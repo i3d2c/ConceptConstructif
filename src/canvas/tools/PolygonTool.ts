@@ -46,7 +46,8 @@ export class PolygonTool {
   }
 
   cancel() {
-    this.deactivate()
+    this.points = []
+    this.clearPreview()
   }
 
   getLastPoint(): [number, number] | null {
