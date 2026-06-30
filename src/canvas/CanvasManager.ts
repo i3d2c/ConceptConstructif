@@ -33,6 +33,12 @@ export class CanvasManager {
     this.stage.height(height)
   }
 
+  toDataURL(): Promise<string> {
+    return new Promise(resolve => {
+      this.stage.toDataURL({ callback: resolve })
+    })
+  }
+
   destroy() {
     this.stage.destroy()
   }

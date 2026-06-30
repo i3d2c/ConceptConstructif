@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import { useProjectStore } from '../stores/projectStore'
 import { CanvasManager } from '../canvas/CanvasManager'
 import { ImageLoader } from '../canvas/ImageLoader'
@@ -11,8 +11,11 @@ import { TraceRenderer } from '../canvas/renderers/TraceRenderer'
 import { NumberRenderer } from '../canvas/renderers/NumberRenderer'
 import { TraceTransformer } from '../canvas/interactions/TraceTransformer'
 import { buildScale } from '../domain/services/ScaleCalculator'
+import { computeTraceVariables } from '../domain/services/ChiffrageCalculator'
 import type { LineTrace, SurfaceTrace } from '../domain/models/Trace'
+import type { Trace } from '../domain/models/Trace'
 import ScaleDialog from './dialogs/ScaleDialog.vue'
+import TraceInfoDialog from './dialogs/TraceInfoDialog.vue'
 
 const store = useProjectStore()
 const containerRef = ref<HTMLDivElement | null>(null)
@@ -30,6 +33,27 @@ let transformer: TraceTransformer | null = null
 const showScaleDialog = ref(false)
 const pendingScalePoints = ref<[[number, number], [number, number]] | null>(null)
 const selectedTraceId = ref<string | null>(null)
+const infoTrace = ref<Trace | null>(null)
+
+// Hover tooltip in select mode
+const hoverTraceId = ref<string | null>(null)
+const hoverPos = ref({ x: 0, y: 0 })
+const hoverInfo = computed(() => {
+  if (!hoverTraceId.value || !store.activeZone) return null
+  const trace = store.activeZone.traces.find(t => t.id === hoverTraceId.value)
+  const ca = store.activeZone.colorAssignments.find(c => c.id === trace?.colorAssignmentId)
+  if (!trace || !ca) return null
+  if (!store.activeZone.scale) {
+    return `#${trace.number} — ${trace.type === 'line' ? 'Trait' : 'Surface'}`
+  }
+  const angleDeg = trace.type === 'surface' ? (trace.angle ?? 0) : 0
+  const v = computeTraceVariables(trace.type, trace.points, store.activeZone.scale, ca, angleDeg)
+  if (trace.type === 'line') {
+    return `#${trace.number}  L=${v.L.toFixed(2)}m  H=${v.H.toFixed(2)}m  E=${v.E.toFixed(3)}m`
+  } else {
+    return `#${trace.number}  S=${v.S.toFixed(2)}m²  L=${v.L.toFixed(2)}m  H=${v.H.toFixed(2)}m`
+  }
+})
 
 function getSelectedCa() {
   if (!store.selectedCaId || !store.activeZone) return null
@@ -45,29 +69,58 @@ function rerenderAll() {
   else scaleRenderer?.clear()
 }
 
+function deactivateSelectHandlers() {
+  cm?.layers.traces.off('.select')
+  cm?.stage.off('.select')
+  hoverTraceId.value = null
+}
+
 function activateTool(mode: string) {
   scaleTool?.deactivate()
   lineTool?.deactivate()
   polygonTool?.deactivate()
   transformer?.deactivate()
+  deactivateSelectHandlers()
 
   const zone = store.activeZone
-  if (!zone) return
+  if (!zone || !cm) return
 
   if (mode === 'scale') {
     scaleTool?.activate()
   } else if (mode === 'line') {
     const ca = getSelectedCa()
     if (!ca) return
-    // strokeWidth en pixels : utilise le ratio si l'échelle est posée, sinon 2px par défaut
     const strokeWidth = zone.scale ? ca.epaisseur / zone.scale.ratio : 2
-    lineTool?.activate(ca.color, Math.max(strokeWidth, 1))
+    lineTool?.activate(ca.color, Math.max(strokeWidth, 1), zone.scale)
   } else if (mode === 'surface') {
     const ca = getSelectedCa()
     if (!ca) return
-    polygonTool?.activate(ca.color)
+    polygonTool?.activate(ca.color, zone.scale)
   } else if (mode === 'select') {
     transformer?.activate(zone.traces)
+
+    cm.layers.traces.on('mouseover.select', (e) => {
+      const id = e.target.id()
+      if (!id) return
+      hoverTraceId.value = id
+      traceRenderer?.highlight(id, true)
+    })
+    cm.layers.traces.on('mouseout.select', (e) => {
+      const id = e.target.id()
+      traceRenderer?.highlight(id, false)
+      hoverTraceId.value = null
+    })
+    cm.layers.traces.on('click.select', (e) => {
+      const id = e.target.id()
+      if (!id || !store.activeZone) return
+      const t = store.activeZone.traces.find(t => t.id === id)
+      if (t) infoTrace.value = t
+    })
+    cm.stage.on('mousemove.select', () => {
+      if (!hoverTraceId.value) return
+      const pos = cm!.stage.getPointerPosition()
+      if (pos) hoverPos.value = { x: pos.x + 14, y: pos.y - 30 }
+    })
   }
 }
 
@@ -139,14 +192,17 @@ function handleImageDrop(e: DragEvent) {
   reader.readAsDataURL(file)
 }
 
+async function getStageDataURL(): Promise<string> {
+  return cm?.toDataURL() ?? ''
+}
+
+defineExpose({ getStageDataURL })
+
 onMounted(() => {
   const container = containerRef.value
   if (!container) return
 
-  const w = container.clientWidth
-  const h = container.clientHeight
-
-  cm = new CanvasManager('canvas-container', w, h)
+  cm = new CanvasManager('canvas-container', container.clientWidth, container.clientHeight)
   imageLoader = new ImageLoader(cm)
   scaleTool = new ScaleTool(cm, onScaleDone)
   lineTool = new LineTool(cm, onLineDone)
@@ -174,14 +230,12 @@ onMounted(() => {
   })
   resizeObs.observe(container)
 
-  // Réagit aux changements de mode et de couleur sélectionnée
   watch(
     () => [store.drawMode, store.selectedCaId] as const,
     ([mode]) => { activateTool(mode) },
     { immediate: true },
   )
 
-  // Réagit aux changements de la zone active (traces, scale, image…)
   watch(
     () => store.activeZone,
     (zone) => {
@@ -209,10 +263,25 @@ onUnmounted(() => {
   >
     <div id="canvas-container" class="canvas-container" />
 
+    <!-- Tooltip hover mode select -->
+    <div
+      v-if="hoverInfo"
+      class="trace-tooltip"
+      :style="{ left: hoverPos.x + 'px', top: hoverPos.y + 'px' }"
+    >
+      {{ hoverInfo }}
+    </div>
+
     <ScaleDialog
       v-if="showScaleDialog"
       @confirm="onScaleConfirm"
       @cancel="showScaleDialog = false"
+    />
+
+    <TraceInfoDialog
+      v-if="infoTrace"
+      :trace="infoTrace"
+      @close="infoTrace = null"
     />
 
     <div v-if="!store.activeZone?.scale" class="hint">
@@ -229,6 +298,17 @@ onUnmounted(() => {
   position: relative;
 }
 .canvas-container { width: 100%; height: 100%; }
+.trace-tooltip {
+  position: absolute;
+  background: rgba(0,0,0,0.8);
+  color: #facc15;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 10;
+}
 .hint {
   position: absolute;
   bottom: 16px;

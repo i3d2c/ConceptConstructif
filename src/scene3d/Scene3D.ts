@@ -18,7 +18,7 @@ export class Scene3D {
   constructor(container: HTMLElement, store: StoreRef) {
     this.store = store
 
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
+    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true })
     this.renderer.setPixelRatio(window.devicePixelRatio)
     this.renderer.setSize(container.clientWidth, container.clientHeight)
     container.appendChild(this.renderer.domElement)
@@ -109,6 +109,10 @@ export class Scene3D {
         this.scene.add(mesh)
       }
     }
+  }
+
+  getDataURL(): string {
+    return this.renderer.domElement.toDataURL('image/png')
   }
 
   destroy() {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, nextTick } from 'vue'
 import AppHeader from './components/AppHeader.vue'
 import SidebarLeft from './components/SidebarLeft.vue'
 import CanvasView from './components/CanvasView.vue'
@@ -21,6 +21,10 @@ const printConfig = ref<PrintConfig | null>(null)
 const canvas2DSnapshot = ref<string | null>(null)
 const canvas3DSnapshot = ref<string | null>(null)
 
+// Refs pour la capture d'impression
+const canvasViewRef = ref<InstanceType<typeof CanvasView> | null>(null)
+const scene3DRef = ref<InstanceType<typeof Scene3DFloat> | null>(null)
+
 function onKeydown(e: KeyboardEvent) {
   if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
     e.preventDefault()
@@ -33,24 +37,32 @@ function onKeydown(e: KeyboardEvent) {
 }
 
 async function onPrint(config: PrintConfig) {
-  printConfig.value = config
   showPrintDialog.value = false
 
-  // Capture Konva stage
-  if (config.show2D) {
-    const konvaStage = document.querySelector<HTMLCanvasElement>('#canvas-container canvas')
-    canvas2DSnapshot.value = konvaStage?.toDataURL('image/png') ?? null
+  // Capture 2D avant d'afficher PrintLayout (canvas Konva composite)
+  if (config.show2D && canvasViewRef.value) {
+    canvas2DSnapshot.value = await canvasViewRef.value.getStageDataURL()
+  } else {
+    canvas2DSnapshot.value = null
   }
 
-  // Capture Three.js canvas
-  if (config.show3D) {
-    const threeCanvas = document.querySelector<HTMLCanvasElement>('.scene3d-container canvas')
-    canvas3DSnapshot.value = threeCanvas?.toDataURL('image/png') ?? null
+  // Capture 3D (seulement si le panneau est ouvert)
+  if (config.show3D && scene3DRef.value) {
+    canvas3DSnapshot.value = scene3DRef.value.getDataURL()
+  } else {
+    canvas3DSnapshot.value = null
   }
 
-  await new Promise(r => setTimeout(r, 100))
+  // Affiche PrintLayout avec les données capturées
+  printConfig.value = config
+
+  // Attendre le rendu Vue + un tick pour le navigateur
+  await nextTick()
+  await new Promise(r => setTimeout(r, 200))
+
+  // Effacer PrintLayout après la fermeture du dialog d'impression
+  window.addEventListener('afterprint', () => { printConfig.value = null }, { once: true })
   window.print()
-  printConfig.value = null
 }
 
 onMounted(() => window.addEventListener('keydown', onKeydown))
@@ -75,10 +87,10 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
       />
 
       <main class="canvas-area">
-        <CanvasView />
+        <CanvasView ref="canvasViewRef" />
 
         <FloatingPanel v-if="show3D" title="Vue 3D" @close="show3D = false">
-          <Scene3DFloat />
+          <Scene3DFloat ref="scene3DRef" />
         </FloatingPanel>
 
         <FloatingPanel v-if="showChiffrage" title="Chiffrage" @close="showChiffrage = false">
@@ -91,7 +103,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
     <PrintDialog v-if="showPrintDialog" @print="onPrint" @cancel="showPrintDialog = false" />
   </div>
 
-  <!-- Zone d'impression (cachée à l'écran, visible uniquement @media print) -->
+  <!-- Layout d'impression (masqué à l'écran) -->
   <PrintLayout
     v-if="printConfig"
     :config="printConfig"

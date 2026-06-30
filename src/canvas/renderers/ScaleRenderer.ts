@@ -28,7 +28,7 @@ export class ScaleRenderer {
     // Arrow caps
     const angle = Math.atan2(y2 - y1, x2 - x1)
     const arrowLen = 10
-    for (const [px, py, dir] of [[x1, y1, angle + Math.PI], [x2, y2, angle]] as [number, number, number][]) {
+    for (const [px, py, dir] of [[x1, y1, angle], [x2, y2, angle + Math.PI]] as [number, number, number][]) {
       layer.add(new Konva.Line({
         points: [
           px, py,

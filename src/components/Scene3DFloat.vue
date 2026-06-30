@@ -5,8 +5,8 @@ import { useProjectStore } from '../stores/projectStore'
 const store = useProjectStore()
 const containerRef = ref<HTMLDivElement | null>(null)
 
-// Three.js is loaded lazily to avoid bundling weight at startup
-let scene3d: { destroy(): void; rebuild(): void } | null = null
+type Scene3DInstance = { destroy(): void; rebuild(): void; getDataURL(): string }
+let scene3d: Scene3DInstance | null = null
 
 onMounted(async () => {
   if (!containerRef.value) return
@@ -24,6 +24,12 @@ watch(
   () => scene3d?.rebuild(),
   { deep: true },
 )
+
+function getDataURL(): string | null {
+  return scene3d?.getDataURL() ?? null
+}
+
+defineExpose({ getDataURL })
 </script>
 
 <template>

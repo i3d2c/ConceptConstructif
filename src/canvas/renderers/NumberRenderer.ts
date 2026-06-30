@@ -9,6 +9,16 @@ function centroid(points: [number, number][]): [number, number] {
   return [x, y]
 }
 
+// For a LineTrace: midpoint of the middle segment
+function lineMiddle(points: [number, number][]): [number, number] {
+  if (points.length < 2) return centroid(points)
+  const segCount = points.length - 1
+  const midSeg = Math.floor((segCount - 1) / 2)
+  const p1 = points[midSeg]
+  const p2 = points[midSeg + 1]
+  return [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2]
+}
+
 export class NumberRenderer {
   private canvas: CanvasManager
 
@@ -24,7 +34,10 @@ export class NumberRenderer {
       const ca = colorAssignments.find(c => c.id === trace.colorAssignmentId)
       if (!ca) continue
 
-      const [cx, cy] = centroid(trace.points)
+      const [cx, cy] = trace.type === 'line'
+        ? lineMiddle(trace.points)
+        : centroid(trace.points)
+
       const radius = 12
 
       layer.add(new Konva.Circle({
