@@ -34,10 +34,21 @@ export class ScaleTool {
     }
   }
 
+  private snappedPos(pos: { x: number; y: number }, ctrlKey: boolean): { x: number; y: number } {
+    if (!ctrlKey || !this.p1) return pos
+    const dx = pos.x - this.p1[0]
+    const dy = pos.y - this.p1[1]
+    const angle = Math.atan2(dy, dx)
+    const snapped = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4)
+    const dist = Math.hypot(dx, dy)
+    return { x: this.p1[0] + dist * Math.cos(snapped), y: this.p1[1] + dist * Math.sin(snapped) }
+  }
+
   private onClick(e: Konva.KonvaEventObject<MouseEvent>) {
     if (!this.active) return
-    const pos = this.canvas.stage.getPointerPosition()
-    if (!pos) return
+    const raw = this.canvas.stage.getPointerPosition()
+    if (!raw) return
+    const pos = this.snappedPos(raw, e.evt.ctrlKey)
 
     if (!this.p1) {
       this.p1 = [pos.x, pos.y]
@@ -45,14 +56,14 @@ export class ScaleTool {
       const p2: [number, number] = [pos.x, pos.y]
       this.deactivate()
       this.onDone(this.p1, p2)
-      void e
     }
   }
 
   private onMouseMove(e: Konva.KonvaEventObject<MouseEvent>) {
     if (!this.active || !this.p1) return
-    const pos = this.canvas.stage.getPointerPosition()
-    if (!pos) return
+    const raw = this.canvas.stage.getPointerPosition()
+    if (!raw) return
+    const pos = this.snappedPos(raw, e.evt.ctrlKey)
 
     if (this.preview) {
       this.preview.points([this.p1[0], this.p1[1], pos.x, pos.y])

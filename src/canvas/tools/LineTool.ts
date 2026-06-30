@@ -30,7 +30,6 @@ export class LineTool {
     this.canvas.stage.container().style.cursor = 'crosshair'
     this.canvas.stage.on('click.linetool', (e) => this.onClick(e))
     this.canvas.stage.on('mousemove.linetool', (e) => this.onMouseMove(e))
-    this.canvas.stage.on('dblclick.linetool', () => this.finish())
   }
 
   deactivate() {
@@ -101,6 +100,8 @@ export class LineTool {
     this.canvas.layers.tool.add(dot)
     this.dots.push(dot)
     this.canvas.layers.tool.batchDraw()
+
+    if (this.points.length === 2) this.finish()
   }
 
   private onMouseMove(e: Konva.KonvaEventObject<MouseEvent>) {
