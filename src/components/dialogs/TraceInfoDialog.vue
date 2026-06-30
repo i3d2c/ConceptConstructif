@@ -93,6 +93,12 @@ function applyResize() {
   store.updateTrace(zone.value.id, props.trace.id, { points: newPts })
 }
 
+function deleteTrace() {
+  if (!zone.value) return
+  store.removeTrace(zone.value.id, props.trace.id)
+  emit('close')
+}
+
 // ── Formatage ──────────────────────────────────────────────────────────────
 function fmt(n: number) {
   return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)
@@ -189,6 +195,7 @@ function fmtQty(n: number) {
       </div>
 
       <div class="dialog-actions">
+        <button class="danger" @click="deleteTrace">Supprimer</button>
         <button class="active" @click="emit('close')">Fermer</button>
       </div>
     </div>
@@ -235,5 +242,7 @@ function fmtQty(n: number) {
 .mini-table th { background: var(--surface2); padding: 3px 6px; text-align: left; border-bottom: 1px solid var(--border); }
 .mini-table td { padding: 2px 6px; }
 .mini-table tfoot td { border-top: 1px solid var(--border); }
-.dialog-actions { padding: 10px 14px; display: flex; justify-content: flex-end; }
+.dialog-actions { padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; }
+button.danger { background: #7f1d1d; color: #fca5a5; border-color: #991b1b; }
+button.danger:hover { background: #991b1b; }
 </style>

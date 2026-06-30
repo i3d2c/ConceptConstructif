@@ -156,6 +156,10 @@ function deactivateSelectHandlers() {
   hoverTraceId.value = null
   dragState = null
   isDragging = false
+  if (cm && (cm as any)._selectDeleteCleanup) {
+    ;(cm as any)._selectDeleteCleanup()
+    ;(cm as any)._selectDeleteCleanup = null
+  }
 }
 
 function activateTool(mode: string) {
@@ -180,6 +184,18 @@ function activateTool(mode: string) {
     polygonTool?.activate(ca.color, zone.scale)
   } else if (mode === 'select') {
     renderSelectHandles()
+
+    // Touche Suppr / Delete sur le tracé survolé
+    const onDeleteKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Delete' && e.key !== 'Backspace') return
+      if (!hoverTraceId.value || !store.activeZone) return
+      store.removeTrace(store.activeZone.id, hoverTraceId.value)
+      hoverTraceId.value = null
+    }
+    window.addEventListener('keydown', onDeleteKey)
+    cm.stage.on('destroyed.select', () => window.removeEventListener('keydown', onDeleteKey))
+    // Nettoyage au changement de mode (deactivateSelectHandlers)
+    ;(cm as any)._selectDeleteCleanup = () => window.removeEventListener('keydown', onDeleteKey)
 
     // Hover highlight on traces
     cm.layers.traces.on('mouseover.select', (e) => {
