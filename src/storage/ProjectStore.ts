@@ -20,7 +20,10 @@ function getDb(): Promise<IDBPDatabase> {
 
 export async function saveProject(project: Project): Promise<void> {
   const db = await getDb()
-  await db.put(STORE, { ...project, updatedAt: new Date().toISOString() })
+  // JSON round-trip strips Vue reactive proxies before structured clone
+  const plain = JSON.parse(JSON.stringify(project))
+  plain.updatedAt = new Date().toISOString()
+  await db.put(STORE, plain)
 }
 
 export async function loadProject(id: string): Promise<Project | undefined> {
