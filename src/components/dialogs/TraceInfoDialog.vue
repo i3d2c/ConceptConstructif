@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useProjectStore } from '../../stores/projectStore'
 import { computeTraceVariables, computeTraceChiffrage } from '../../domain/services/ChiffrageCalculator'
 import type { Trace } from '../../domain/models/Trace'
+import type { Scale } from '../../domain/models/Scale'
 
 const props = defineProps<{ trace: Trace }>()
 const emit = defineEmits<{ close: [] }>()
@@ -25,6 +26,74 @@ const chiffrage = computed(() => {
   return computeTraceChiffrage(props.trace, zone.value.scale, ca.value, ouvrage.value, constituentsMap)
 })
 
+// ── Redimensionnement ──────────────────────────────────────────────────────
+const resizeL = ref('')
+const resizeH = ref('')
+
+watch(vars, (v) => {
+  if (!v) return
+  resizeL.value = v.L.toFixed(3)
+  if (props.trace.type === 'surface') resizeH.value = v.H.toFixed(3)
+}, { immediate: true })
+
+function parseM(s: string): number | null {
+  const n = parseFloat(s.replace(',', '.'))
+  return isNaN(n) || n <= 0 ? null : n
+}
+
+function resizeLine(pts: [number, number][], newLMeters: number, scale: Scale): [number, number][] {
+  if (pts.length < 2) return pts
+  let curLen = 0
+  for (let i = 0; i < pts.length - 1; i++) {
+    curLen += Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1])
+  }
+  if (curLen === 0) return pts
+  const factor = (newLMeters / scale.ratio) / curLen
+  const start = pts[0]
+  return pts.map((p, i) =>
+    i === 0 ? p : [start[0] + (p[0] - start[0]) * factor, start[1] + (p[1] - start[1]) * factor]
+  )
+}
+
+function resizeSurface(
+  pts: [number, number][],
+  newLMeters: number | null,
+  newHMeters: number | null,
+  scale: Scale,
+): [number, number][] {
+  const xs = pts.map(p => p[0])
+  const ys = pts.map(p => p[1])
+  const minX = Math.min(...xs), maxX = Math.max(...xs)
+  const minY = Math.min(...ys), maxY = Math.max(...ys)
+  const cx = (minX + maxX) / 2
+  const cy = (minY + maxY) / 2
+  const curW = maxX - minX || 1
+  const curH = maxY - minY || 1
+  const scaleX = newLMeters !== null ? (newLMeters / scale.ratio) / curW : 1
+  const scaleY = newHMeters !== null ? (newHMeters / scale.ratio) / curH : 1
+  return pts.map(p => [cx + (p[0] - cx) * scaleX, cy + (p[1] - cy) * scaleY])
+}
+
+function applyResize() {
+  const s = zone.value?.scale
+  if (!s || !zone.value) return
+
+  let newPts: [number, number][]
+  if (props.trace.type === 'line') {
+    const newL = parseM(resizeL.value)
+    if (!newL) return
+    newPts = resizeLine(props.trace.points, newL, s)
+  } else {
+    const newL = parseM(resizeL.value)
+    const newH = parseM(resizeH.value)
+    if (!newL && !newH) return
+    newPts = resizeSurface(props.trace.points, newL, newH, s)
+  }
+
+  store.updateTrace(zone.value.id, props.trace.id, { points: newPts })
+}
+
+// ── Formatage ──────────────────────────────────────────────────────────────
 function fmt(n: number) {
   return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)
 }
@@ -56,9 +125,9 @@ function fmtQty(n: number) {
         </div>
       </div>
 
-      <!-- Dimensions calculées -->
+      <!-- Dimensions calculées (lecture seule) -->
       <div v-if="vars" class="section">
-        <div class="section-title">Dimensions</div>
+        <div class="section-title">Dimensions calculées</div>
         <div class="info-grid">
           <span class="label">L</span><span>{{ fmtQty(vars.L) }} m</span>
           <span class="label">H</span><span>{{ fmtQty(vars.H) }} m</span>
@@ -68,6 +137,32 @@ function fmtQty(n: number) {
         </div>
       </div>
       <div v-else class="hint">Posez une échelle pour voir les dimensions réelles.</div>
+
+      <!-- Redimensionnement -->
+      <div v-if="vars" class="section">
+        <div class="section-title">Redimensionner</div>
+        <div v-if="trace.type === 'line'" class="resize-row">
+          <label>L (m)</label>
+          <input v-model="resizeL" type="text" class="dim-input" @keyup.enter="applyResize" />
+          <button class="active small" @click="applyResize">Appliquer</button>
+        </div>
+        <div v-else class="resize-col">
+          <div class="resize-row">
+            <label>L (m)</label>
+            <input v-model="resizeL" type="text" class="dim-input" @keyup.enter="applyResize" />
+          </div>
+          <div class="resize-row">
+            <label>H (m)</label>
+            <input v-model="resizeH" type="text" class="dim-input" @keyup.enter="applyResize" />
+          </div>
+          <button class="active small" style="align-self:flex-end" @click="applyResize">Appliquer</button>
+        </div>
+        <div class="resize-hint">
+          {{ trace.type === 'line'
+            ? 'Modifie la longueur du trait en gardant le point de départ fixe.'
+            : 'Redimensionne depuis le centre du bounding box.' }}
+        </div>
+      </div>
 
       <!-- Chiffrage -->
       <div v-if="chiffrage" class="section">
@@ -130,6 +225,12 @@ function fmtQty(n: number) {
 .info-grid { display: grid; grid-template-columns: 20px 1fr; gap: 2px 8px; font-size: 12px; }
 .label { color: var(--text-muted); }
 .hint { padding: 10px 14px; font-size: 11px; color: var(--text-muted); }
+.resize-row { display: flex; align-items: center; gap: 8px; }
+.resize-row label { width: 36px; font-size: 11px; color: var(--text-muted); flex-shrink: 0; }
+.resize-col { display: flex; flex-direction: column; gap: 6px; }
+.dim-input { width: 90px; font-size: 12px; text-align: right; }
+.resize-hint { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+.small { padding: 3px 10px; font-size: 11px; }
 .mini-table { width: 100%; border-collapse: collapse; font-size: 11px; }
 .mini-table th { background: var(--surface2); padding: 3px 6px; text-align: left; border-bottom: 1px solid var(--border); }
 .mini-table td { padding: 2px 6px; }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 
 const emit = defineEmits<{
   confirm: [realLength: number]
@@ -7,6 +7,11 @@ const emit = defineEmits<{
 }>()
 
 const value = ref('5')
+const inputRef = ref<HTMLInputElement | null>(null)
+
+onMounted(() => {
+  inputRef.value?.select()
+})
 
 function submit() {
   const n = parseFloat(value.value.replace(',', '.'))
@@ -20,7 +25,7 @@ function submit() {
     <div class="dialog">
       <h3>Longueur réelle du trait</h3>
       <label>Longueur (m)</label>
-      <input v-model="value" type="text" autofocus @keyup.enter="submit" />
+      <input ref="inputRef" v-model="value" type="text" autofocus @keyup.enter="submit" />
       <div class="dialog-actions">
         <button @click="emit('cancel')">Annuler</button>
         <button class="active" @click="submit">Valider</button>

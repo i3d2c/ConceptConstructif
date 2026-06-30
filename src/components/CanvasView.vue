@@ -102,6 +102,22 @@ function rerenderAll() {
   if (store.drawMode === 'select') renderSelectHandles()
 }
 
+// Snap d'un sommet déplacé à 45° par rapport au point adjacent
+function snapVertex(
+  pos: { x: number; y: number },
+  pts: [number, number][],
+  idx: number,
+): { x: number; y: number } {
+  const ref = pts[idx - 1] ?? pts[idx + 1]
+  if (!ref) return pos
+  const dx = pos.x - ref[0]
+  const dy = pos.y - ref[1]
+  const angle = Math.atan2(dy, dx)
+  const snapped = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4)
+  const dist = Math.hypot(dx, dy)
+  return { x: ref[0] + dist * Math.cos(snapped), y: ref[1] + dist * Math.sin(snapped) }
+}
+
 // ── Select handles ─────────────────────────────────────────────────────────
 function renderSelectHandles() {
   if (!cm || !store.activeZone) return
@@ -219,7 +235,7 @@ function activateTool(mode: string) {
       }
     })
 
-    cm.stage.on('mousemove.selectdrag', () => {
+    cm.stage.on('mousemove.selectdrag', (e) => {
       if (!dragState) return
       isDragging = true
       const pos = cm!.stage.getPointerPosition()
@@ -229,8 +245,13 @@ function activateTool(mode: string) {
       const dy = pos.y - dragState.startMouseY
 
       if (dragState.type === 'vertex') {
+        const rawPos = {
+          x: dragState.startPoints[dragState.vertexIdx][0] + dx,
+          y: dragState.startPoints[dragState.vertexIdx][1] + dy,
+        }
+        const vPos = e.evt.ctrlKey ? snapVertex(rawPos, dragState.startPoints, dragState.vertexIdx) : rawPos
         const newPts = dragState.startPoints.map((p, i) =>
-          i === dragState!.vertexIdx ? [p[0] + dx, p[1] + dy] as [number, number] : p
+          i === dragState!.vertexIdx ? [vPos.x, vPos.y] as [number, number] : p
         )
         // Move Konva line node directly
         const lineNode = cm!.layers.traces.findOne<Konva.Line>('#' + dragState.traceId)
@@ -238,7 +259,7 @@ function activateTool(mode: string) {
         cm!.layers.traces.batchDraw()
         // Move handle
         const handle = getHandle(dragState.traceId, dragState.vertexIdx)
-        handle?.position({ x: newPts[dragState.vertexIdx][0], y: newPts[dragState.vertexIdx][1] })
+        handle?.position({ x: vPos.x, y: vPos.y })
         cm!.layers.tool.batchDraw()
       } else {
         const newPts = dragState.startPoints.map(p => [p[0] + dx, p[1] + dy] as [number, number])
@@ -257,6 +278,7 @@ function activateTool(mode: string) {
       if (!dragState) return
       const pos = cm!.stage.getPointerPosition()
       const wasDrag = isDragging
+      const ctrlKey = e.evt.ctrlKey
       // Reset before store update so rerenderAll is not blocked
       const ds = dragState
       dragState = null
@@ -270,14 +292,15 @@ function activateTool(mode: string) {
       const zone = store.activeZone
 
       if (moved) {
-        const newPts = ds.startPoints.map((p, i) =>
-          ds.type === 'vertex' && i === ds.vertexIdx
-            ? [p[0] + dx, p[1] + dy] as [number, number]
-            : ds.type === 'trace' ? [p[0] + dx, p[1] + dy] as [number, number]
-            : p
-        )
+        let newPts: [number, number][]
+        if (ds.type === 'vertex') {
+          const rawPos = { x: ds.startPoints[ds.vertexIdx][0] + dx, y: ds.startPoints[ds.vertexIdx][1] + dy }
+          const vPos = ctrlKey ? snapVertex(rawPos, ds.startPoints, ds.vertexIdx) : rawPos
+          newPts = ds.startPoints.map((p, i) => i === ds.vertexIdx ? [vPos.x, vPos.y] : p)
+        } else {
+          newPts = ds.startPoints.map(p => [p[0] + dx, p[1] + dy] as [number, number])
+        }
         if (ds.isCtrl && ds.type === 'trace') {
-          // Duplicate
           const orig = zone.traces.find(t => t.id === ds.traceId)
           if (orig) {
             store.addTrace(zone.id, {
