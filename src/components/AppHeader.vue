@@ -39,7 +39,12 @@ function handleExport() {
 
 <template>
   <header class="app-header no-print">
-    <span class="brand">ConceptConstructif</span>
+    <span class="brand">CC</span>
+    <input
+      v-model="store.project.name"
+      class="project-name"
+      title="Nom du projet (cliquez pour renommer)"
+    />
 
     <div class="zone-selector">
       <select
@@ -74,8 +79,21 @@ function handleExport() {
   padding: 0 12px;
   flex-shrink: 0;
 }
-.brand { font-weight: 600; color: var(--accent); white-space: nowrap; }
-.zone-selector select { width: 200px; }
+.brand { font-weight: 700; color: var(--accent); white-space: nowrap; font-size: 13px; }
+.project-name {
+  font-size: 13px;
+  font-weight: 500;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--text);
+  padding: 2px 6px;
+  width: 180px;
+  transition: border-color 0.15s;
+}
+.project-name:hover { border-color: var(--border); }
+.project-name:focus { border-color: var(--accent); outline: none; background: var(--surface2); }
+.zone-selector select { width: 180px; }
 .header-actions { margin-left: auto; display: flex; gap: 4px; }
 button:disabled { opacity: 0.4; cursor: not-allowed; }
 </style>

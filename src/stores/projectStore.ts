@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import type { Project } from '../domain/models/Project'
 import type { Zone } from '../domain/models/Zone'
 import type { Ouvrage } from '../domain/models/Ouvrage'
@@ -39,6 +39,7 @@ export const useProjectStore = defineStore('project', () => {
   // UI state (non persisté)
   const drawMode = ref<DrawMode>('select')
   const selectedCaId = ref<string | null>(null)
+  const showNumbers = ref(true)
 
   const activeZone = computed<Zone | undefined>(
     () => project.value.zones.find(z => z.id === project.value.activeZoneId),
@@ -178,12 +179,20 @@ export const useProjectStore = defineStore('project', () => {
   async function save() {
     project.value.updatedAt = new Date().toISOString()
     await saveProject(project.value)
+    localStorage.setItem('cc_last_project', project.value.id)
   }
 
   async function load(id: string) {
     const p = await loadProject(id)
     if (p) project.value = p
   }
+
+  // Auto-save debounced (1 s après la dernière mutation)
+  let _saveTimer: ReturnType<typeof setTimeout>
+  watch(project, () => {
+    clearTimeout(_saveTimer)
+    _saveTimer = setTimeout(() => save(), 1000)
+  }, { deep: true })
 
   function reset() {
     project.value = newProject()
@@ -194,6 +203,7 @@ export const useProjectStore = defineStore('project', () => {
     activeZone,
     drawMode,
     selectedCaId,
+    showNumbers,
     setDrawMode,
     setSelectedCaId,
     canUndo,

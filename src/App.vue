@@ -65,7 +65,11 @@ async function onPrint(config: PrintConfig) {
   window.print()
 }
 
-onMounted(() => window.addEventListener('keydown', onKeydown))
+onMounted(async () => {
+  window.addEventListener('keydown', onKeydown)
+  const lastId = localStorage.getItem('cc_last_project')
+  if (lastId) await store.load(lastId)
+})
 onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 </script>
 

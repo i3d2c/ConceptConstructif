@@ -444,6 +444,15 @@ onMounted(() => {
   )
 
   watch(
+    () => store.showNumbers,
+    (val) => {
+      if (!cm) return
+      cm.layers.numbers.visible(val)
+      cm.layers.numbers.batchDraw()
+    },
+  )
+
+  watch(
     () => store.activeZone,
     (zone) => {
       if (!zone) return
