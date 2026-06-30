@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { useProjectStore } from '../stores/projectStore'
-import { importProject } from '../storage/JsonExporter'
-import { downloadProject } from '../storage/JsonExporter'
+import { importProject, downloadProject } from '../storage/JsonExporter'
 
 const store = useProjectStore()
 
 defineEmits<{
   toggle3d: []
   toggleChiffrage: []
+  print: []
 }>()
 
 async function handleSave() {
@@ -25,7 +25,7 @@ function handleImport() {
     try {
       const project = importProject(text)
       store.project = project
-    } catch (e) {
+    } catch {
       alert('Fichier JSON invalide')
     }
   }
@@ -58,6 +58,7 @@ function handleExport() {
       <button class="icon" title="Sauvegarder" @click="handleSave">💾</button>
       <button class="icon" title="Importer JSON" @click="handleImport">📥</button>
       <button class="icon" title="Exporter JSON" @click="handleExport">📤</button>
+      <button class="icon" title="Imprimer / PDF" @click="$emit('print')">🖨</button>
     </div>
   </header>
 </template>
