@@ -98,12 +98,9 @@ export class Scene3D {
         const geom = new THREE.ShapeGeometry(shape)
         const mat = new THREE.MeshLambertMaterial({ color, side: THREE.DoubleSide })
         const mesh = new THREE.Mesh(geom, mat)
-        mesh.rotation.x = -Math.PI / 2
+        const angleRad = trace.angle ? (trace.angle * Math.PI) / 180 : 0
+        mesh.rotation.x = Math.PI / 2 - angleRad
         mesh.position.y = trace.up
-
-        if (trace.angle) {
-          mesh.rotation.x = -(Math.PI / 2 - (trace.angle * Math.PI) / 180)
-        }
 
         mesh.userData['trace'] = true
         this.scene.add(mesh)
