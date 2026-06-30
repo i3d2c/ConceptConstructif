@@ -12,13 +12,13 @@ const emit = defineEmits<{
 
 <template>
   <aside class="sidebar no-print">
+    <ZoneSection />
+    <hr class="divider" />
     <ToolsSection />
     <hr class="divider" />
     <ColorSection />
     <hr class="divider" />
     <button class="full-btn" @click="emit('openOuvrages')">Ouvrages</button>
-    <hr class="divider" />
-    <ZoneSection />
     <hr class="divider" />
     <div class="bottom-actions">
       <button @click="emit('toggleChiffrage')">Chiffrage</button>
