@@ -175,12 +175,12 @@ function activateTool(mode: string) {
     scaleTool?.activate()
   } else if (mode === 'line') {
     const ca = getSelectedCa()
-    if (!ca) return
+    if (!ca) { cm.stage.container().style.cursor = 'not-allowed'; return }
     const strokeWidth = zone.scale ? ca.epaisseur / zone.scale.ratio : 2
     lineTool?.activate(ca.color, Math.max(strokeWidth, 1), zone.scale)
   } else if (mode === 'surface') {
     const ca = getSelectedCa()
-    if (!ca) return
+    if (!ca) { cm.stage.container().style.cursor = 'not-allowed'; return }
     polygonTool?.activate(ca.color, zone.scale)
   } else if (mode === 'select') {
     renderSelectHandles()

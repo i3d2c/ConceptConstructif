@@ -57,6 +57,13 @@ function onSave(ca: ColorAssignment) {
       <button class="edit-btn" title="Modifier" @click="openEdit(ca, $event)">✎</button>
     </div>
 
+    <div
+      v-if="(store.drawMode === 'line' || store.drawMode === 'surface') && !store.selectedCaId"
+      class="no-color-hint"
+    >
+      ↑ Sélectionnez une couleur pour tracer
+    </div>
+
     <button class="add-btn" @click="openNew">+ Couleur</button>
 
     <ColorAssignDialog
@@ -88,4 +95,14 @@ function onSave(ca: ColorAssignment) {
 }
 .edit-btn:hover { opacity: 1; }
 .add-btn { width: 100%; margin-top: 4px; }
+.no-color-hint {
+  font-size: 10px;
+  color: #f59e0b;
+  padding: 4px 2px;
+  animation: pulse-hint 1.5s ease-in-out infinite;
+}
+@keyframes pulse-hint {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
 </style>
