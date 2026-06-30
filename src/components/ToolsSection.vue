@@ -1,21 +1,17 @@
 <script setup lang="ts">
-import { ref, provide } from 'vue'
+import { useProjectStore } from '../stores/projectStore'
 
-export type DrawMode = 'scale' | 'line' | 'surface' | 'select'
-
-const mode = ref<DrawMode>('select')
-
-provide('drawMode', mode)
+const store = useProjectStore()
 </script>
 
 <template>
   <div class="tools-section">
     <div class="section-label">Outils</div>
     <div class="tool-btns">
-      <button :class="{ active: mode === 'scale' }" title="Tracer l'échelle" @click="mode = 'scale'">Echelle</button>
-      <button :class="{ active: mode === 'line' }" title="Tracer un trait (mur)" @click="mode = 'line'">Trait</button>
-      <button :class="{ active: mode === 'surface' }" title="Tracer une surface" @click="mode = 'surface'">Surface</button>
-      <button :class="{ active: mode === 'select' }" title="Sélectionner" @click="mode = 'select'">Select.</button>
+      <button :class="{ active: store.drawMode === 'scale' }" title="Tracer l'échelle" @click="store.setDrawMode('scale')">Echelle</button>
+      <button :class="{ active: store.drawMode === 'line' }" title="Tracer un trait (mur)" @click="store.setDrawMode('line')">Trait</button>
+      <button :class="{ active: store.drawMode === 'surface' }" title="Tracer une surface" @click="store.setDrawMode('surface')">Surface</button>
+      <button :class="{ active: store.drawMode === 'select' }" title="Sélectionner" @click="store.setDrawMode('select')">Select.</button>
     </div>
   </div>
 </template>

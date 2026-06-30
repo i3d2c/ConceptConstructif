@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch, inject } from 'vue'
-import type { Ref } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useProjectStore } from '../stores/projectStore'
 import { CanvasManager } from '../canvas/CanvasManager'
 import { ImageLoader } from '../canvas/ImageLoader'
@@ -17,7 +16,6 @@ import ScaleDialog from './dialogs/ScaleDialog.vue'
 
 const store = useProjectStore()
 const containerRef = ref<HTMLDivElement | null>(null)
-const drawMode = inject<Ref<string>>('drawMode')
 
 let cm: CanvasManager | null = null
 let imageLoader: ImageLoader | null = null
@@ -31,12 +29,11 @@ let transformer: TraceTransformer | null = null
 
 const showScaleDialog = ref(false)
 const pendingScalePoints = ref<[[number, number], [number, number]] | null>(null)
-const selectedCaId = ref<string | null>(null)
 const selectedTraceId = ref<string | null>(null)
 
 function getSelectedCa() {
-  if (!selectedCaId.value || !store.activeZone) return null
-  return store.activeZone.colorAssignments.find(c => c.id === selectedCaId.value) ?? null
+  if (!store.selectedCaId || !store.activeZone) return null
+  return store.activeZone.colorAssignments.find(c => c.id === store.selectedCaId) ?? null
 }
 
 function rerenderAll() {
@@ -61,8 +58,9 @@ function activateTool(mode: string) {
     scaleTool?.activate()
   } else if (mode === 'line') {
     const ca = getSelectedCa()
-    if (!ca || !zone.scale) return
-    const strokeWidth = ca.epaisseur / zone.scale.ratio
+    if (!ca) return
+    // strokeWidth en pixels : utilise le ratio si l'échelle est posée, sinon 2px par défaut
+    const strokeWidth = zone.scale ? ca.epaisseur / zone.scale.ratio : 2
     lineTool?.activate(ca.color, Math.max(strokeWidth, 1))
   } else if (mode === 'surface') {
     const ca = getSelectedCa()
@@ -106,7 +104,7 @@ function onLineDone(points: [number, number][]) {
   }
   store.addTrace(zone.id, trace)
   rerenderAll()
-  activateTool(drawMode?.value ?? 'select')
+  activateTool(store.drawMode)
 }
 
 function onPolygonDone(points: [number, number][]) {
@@ -125,7 +123,7 @@ function onPolygonDone(points: [number, number][]) {
   }
   store.addTrace(zone.id, trace)
   rerenderAll()
-  activateTool(drawMode?.value ?? 'select')
+  activateTool(store.drawMode)
 }
 
 function handleImageDrop(e: DragEvent) {
@@ -176,12 +174,14 @@ onMounted(() => {
   })
   resizeObs.observe(container)
 
+  // Réagit aux changements de mode et de couleur sélectionnée
   watch(
-    () => drawMode?.value,
-    (mode) => { if (mode) activateTool(mode) },
+    () => [store.drawMode, store.selectedCaId] as const,
+    ([mode]) => { activateTool(mode) },
     { immediate: true },
   )
 
+  // Réagit aux changements de la zone active (traces, scale, image…)
   watch(
     () => store.activeZone,
     (zone) => {
@@ -189,6 +189,7 @@ onMounted(() => {
       if (zone.backgroundImage) imageLoader?.load(zone.backgroundImage)
       else imageLoader?.clear()
       rerenderAll()
+      activateTool(store.drawMode)
     },
     { deep: true },
   )
@@ -215,7 +216,8 @@ onUnmounted(() => {
     />
 
     <div v-if="!store.activeZone?.scale" class="hint">
-      Glisser-déposer une image de plan, puis tracer l'échelle
+      <span v-if="store.drawMode !== 'scale'">Commencer par tracer l'échelle (outil Echelle)</span>
+      <span v-else>Cliquez deux fois pour définir le trait d'échelle</span>
     </div>
   </div>
 </template>
@@ -238,5 +240,6 @@ onUnmounted(() => {
   border-radius: 20px;
   font-size: 11px;
   pointer-events: none;
+  white-space: nowrap;
 }
 </style>

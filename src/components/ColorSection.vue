@@ -8,13 +8,18 @@ const store = useProjectStore()
 const editingCa = ref<ColorAssignment | null>(null)
 const showDialog = ref(false)
 
-function openNew() {
-  editingCa.value = null
+function selectCa(ca: ColorAssignment) {
+  store.setSelectedCaId(ca.id)
+}
+
+function openEdit(ca: ColorAssignment, e: MouseEvent) {
+  e.stopPropagation()
+  editingCa.value = ca
   showDialog.value = true
 }
 
-function openEdit(ca: ColorAssignment) {
-  editingCa.value = ca
+function openNew() {
+  editingCa.value = null
   showDialog.value = true
 }
 
@@ -25,6 +30,7 @@ function onSave(ca: ColorAssignment) {
     store.updateColorAssignment(zone.id, ca.id, ca)
   } else {
     store.addColorAssignment(zone.id, ca)
+    store.setSelectedCaId(ca.id)
   }
   showDialog.value = false
 }
@@ -38,7 +44,8 @@ function onSave(ca: ColorAssignment) {
       v-for="ca in store.activeZone?.colorAssignments ?? []"
       :key="ca.id"
       class="color-entry"
-      @click="openEdit(ca)"
+      :class="{ selected: store.selectedCaId === ca.id }"
+      @click="selectCa(ca)"
     >
       <span class="swatch" :style="{ background: ca.color }" />
       <div class="entry-info">
@@ -47,6 +54,7 @@ function onSave(ca: ColorAssignment) {
         </div>
         <div class="entry-dim">E={{ ca.epaisseur }}m</div>
       </div>
+      <button class="edit-btn" title="Modifier" @click="openEdit(ca, $event)">✎</button>
     </div>
 
     <button class="add-btn" @click="openNew">+ Couleur</button>
@@ -69,9 +77,15 @@ function onSave(ca: ColorAssignment) {
   border: 1px solid var(--border);
 }
 .color-entry:hover { background: var(--surface2); }
+.color-entry.selected { border-color: var(--accent); background: var(--surface2); }
 .swatch { width: 18px; height: 18px; border-radius: 3px; flex-shrink: 0; }
 .entry-info { flex: 1; overflow: hidden; }
 .entry-ouvrage { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .entry-dim { font-size: 10px; color: var(--text-muted); }
+.edit-btn {
+  padding: 2px 5px; font-size: 12px; opacity: 0.5;
+  background: none; border: none; cursor: pointer; color: var(--text);
+}
+.edit-btn:hover { opacity: 1; }
 .add-btn { width: 100%; margin-top: 4px; }
 </style>

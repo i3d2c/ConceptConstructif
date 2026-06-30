@@ -30,9 +30,15 @@ function newProject(): Project {
   }
 }
 
+export type DrawMode = 'select' | 'scale' | 'line' | 'surface'
+
 export const useProjectStore = defineStore('project', () => {
   const project = ref<Project>(newProject())
   const history = new HistoryManager(20)
+
+  // UI state (non persisté)
+  const drawMode = ref<DrawMode>('select')
+  const selectedCaId = ref<string | null>(null)
 
   const activeZone = computed<Zone | undefined>(
     () => project.value.zones.find(z => z.id === project.value.activeZoneId),
@@ -55,9 +61,18 @@ export const useProjectStore = defineStore('project', () => {
   const canUndo = computed(() => history.canUndo)
   const canRedo = computed(() => history.canRedo)
 
+  function setDrawMode(mode: DrawMode) {
+    drawMode.value = mode
+  }
+
+  function setSelectedCaId(id: string | null) {
+    selectedCaId.value = id
+  }
+
   // ── Zones ──────────────────────────────────────────────────────────────
   function setActiveZone(id: string) {
     project.value.activeZoneId = id
+    selectedCaId.value = null
   }
 
   function addZone(zone: Zone) {
@@ -177,6 +192,10 @@ export const useProjectStore = defineStore('project', () => {
   return {
     project,
     activeZone,
+    drawMode,
+    selectedCaId,
+    setDrawMode,
+    setSelectedCaId,
     canUndo,
     canRedo,
     undo,
