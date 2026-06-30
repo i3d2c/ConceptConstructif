@@ -46,12 +46,19 @@ async function onPrint(config: PrintConfig) {
     canvas2DSnapshot.value = null
   }
 
-  // Capture 3D (seulement si le panneau est ouvert)
+  // Capture 3D : ouvrir le panneau temporairement si nécessaire
+  const wasShow3D = show3D.value
+  if (config.show3D && !show3D.value) {
+    show3D.value = true
+    await nextTick()
+    await new Promise(r => setTimeout(r, 600)) // Three.js a besoin d'un tick de rendu
+  }
   if (config.show3D && scene3DRef.value) {
     canvas3DSnapshot.value = scene3DRef.value.getDataURL()
   } else {
     canvas3DSnapshot.value = null
   }
+  if (!wasShow3D) show3D.value = false
 
   // Affiche PrintLayout avec les données capturées
   printConfig.value = config

@@ -60,5 +60,7 @@ label { color: var(--text-muted); font-size: 11px; display: block; margin-bottom
   .no-print { display: none !important; }
   .print-only { display: block !important; }
   body { background: white; color: black; }
+  /* Lever les contraintes de hauteur/overflow pour que le contenu s'étende sur plusieurs pages */
+  html, body, #app { height: auto !important; overflow: visible !important; }
 }
 .print-only { display: none; }
