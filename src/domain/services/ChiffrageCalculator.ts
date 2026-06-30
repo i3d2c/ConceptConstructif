@@ -1,6 +1,6 @@
 import type { Scale } from '../models/Scale'
 import type { ColorAssignment } from '../models/Zone'
-import type { Ouvrage, OuvrageConstituent } from '../models/Ouvrage'
+import type { Ouvrage } from '../models/Ouvrage'
 import type { Constituent } from '../models/Constituent'
 import type { Trace } from '../models/Trace'
 import { computePolygonArea, applyAngle } from './SurfaceCalculator'

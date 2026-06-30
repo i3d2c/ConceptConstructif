@@ -1,4 +1,3 @@
-import Konva from 'konva'
 import type { CanvasManager } from '../CanvasManager'
 import type { Trace } from '../../domain/models/Trace'
 
@@ -7,20 +6,16 @@ export type SelectCallback = (traceId: string | null) => void
 
 export class TraceTransformer {
   private canvas: CanvasManager
-  private onTransform: TransformCallback
   private onSelect: SelectCallback
-  private active = false
   private selected: string | null = null
   private clipboard: Trace | null = null
 
-  constructor(canvas: CanvasManager, onTransform: TransformCallback, onSelect: SelectCallback) {
+  constructor(canvas: CanvasManager, _onTransform: TransformCallback, onSelect: SelectCallback) {
     this.canvas = canvas
-    this.onTransform = onTransform
     this.onSelect = onSelect
   }
 
   activate(traces: Trace[]) {
-    this.active = true
     this.canvas.stage.container().style.cursor = 'default'
 
     this.canvas.layers.traces.on('click.transformer', (e) => {
@@ -43,7 +38,6 @@ export class TraceTransformer {
   }
 
   deactivate() {
-    this.active = false
     this.canvas.layers.traces.off('.transformer')
     this.canvas.stage.off('.transformer-deselect')
     this.selected = null

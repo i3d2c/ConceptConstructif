@@ -58,7 +58,7 @@ export class TraceRenderer {
   }
 
   highlight(traceId: string, on: boolean) {
-    const node = this.nodes.get(traceId)
+    const node = this.nodes.get(traceId) as Konva.Line | undefined
     if (!node) return
     if (on) {
       node.shadowColor('#ffffff')
