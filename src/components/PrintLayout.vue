@@ -55,7 +55,7 @@ function fmtQty(n: number) {
     <!-- Vue 3D -->
     <div v-if="config.show3D && canvas3DImage" class="print-section">
       <h3>Vue 3D</h3>
-      <img :src="canvas3DImage" class="print-img" />
+      <img :src="canvas3DImage" class="print-img print-img-3d" />
     </div>
 
     <!-- Récap par ouvrage -->
@@ -153,6 +153,7 @@ function fmtQty(n: number) {
 .print-section { margin-bottom: 20pt; page-break-inside: avoid; }
 .print-section h3 { font-size: 13pt; border-bottom: 1px solid #ccc; margin-bottom: 8pt; }
 .print-img { max-width: 100%; border: 1px solid #ccc; }
+.print-img-3d { max-width: 55%; display: block; margin: 0 auto; }
 .print-table { width: 100%; border-collapse: collapse; font-size: 10pt; }
 .print-table th { background: #eee; padding: 3pt 5pt; border: 1px solid #ccc; text-align: left; }
 .print-table td { padding: 2pt 5pt; border: 1px solid #ddd; }
