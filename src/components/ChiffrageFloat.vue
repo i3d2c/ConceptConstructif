@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { evaluate } from 'mathjs'
 import { useProjectStore } from '../stores/projectStore'
 import { computeTraceChiffrage } from '../domain/services/ChiffrageCalculator'
 import type { TraceChiffrage } from '../domain/services/ChiffrageCalculator'
@@ -28,6 +29,11 @@ const traceResults = computed<TraceChiffrage[]>(() => {
 const grandTotal = computed(() =>
   traceResults.value.reduce((s, t) => s + t.subtotal, 0),
 )
+
+function applyRecap(formulaRecap: string | undefined, X: number): number {
+  if (!formulaRecap) return X
+  try { const r = evaluate(formulaRecap, { X }); return typeof r === 'number' ? r : X } catch { return X }
+}
 
 function fmt(n: number): string {
   return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)
@@ -105,9 +111,9 @@ function fmtQty(n: number): string {
               <tr v-for="oc in ouvrage.constituents" :key="oc.id">
                 <td />
                 <td>{{ store.project.constituents.find(c => c.id === oc.constituentId)?.name }}</td>
-                <td class="num">{{ fmtQty(traceResults.filter(t => t.ouvrageId === ouvrage.id).flatMap(t => t.constituents).filter(c => c.ouvrageConstituentId === oc.id).reduce((s, c) => s + c.quantity, 0)) }}</td>
+                <td class="num">{{ fmtQty(applyRecap(oc.formulaRecap, traceResults.filter(t => t.ouvrageId === ouvrage.id).flatMap(t => t.constituents).filter(c => c.ouvrageConstituentId === oc.id).reduce((s, c) => s + c.quantity, 0))) }}</td>
                 <td>{{ store.project.constituents.find(c => c.id === oc.constituentId)?.unit }}</td>
-                <td class="num">{{ fmt(traceResults.filter(t => t.ouvrageId === ouvrage.id).flatMap(t => t.constituents).filter(c => c.ouvrageConstituentId === oc.id).reduce((s, c) => s + c.total, 0)) }} €</td>
+                <td class="num">{{ fmt(applyRecap(oc.formulaRecap, traceResults.filter(t => t.ouvrageId === ouvrage.id).flatMap(t => t.constituents).filter(c => c.ouvrageConstituentId === oc.id).reduce((s, c) => s + c.quantity, 0)) * (store.project.constituents.find(c => c.id === oc.constituentId)?.unitPrice ?? 0)) }} €</td>
               </tr>
             </template>
           </template>
@@ -130,10 +136,24 @@ function fmtQty(n: number): string {
                   <span v-else>{{ c.name }}</span>
                 </td>
                 <td>{{ c.supplier ?? '—' }}</td>
-                <td class="num">{{ fmtQty(traceResults.flatMap(t => t.constituents).filter(r => r.constituentId === c.id).reduce((s, r) => s + r.quantity, 0)) }}</td>
+                <td class="num">{{
+                  fmtQty(store.project.ouvrages.flatMap(o => o.constituents)
+                    .filter(oc => oc.constituentId === c.id)
+                    .reduce((s, oc) => s + applyRecap(oc.formulaRecap,
+                      traceResults.flatMap(t => t.constituents)
+                        .filter(r => r.ouvrageConstituentId === oc.id)
+                        .reduce((a, r) => a + r.quantity, 0)), 0))
+                }}</td>
                 <td>{{ c.unit }}</td>
                 <td class="num">{{ fmt(c.unitPrice) }} €</td>
-                <td class="num">{{ fmt(traceResults.flatMap(t => t.constituents).filter(r => r.constituentId === c.id).reduce((s, r) => s + r.total, 0)) }} €</td>
+                <td class="num">{{
+                  fmt(store.project.ouvrages.flatMap(o => o.constituents)
+                    .filter(oc => oc.constituentId === c.id)
+                    .reduce((s, oc) => s + applyRecap(oc.formulaRecap,
+                      traceResults.flatMap(t => t.constituents)
+                        .filter(r => r.ouvrageConstituentId === oc.id)
+                        .reduce((a, r) => a + r.quantity, 0)) * c.unitPrice, 0))
+                }} €</td>
               </tr>
             </template>
           </template>

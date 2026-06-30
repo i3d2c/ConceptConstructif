@@ -36,8 +36,8 @@ export class TraceRenderer {
         points: pts,
         stroke: ca.color,
         strokeWidth: Math.max(strokeWidth, 1),
-        lineCap: 'round',
-        lineJoin: 'round',
+        lineCap: 'butt',
+        lineJoin: 'miter',
         listening: true,
       })
       layer.add(node)

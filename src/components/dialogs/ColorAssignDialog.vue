@@ -13,7 +13,17 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
-const color = ref(props.initial?.color ?? '#ff6600')
+function randomHexColor(): string {
+  const h = Math.floor(Math.random() * 360)
+  const s = 0.65, l = 0.55
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12
+    return Math.round((l - s * Math.max(-1, Math.min(k - 3, 9 - k, 1))) * 255)
+  }
+  return '#' + [f(0), f(8), f(4)].map(v => v.toString(16).padStart(2, '0')).join('')
+}
+
+const color = ref(props.initial?.color ?? randomHexColor())
 const ouvrageId = ref(props.initial?.ouvrageId ?? props.ouvrages[0]?.id ?? '')
 const epaisseur = ref(props.initial?.epaisseur ?? 0.105)
 const hauteur = ref(props.initial?.hauteur ?? 2.5)
