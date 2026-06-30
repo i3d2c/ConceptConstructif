@@ -16,6 +16,11 @@ export class LineTool {
   private strokeWidth = 4
   private scale: Scale | null = null
 
+  // Bound reference kept for clean removeEventListener
+  private readonly escapeHandler = (e: KeyboardEvent) => {
+    if (e.key === 'Escape' && this.active) this.cancel()
+  }
+
   constructor(canvas: CanvasManager, onDone: LineToolCallback) {
     this.canvas = canvas
     this.onDone = onDone
@@ -30,13 +35,19 @@ export class LineTool {
     this.canvas.stage.container().style.cursor = 'crosshair'
     this.canvas.stage.on('click.linetool', (e) => this.onClick(e))
     this.canvas.stage.on('mousemove.linetool', (e) => this.onMouseMove(e))
+    window.addEventListener('keydown', this.escapeHandler)
   }
 
   deactivate() {
     this.active = false
+    window.removeEventListener('keydown', this.escapeHandler)
     this.canvas.stage.off('.linetool')
     this.canvas.stage.container().style.cursor = 'default'
     this.clearPreview()
+  }
+
+  cancel() {
+    this.deactivate()
   }
 
   getLastPoint(): [number, number] | null {

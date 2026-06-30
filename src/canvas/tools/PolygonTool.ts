@@ -17,6 +17,10 @@ export class PolygonTool {
   private scale: Scale | null = null
   private readonly CLOSE_RADIUS = 12
 
+  private readonly escapeHandler = (e: KeyboardEvent) => {
+    if (e.key === 'Escape' && this.active) this.cancel()
+  }
+
   constructor(canvas: CanvasManager, onDone: PolygonToolCallback) {
     this.canvas = canvas
     this.onDone = onDone
@@ -30,13 +34,19 @@ export class PolygonTool {
     this.canvas.stage.container().style.cursor = 'crosshair'
     this.canvas.stage.on('click.polygontool', (e) => this.onClick(e))
     this.canvas.stage.on('mousemove.polygontool', (e) => this.onMouseMove(e))
+    window.addEventListener('keydown', this.escapeHandler)
   }
 
   deactivate() {
     this.active = false
+    window.removeEventListener('keydown', this.escapeHandler)
     this.canvas.stage.off('.polygontool')
     this.canvas.stage.container().style.cursor = 'default'
     this.clearPreview()
+  }
+
+  cancel() {
+    this.deactivate()
   }
 
   getLastPoint(): [number, number] | null {

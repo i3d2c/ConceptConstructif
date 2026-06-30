@@ -10,6 +10,10 @@ export class ScaleTool {
   private p1: [number, number] | null = null
   private preview: Konva.Line | null = null
 
+  private readonly escapeHandler = (e: KeyboardEvent) => {
+    if (e.key === 'Escape' && this.active) this.deactivate()
+  }
+
   constructor(canvas: CanvasManager, onDone: ScaleToolCallback) {
     this.canvas = canvas
     this.onDone = onDone
@@ -21,10 +25,12 @@ export class ScaleTool {
     this.canvas.stage.container().style.cursor = 'crosshair'
     this.canvas.stage.on('click.scaletool', (e) => this.onClick(e))
     this.canvas.stage.on('mousemove.scaletool', (e) => this.onMouseMove(e))
+    window.addEventListener('keydown', this.escapeHandler)
   }
 
   deactivate() {
     this.active = false
+    window.removeEventListener('keydown', this.escapeHandler)
     this.canvas.stage.off('.scaletool')
     this.canvas.stage.container().style.cursor = 'default'
     if (this.preview) {

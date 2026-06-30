@@ -412,15 +412,6 @@ async function getStageDataURL(): Promise<string> {
 
 defineExpose({ getStageDataURL })
 
-// ── Échap : annule le tracé en cours ──────────────────────────────────────
-function onEscapeKey(e: KeyboardEvent) {
-  if (e.key !== 'Escape') return
-  const mode = store.drawMode
-  if (mode === 'line' || mode === 'surface' || mode === 'scale') {
-    activateTool(mode)   // deactivate + clear preview + restart propre
-  }
-}
-
 // ── Lifecycle ──────────────────────────────────────────────────────────────
 onMounted(() => {
   const container = containerRef.value
@@ -434,8 +425,6 @@ onMounted(() => {
   scaleRenderer = new ScaleRenderer(cm)
   traceRenderer = new TraceRenderer(cm)
   numberRenderer = new NumberRenderer(cm)
-
-  window.addEventListener('keydown', onEscapeKey)
 
   const zone = store.activeZone
   if (zone?.backgroundImage) imageLoader.load(zone.backgroundImage)
@@ -468,7 +457,6 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  window.removeEventListener('keydown', onEscapeKey)
   cm?.destroy()
 })
 </script>
