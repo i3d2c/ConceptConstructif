@@ -54,6 +54,13 @@ onUnmounted(() => {
   window.removeEventListener('scroll', onAnyScroll, true)
 })
 
+const sortedOuvrages = computed(() =>
+  [...store.project.ouvrages].sort((a, b) => a.name.localeCompare(b.name, 'fr'))
+)
+const sortedConstituents = computed(() =>
+  [...store.project.constituents].sort((a, b) => a.name.localeCompare(b.name, 'fr'))
+)
+
 // Suggestions autocomplete
 const existingUnits = computed(() =>
   [...new Set(store.project.constituents.map(c => c.unit).filter(Boolean))]
@@ -212,7 +219,7 @@ function deleteConstituent(id: string) {
               <button @click="openNewOuvrage">+ Nouveau</button>
             </div>
             <div
-              v-for="o in store.project.ouvrages" :key="o.id"
+              v-for="o in sortedOuvrages" :key="o.id"
               class="list-item"
               :class="{ selected: editingOuvrage?.id === o.id }"
               @click="openEditOuvrage(o)"
@@ -269,7 +276,7 @@ function deleteConstituent(id: string) {
               <div v-for="(oc, idx) in oConstituents" :key="oc.id" class="oc-row">
                 <span class="oc-pos">C{{ oc.position }}</span>
                 <select v-model="oc.constituentId" style="flex:1">
-                  <option v-for="c in store.project.constituents" :key="c.id" :value="c.id">{{ c.name }}</option>
+                  <option v-for="c in sortedConstituents" :key="c.id" :value="c.id">{{ c.name }}</option>
                 </select>
                 <div class="oc-formulas">
                   <input v-model="oc.formula" placeholder="ex: L*H/(0.22*0.05)" title="Formule par tracé" />
@@ -311,7 +318,7 @@ function deleteConstituent(id: string) {
               <button @click="openNewConstituent">+ Nouveau</button>
             </div>
             <div
-              v-for="c in store.project.constituents" :key="c.id"
+              v-for="c in sortedConstituents" :key="c.id"
               class="list-item"
               :class="{ selected: editingConstituent?.id === c.id }"
               @click="openEditConstituent(c)"
