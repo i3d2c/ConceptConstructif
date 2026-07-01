@@ -262,6 +262,7 @@ function deleteConstituent(id: string) {
                   <span class="hk">Cn</span><span>Quantité du constituant en position n (cascade)</span>
                 </div>
                 <div class="help-fns">Fonctions : <code>floor() ceil() round() sqrt() abs() min() max() pow()</code></div>
+                <div class="help-fns">Conditionnel : <code>if(condition; valeur_si_vrai; valeur_si_faux)</code> — ex : <code>if(L > 3; L * 2; L)</code></div>
                 <div class="help-fns">formulaRecap : variable <code>X</code> = total brut de la zone. Ex : <code>ceil(X)</code></div>
               </div>
 

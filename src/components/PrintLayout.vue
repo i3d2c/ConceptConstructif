@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { evaluate } from 'mathjs'
 import { useProjectStore } from '../stores/projectStore'
 import { computeTraceChiffrage } from '../domain/services/ChiffrageCalculator'
 import type { PrintConfig } from '../print/PrintConfig'
 import type { TraceChiffrage } from '../domain/services/ChiffrageCalculator'
 import type { OuvrageConstituent } from '../domain/models/Ouvrage'
+import { evaluateRecap } from '../domain/services/FormulaEvaluator'
 
 const props = defineProps<{
   config: PrintConfig
@@ -32,8 +32,7 @@ const traceResults = computed<TraceChiffrage[]>(() => {
 const grandTotal = computed(() => traceResults.value.reduce((s, t) => s + t.subtotal, 0))
 
 function applyRecap(formulaRecap: string | undefined, X: number): number {
-  if (!formulaRecap) return X
-  try { const r = evaluate(formulaRecap, { X }); return typeof r === 'number' ? r : X } catch { return X }
+  return formulaRecap ? evaluateRecap(formulaRecap, X) : X
 }
 
 function ocAggregatedQty(oc: OuvrageConstituent, scoped: TraceChiffrage[]): number {

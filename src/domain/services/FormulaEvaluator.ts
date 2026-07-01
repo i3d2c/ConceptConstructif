@@ -9,17 +9,36 @@ export interface FormulaVariables {
   [key: string]: number
 }
 
+function customIf(cond: boolean | number, trueVal: number, falseVal: number): number {
+  return cond ? trueVal : falseVal
+}
+
+function normalize(formula: string): string {
+  return formula.replaceAll(';', ',')
+}
+
+function buildScope(vars: Record<string, number>): Record<string, unknown> {
+  return { ...vars, if: customIf }
+}
+
 export function evaluateFormula(formula: string, vars: FormulaVariables): number {
-  const result = evaluate(formula, vars)
+  const result = evaluate(normalize(formula), buildScope(vars))
   if (typeof result !== 'number' || !isFinite(result)) {
     throw new Error(`Formule invalide : "${formula}" → ${result}`)
   }
   return result
 }
 
+export function evaluateRecap(formula: string, X: number): number {
+  try {
+    const result = evaluate(normalize(formula), buildScope({ X }))
+    return typeof result === 'number' && isFinite(result) ? result : X
+  } catch { return X }
+}
+
 export function validateFormula(formula: string): string | null {
   try {
-    evaluate(formula, { L: 1, H: 1, E: 1, S: 1, V: 1 })
+    evaluate(normalize(formula), buildScope({ L: 1, H: 1, E: 1, S: 1, V: 1 }))
     return null
   } catch (e) {
     return e instanceof Error ? e.message : String(e)

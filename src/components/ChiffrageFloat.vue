@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { evaluate } from 'mathjs'
 import { useProjectStore } from '../stores/projectStore'
 import { computeTraceChiffrage } from '../domain/services/ChiffrageCalculator'
 import type { TraceChiffrage } from '../domain/services/ChiffrageCalculator'
 import type { OuvrageConstituent } from '../domain/models/Ouvrage'
+import { evaluateRecap } from '../domain/services/FormulaEvaluator'
 
 const store = useProjectStore()
 const tab = ref<'list' | 'ouvrage' | 'constituent'>('list')
@@ -32,8 +32,7 @@ const grandTotal = computed(() =>
 )
 
 function applyRecap(formulaRecap: string | undefined, X: number): number {
-  if (!formulaRecap) return X
-  try { const r = evaluate(formulaRecap, { X }); return typeof r === 'number' ? r : X } catch { return X }
+  return formulaRecap ? evaluateRecap(formulaRecap, X) : X
 }
 
 function ocAggregatedQty(oc: OuvrageConstituent, scoped: TraceChiffrage[]): number {
