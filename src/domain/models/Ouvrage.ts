@@ -4,6 +4,11 @@ export interface OuvrageConstituent {
   position: number
   formula: string
   formulaRecap?: string
+  disabled?: boolean
+  hideIfZero?: boolean
+  hideIfPriceZero?: boolean
+  hideFromRecapOuvrage?: boolean
+  hideFromRecapConstituent?: boolean
 }
 
 export interface Ouvrage {

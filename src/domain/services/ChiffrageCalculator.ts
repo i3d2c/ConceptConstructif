@@ -26,6 +26,10 @@ export interface ConstituentResult {
   url?: string
   quantity: number
   total: number
+  hideIfZero?: boolean
+  hideIfPriceZero?: boolean
+  hideFromRecapOuvrage?: boolean
+  hideFromRecapConstituent?: boolean
 }
 
 export interface TraceChiffrage {
@@ -105,6 +109,8 @@ export function computeTraceChiffrage(
     const quantity = evaluateFormula(oc.formula, cascadeVars)
     cascadeVars[`C${oc.position}`] = quantity
 
+    if (oc.disabled) continue
+
     constituentResults.push({
       ouvrageConstituentId: oc.id,
       constituentId: constituent.id,
@@ -115,6 +121,10 @@ export function computeTraceChiffrage(
       url: constituent.url,
       quantity,
       total: quantity * constituent.unitPrice,
+      hideIfZero: oc.hideIfZero,
+      hideIfPriceZero: oc.hideIfPriceZero,
+      hideFromRecapOuvrage: oc.hideFromRecapOuvrage,
+      hideFromRecapConstituent: oc.hideFromRecapConstituent,
     })
   }
 

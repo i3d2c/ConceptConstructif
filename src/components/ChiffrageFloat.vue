@@ -4,6 +4,7 @@ import { evaluate } from 'mathjs'
 import { useProjectStore } from '../stores/projectStore'
 import { computeTraceChiffrage } from '../domain/services/ChiffrageCalculator'
 import type { TraceChiffrage } from '../domain/services/ChiffrageCalculator'
+import type { OuvrageConstituent } from '../domain/models/Ouvrage'
 
 const store = useProjectStore()
 const tab = ref<'list' | 'ouvrage' | 'constituent'>('list')
@@ -33,6 +34,34 @@ const grandTotal = computed(() =>
 function applyRecap(formulaRecap: string | undefined, X: number): number {
   if (!formulaRecap) return X
   try { const r = evaluate(formulaRecap, { X }); return typeof r === 'number' ? r : X } catch { return X }
+}
+
+function ocAggregatedQty(oc: OuvrageConstituent, scoped: TraceChiffrage[]): number {
+  const raw = scoped.flatMap(t => t.constituents)
+    .filter(c => c.ouvrageConstituentId === oc.id)
+    .reduce((s, c) => s + c.quantity, 0)
+  return applyRecap(oc.formulaRecap, raw)
+}
+
+function ouvrageVisibleOCs(ouvrageId: string): OuvrageConstituent[] {
+  const ouvrage = store.project.ouvrages.find(o => o.id === ouvrageId)
+  if (!ouvrage) return []
+  const scoped = traceResults.value.filter(t => t.ouvrageId === ouvrageId)
+  return ouvrage.constituents.filter(oc => {
+    const unitPrice = store.project.constituents.find(c => c.id === oc.constituentId)?.unitPrice ?? 0
+    return !oc.disabled
+      && !oc.hideFromRecapOuvrage
+      && !(oc.hideIfZero && ocAggregatedQty(oc, scoped) === 0)
+      && !(oc.hideIfPriceZero && unitPrice === 0)
+  })
+}
+
+function constituentApplicableOCs(constituentId: string): OuvrageConstituent[] {
+  const unitPrice = store.project.constituents.find(c => c.id === constituentId)?.unitPrice ?? 0
+  return store.project.ouvrages.flatMap(o => o.constituents)
+    .filter(oc => oc.constituentId === constituentId && !oc.disabled && !oc.hideFromRecapConstituent)
+    .filter(oc => !(oc.hideIfZero && ocAggregatedQty(oc, traceResults.value) === 0))
+    .filter(oc => !(oc.hideIfPriceZero && unitPrice === 0))
 }
 
 function fmt(n: number): string {
@@ -69,17 +98,19 @@ function fmtQty(n: number): string {
                 (L={{ fmtQty(t.vars.L) }}m · H={{ fmtQty(t.vars.H) }}m · E={{ fmtQty(t.vars.E) }}m)
               </td>
             </tr>
-            <tr v-for="c in t.constituents" :key="c.ouvrageConstituentId">
-              <td />
-              <td>
-                <a v-if="c.url" :href="c.url" target="_blank" rel="noopener">{{ c.name }}</a>
-                <span v-else>{{ c.name }}</span>
-              </td>
-              <td class="num">{{ fmtQty(c.quantity) }}</td>
-              <td>{{ c.unit }}</td>
-              <td class="num">{{ fmt(c.unitPrice) }} €</td>
-              <td class="num">{{ fmt(c.total) }} €</td>
-            </tr>
+            <template v-for="c in t.constituents" :key="c.ouvrageConstituentId">
+              <tr v-if="!(c.hideIfZero && c.quantity === 0) && !(c.hideIfPriceZero && c.unitPrice === 0)">
+                <td />
+                <td>
+                  <a v-if="c.url" :href="c.url" target="_blank" rel="noopener">{{ c.name }}</a>
+                  <span v-else>{{ c.name }}</span>
+                </td>
+                <td class="num">{{ fmtQty(c.quantity) }}</td>
+                <td>{{ c.unit }}</td>
+                <td class="num">{{ fmt(c.unitPrice) }} €</td>
+                <td class="num">{{ fmt(c.total) }} €</td>
+              </tr>
+            </template>
             <tr class="subtotal-row">
               <td colspan="5" class="right">Sous-total</td>
               <td class="num">{{ fmt(t.subtotal) }} €</td>
@@ -108,12 +139,12 @@ function fmtQty(n: number): string {
                 <td colspan="4">{{ ouvrage.name }}</td>
                 <td class="num">{{ fmt(traceResults.filter(t => t.ouvrageId === ouvrage.id).reduce((s, t) => s + t.subtotal, 0)) }} €</td>
               </tr>
-              <tr v-for="oc in ouvrage.constituents" :key="oc.id">
+              <tr v-for="oc in ouvrageVisibleOCs(ouvrage.id)" :key="oc.id">
                 <td />
                 <td>{{ store.project.constituents.find(c => c.id === oc.constituentId)?.name }}</td>
-                <td class="num">{{ fmtQty(applyRecap(oc.formulaRecap, traceResults.filter(t => t.ouvrageId === ouvrage.id).flatMap(t => t.constituents).filter(c => c.ouvrageConstituentId === oc.id).reduce((s, c) => s + c.quantity, 0))) }}</td>
+                <td class="num">{{ fmtQty(ocAggregatedQty(oc, traceResults.filter(t => t.ouvrageId === ouvrage.id))) }}</td>
                 <td>{{ store.project.constituents.find(c => c.id === oc.constituentId)?.unit }}</td>
-                <td class="num">{{ fmt(applyRecap(oc.formulaRecap, traceResults.filter(t => t.ouvrageId === ouvrage.id).flatMap(t => t.constituents).filter(c => c.ouvrageConstituentId === oc.id).reduce((s, c) => s + c.quantity, 0)) * (store.project.constituents.find(c => c.id === oc.constituentId)?.unitPrice ?? 0)) }} €</td>
+                <td class="num">{{ fmt(ocAggregatedQty(oc, traceResults.filter(t => t.ouvrageId === ouvrage.id)) * (store.project.constituents.find(c => c.id === oc.constituentId)?.unitPrice ?? 0)) }} €</td>
               </tr>
             </template>
           </template>
@@ -129,7 +160,7 @@ function fmtQty(n: number): string {
         </thead>
         <tbody>
           <template v-for="c in store.project.constituents" :key="c.id">
-            <template v-if="traceResults.flatMap(t => t.constituents).some(r => r.constituentId === c.id)">
+            <template v-if="constituentApplicableOCs(c.id).length > 0">
               <tr>
                 <td>
                   <a v-if="c.url" :href="c.url" target="_blank" rel="noopener">{{ c.name }}</a>
@@ -137,22 +168,14 @@ function fmtQty(n: number): string {
                 </td>
                 <td>{{ c.supplier ?? '—' }}</td>
                 <td class="num">{{
-                  fmtQty(store.project.ouvrages.flatMap(o => o.constituents)
-                    .filter(oc => oc.constituentId === c.id)
-                    .reduce((s, oc) => s + applyRecap(oc.formulaRecap,
-                      traceResults.flatMap(t => t.constituents)
-                        .filter(r => r.ouvrageConstituentId === oc.id)
-                        .reduce((a, r) => a + r.quantity, 0)), 0))
+                  fmtQty(constituentApplicableOCs(c.id)
+                    .reduce((s, oc) => s + ocAggregatedQty(oc, traceResults), 0))
                 }}</td>
                 <td>{{ c.unit }}</td>
                 <td class="num">{{ fmt(c.unitPrice) }} €</td>
                 <td class="num">{{
-                  fmt(store.project.ouvrages.flatMap(o => o.constituents)
-                    .filter(oc => oc.constituentId === c.id)
-                    .reduce((s, oc) => s + applyRecap(oc.formulaRecap,
-                      traceResults.flatMap(t => t.constituents)
-                        .filter(r => r.ouvrageConstituentId === oc.id)
-                        .reduce((a, r) => a + r.quantity, 0)) * c.unitPrice, 0))
+                  fmt(constituentApplicableOCs(c.id)
+                    .reduce((s, oc) => s + ocAggregatedQty(oc, traceResults) * c.unitPrice, 0))
                 }} €</td>
               </tr>
             </template>

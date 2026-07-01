@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useProjectStore } from '../stores/projectStore'
 import type { Ouvrage, OuvrageConstituent } from '../domain/models/Ouvrage'
 import type { Constituent } from '../domain/models/Constituent'
@@ -12,6 +12,47 @@ const tab = ref<Tab>('ouvrages')
 const editingOuvrage = ref<Ouvrage | null>(null)
 const editingConstituent = ref<Constituent | null>(null)
 const showFormulaHelp = ref(false)
+const oSaveMsg = ref('')
+let oSaveMsgTimer: ReturnType<typeof setTimeout> | null = null
+const cSaveMsg = ref('')
+let cSaveMsgTimer: ReturnType<typeof setTimeout> | null = null
+
+const openFlagsId = ref<string | null>(null)
+const flagsPopoverPos = ref({ top: 0, right: 0 })
+const currentFlagsOC = computed(() => oConstituents.value.find(oc => oc.id === openFlagsId.value) ?? null)
+
+function ocFlagsCount(oc: OuvrageConstituent): number {
+  return [oc.disabled, oc.hideIfZero, oc.hideIfPriceZero, oc.hideFromRecapOuvrage, oc.hideFromRecapConstituent]
+    .filter(Boolean).length
+}
+
+function toggleFlags(id: string, e: MouseEvent) {
+  e.stopPropagation()
+  if (openFlagsId.value === id) { openFlagsId.value = null; return }
+  const btn = e.currentTarget as HTMLElement
+  const rect = btn.getBoundingClientRect()
+  flagsPopoverPos.value = { top: rect.bottom + 4, right: window.innerWidth - rect.right }
+  openFlagsId.value = id
+}
+
+function onWindowClick(e: MouseEvent) {
+  if (openFlagsId.value === null) return
+  const target = e.target as HTMLElement
+  if (!target.closest('.flags-popover-global') && !target.closest('.flags-btn')) {
+    openFlagsId.value = null
+  }
+}
+
+function onAnyScroll() { openFlagsId.value = null }
+
+onMounted(() => {
+  window.addEventListener('click', onWindowClick)
+  window.addEventListener('scroll', onAnyScroll, true)
+})
+onUnmounted(() => {
+  window.removeEventListener('click', onWindowClick)
+  window.removeEventListener('scroll', onAnyScroll, true)
+})
 
 // Suggestions autocomplete
 const existingUnits = computed(() =>
@@ -48,8 +89,9 @@ function openEditOuvrage(o: Ouvrage) {
 
 function saveOuvrage() {
   if (!oName.value) return
+  const id = editingOuvrage.value?.id ?? crypto.randomUUID()
   const data: Ouvrage = {
-    id: editingOuvrage.value?.id ?? crypto.randomUUID(),
+    id,
     name: oName.value,
     description: oDesc.value,
     defaultEpaisseur: oEp.value !== '' ? Number(oEp.value) : undefined,
@@ -57,11 +99,14 @@ function saveOuvrage() {
     constituents: oConstituents.value,
   }
   if (editingOuvrage.value) {
-    store.updateOuvrage(data.id, data)
+    store.updateOuvrage(id, data)
   } else {
     store.addOuvrage(data)
   }
-  editingOuvrage.value = null
+  editingOuvrage.value = store.project.ouvrages.find(o => o.id === id) ?? null
+  oSaveMsg.value = '✓ Enregistré'
+  if (oSaveMsgTimer) clearTimeout(oSaveMsgTimer)
+  oSaveMsgTimer = setTimeout(() => { oSaveMsg.value = '' }, 2000)
 }
 
 function deleteOuvrage(id: string) {
@@ -76,6 +121,11 @@ function addOC() {
     constituentId: store.project.constituents[0]?.id ?? '',
     position: pos,
     formula: '',
+    disabled: false,
+    hideIfZero: false,
+    hideIfPriceZero: false,
+    hideFromRecapOuvrage: false,
+    hideFromRecapConstituent: false,
   })
 }
 
@@ -114,8 +164,9 @@ function openEditConstituent(c: Constituent) {
 
 function saveConstituent() {
   if (!cName.value) return
+  const id = editingConstituent.value?.id ?? crypto.randomUUID()
   const data: Constituent = {
-    id: editingConstituent.value?.id ?? crypto.randomUUID(),
+    id,
     name: cName.value,
     code: cCode.value || undefined,
     unit: cUnit.value,
@@ -124,11 +175,14 @@ function saveConstituent() {
     url: cUrl.value || undefined,
   }
   if (editingConstituent.value) {
-    store.updateConstituent(data.id, data)
+    store.updateConstituent(id, data)
   } else {
     store.addConstituent(data)
   }
-  editingConstituent.value = null
+  editingConstituent.value = store.project.constituents.find(c => c.id === id) ?? null
+  cSaveMsg.value = '✓ Enregistré'
+  if (cSaveMsgTimer) clearTimeout(cSaveMsgTimer)
+  cSaveMsgTimer = setTimeout(() => { cSaveMsg.value = '' }, 2000)
 }
 
 function deleteConstituent(id: string) {
@@ -220,6 +274,20 @@ function deleteConstituent(id: string) {
                   <input v-model="oc.formula" placeholder="ex: L*H/(0.22*0.05)" title="Formule par tracé" />
                   <input v-model="oc.formulaRecap" placeholder="récap (opt) ex: ceil(X)" title="Formule récapitulatif (variable X)" />
                 </div>
+                <div class="oc-flags-wrap">
+                  <button
+                    class="icon small flags-btn"
+                    title="Options d'affichage"
+                    @click="toggleFlags(oc.id, $event)"
+                  >
+                    <svg viewBox="0 0 16 16" fill="currentColor" width="12" height="12">
+                      <circle cx="8" cy="3" r="1.3"/>
+                      <circle cx="8" cy="8" r="1.3"/>
+                      <circle cx="8" cy="13" r="1.3"/>
+                    </svg>
+                    <span v-if="ocFlagsCount(oc) > 0" class="flags-badge">{{ ocFlagsCount(oc) }}</span>
+                  </button>
+                </div>
                 <button class="icon small" @click="removeOC(idx)">✕</button>
               </div>
               <div v-if="oConstituents.length === 0" class="oc-empty">
@@ -228,7 +296,7 @@ function deleteConstituent(id: string) {
             </div>
 
             <div class="form-actions">
-              <button @click="editingOuvrage = null; openNewOuvrage()">Annuler</button>
+              <span v-if="oSaveMsg" class="save-msg">{{ oSaveMsg }}</span>
               <button class="active" @click="saveOuvrage">Enregistrer</button>
             </div>
           </div>
@@ -288,7 +356,7 @@ function deleteConstituent(id: string) {
             <input v-model="cUrl" placeholder="https://..." />
 
             <div class="form-actions">
-              <button @click="editingConstituent = null; openNewConstituent()">Annuler</button>
+              <span v-if="cSaveMsg" class="save-msg">{{ cSaveMsg }}</span>
               <button class="active" @click="saveConstituent">Enregistrer</button>
             </div>
           </div>
@@ -297,6 +365,36 @@ function deleteConstituent(id: string) {
       </div>
     </div>
   </div>
+
+  <Teleport to="body">
+    <div
+      v-if="openFlagsId !== null && currentFlagsOC !== null"
+      class="flags-popover-global"
+      :style="{ top: flagsPopoverPos.top + 'px', right: flagsPopoverPos.right + 'px' }"
+      @click.stop
+    >
+      <label title="Toujours calculé pour le cascade Cn, mais jamais affiché ni compté dans les totaux">
+        <input type="checkbox" v-model="currentFlagsOC.disabled" />
+        <span>Technique (masqué partout)</span>
+      </label>
+      <label title="Masquer si la quantité est 0 (liste : par tracé ; récaps : quantité agrégée)">
+        <input type="checkbox" v-model="currentFlagsOC.hideIfZero" />
+        <span>Masquer si quantité = 0</span>
+      </label>
+      <label title="Masquer si le prix unitaire du constituant est 0€">
+        <input type="checkbox" v-model="currentFlagsOC.hideIfPriceZero" />
+        <span>Masquer si prix = 0€</span>
+      </label>
+      <label title="Masquer du récapitulatif par ouvrage">
+        <input type="checkbox" v-model="currentFlagsOC.hideFromRecapOuvrage" />
+        <span>Masquer récap/O</span>
+      </label>
+      <label title="Masquer du récapitulatif par constituant">
+        <input type="checkbox" v-model="currentFlagsOC.hideFromRecapConstituent" />
+        <span>Masquer récap/C</span>
+      </label>
+    </div>
+  </Teleport>
 </template>
 
 <style scoped>
@@ -353,6 +451,16 @@ function deleteConstituent(id: string) {
 .oc-formulas input { font-size: 11px; }
 .oc-pos { width: 24px; text-align: right; color: var(--text-muted); font-size: 11px; flex-shrink: 0; }
 .oc-empty { color: var(--text-muted); font-size: 11px; }
+.oc-flags-wrap { flex-shrink: 0; }
+.flags-btn { position: relative; color: var(--text-muted); }
+.flags-badge {
+  position: absolute; top: -5px; right: -5px;
+  background: #f59e0b; color: #000;
+  border-radius: 50%; width: 13px; height: 13px;
+  font-size: 8px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none; line-height: 1;
+}
 .help-btn { font-size: 10px; padding: 2px 7px; }
 .formula-help {
   background: var(--surface2);
@@ -375,6 +483,40 @@ function deleteConstituent(id: string) {
 }
 .help-fns { color: var(--text-muted); }
 .help-fns code { color: var(--accent); font-family: monospace; }
-.form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+.form-actions { display: flex; gap: 8px; justify-content: flex-end; align-items: center; margin-top: 8px; }
+.save-msg { font-size: 11px; color: #4ade80; margin-right: auto; }
 textarea { resize: vertical; min-height: 40px; }
+</style>
+
+<style>
+.flags-popover-global {
+  position: fixed;
+  z-index: 9999;
+  background: var(--surface, #1e1e2e);
+  border: 1px solid var(--border, #333);
+  border-radius: 6px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 11px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  min-width: 210px;
+}
+.flags-popover-global label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.flags-popover-global label input[type="checkbox"] {
+  flex-shrink: 0;
+  width: auto;
+  margin: 0;
+  cursor: pointer;
+}
+.flags-popover-global label span {
+  color: var(--text, #ccc);
+  white-space: nowrap;
+}
 </style>

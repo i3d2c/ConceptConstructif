@@ -18,7 +18,7 @@ function randomHexColor(): string {
   const s = 0.65, l = 0.55
   const f = (n: number) => {
     const k = (n + h / 30) % 12
-    return Math.round((l - s * Math.max(-1, Math.min(k - 3, 9 - k, 1))) * 255)
+    return Math.max(0, Math.min(255, Math.round((l - s * Math.max(-1, Math.min(k - 3, 9 - k, 1))) * 255)))
   }
   return '#' + [f(0), f(8), f(4)].map(v => v.toString(16).padStart(2, '0')).join('')
 }
