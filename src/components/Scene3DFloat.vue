@@ -25,6 +25,11 @@ watch(
   { deep: true },
 )
 
+watch(
+  () => store.bgLayout,
+  () => scene3d?.rebuild(),
+)
+
 function getDataURL(): string | null {
   return scene3d?.getDataURL() ?? null
 }

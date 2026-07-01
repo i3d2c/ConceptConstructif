@@ -1,5 +1,6 @@
 import Konva from 'konva'
 import type { CanvasManager } from './CanvasManager'
+import { useProjectStore } from '../stores/projectStore'
 
 export class ImageLoader {
   private canvas: CanvasManager
@@ -24,18 +25,20 @@ export class ImageLoader {
 
         if (this.imageNode) this.imageNode.destroy()
 
+        const x = (stageW - w) / 2
+        const y = (stageH - h) / 2
+
         this.imageNode = new Konva.Image({
           image: img,
-          x: (stageW - w) / 2,
-          y: (stageH - h) / 2,
-          width: w,
-          height: h,
+          x, y, width: w, height: h,
           listening: false,
         })
 
         this.canvas.layers.background.destroyChildren()
         this.canvas.layers.background.add(this.imageNode)
         this.canvas.layers.background.batchDraw()
+
+        useProjectStore().setBackgroundImageLayout({ x, y, w, h })
         resolve()
       }
       img.onerror = reject
@@ -47,5 +50,6 @@ export class ImageLoader {
     this.canvas.layers.background.destroyChildren()
     this.imageNode = null
     this.canvas.layers.background.batchDraw()
+    useProjectStore().setBackgroundImageLayout(null)
   }
 }

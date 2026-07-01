@@ -5,6 +5,7 @@ import type { Scale } from '../domain/models/Scale'
 
 interface StoreRef {
   activeZone: Zone | undefined
+  bgLayout: { x: number; y: number; w: number; h: number } | null
 }
 
 export class Scene3D {
@@ -105,6 +106,25 @@ export class Scene3D {
         mesh.userData['trace'] = true
         this.scene.add(mesh)
       }
+    }
+
+    const layout = this.store.bgLayout
+    if (zone.backgroundImage && layout) {
+      const texture = new THREE.TextureLoader().load(zone.backgroundImage)
+      texture.colorSpace = THREE.SRGBColorSpace
+      const planeW = layout.w * scale.ratio
+      const planeH = layout.h * scale.ratio
+      const geom = new THREE.PlaneGeometry(planeW, planeH)
+      const mat = new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: 0.4, side: THREE.DoubleSide })
+      const mesh = new THREE.Mesh(geom, mat)
+      mesh.rotation.x = -Math.PI / 2
+      mesh.position.set(
+        (layout.x + layout.w / 2) * scale.ratio,
+        -0.01,
+        (layout.y + layout.h / 2) * scale.ratio,
+      )
+      mesh.userData['trace'] = true
+      this.scene.add(mesh)
     }
   }
 

@@ -40,6 +40,11 @@ export const useProjectStore = defineStore('project', () => {
   const drawMode = ref<DrawMode>('select')
   const selectedCaId = ref<string | null>(null)
   const showNumbers = ref(true)
+  const bgLayout = ref<{ x: number; y: number; w: number; h: number } | null>(null)
+
+  function setBackgroundImageLayout(layout: { x: number; y: number; w: number; h: number } | null) {
+    bgLayout.value = layout
+  }
 
   const activeZone = computed<Zone | undefined>(
     () => project.value.zones.find(z => z.id === project.value.activeZoneId),
@@ -226,6 +231,8 @@ export const useProjectStore = defineStore('project', () => {
     addConstituent,
     updateConstituent,
     removeConstituent,
+    bgLayout,
+    setBackgroundImageLayout,
     save,
     load,
     reset,
