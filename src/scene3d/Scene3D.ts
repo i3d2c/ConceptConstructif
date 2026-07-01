@@ -95,7 +95,7 @@ export class Scene3D {
         for (let i = 1; i < pts.length; i++) shape.lineTo(pts[i][0], pts[i][1])
         shape.closePath()
 
-        const geom = new THREE.ShapeGeometry(shape)
+        const geom = new THREE.ExtrudeGeometry(shape, { depth: ca.epaisseur, bevelEnabled: false })
         const mat = new THREE.MeshLambertMaterial({ color, side: THREE.DoubleSide })
         const mesh = new THREE.Mesh(geom, mat)
         const angleRad = trace.angle ? (trace.angle * Math.PI) / 180 : 0

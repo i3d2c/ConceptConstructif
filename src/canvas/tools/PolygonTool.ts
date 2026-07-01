@@ -106,7 +106,7 @@ export class PolygonTool {
 
   private onClick(e: Konva.KonvaEventObject<MouseEvent>) {
     if (!this.active) return
-    const pos = this.canvas.stage.getPointerPosition()
+    const pos = this.canvas.stage.getRelativePointerPosition()
     if (!pos) return
     const snapped = this.snappedPos(pos, e.evt.ctrlKey)
 
@@ -127,7 +127,7 @@ export class PolygonTool {
 
   private onMouseMove(e: Konva.KonvaEventObject<MouseEvent>) {
     if (!this.active || this.points.length === 0) return
-    const pos = this.canvas.stage.getPointerPosition()
+    const pos = this.canvas.stage.getRelativePointerPosition()
     if (!pos) return
     const snapped = this.snappedPos(pos, e.evt.ctrlKey)
 

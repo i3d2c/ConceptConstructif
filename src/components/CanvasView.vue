@@ -21,6 +21,8 @@ const containerRef = ref<HTMLDivElement | null>(null)
 
 let cm: CanvasManager | null = null
 let imageLoader: ImageLoader | null = null
+let panMoveHandler: ((e: MouseEvent) => void) | null = null
+let panEndHandler: ((e: MouseEvent) => void) | null = null
 let scaleTool: ScaleTool | null = null
 let lineTool: LineTool | null = null
 let polygonTool: PolygonTool | null = null
@@ -135,7 +137,6 @@ function renderSelectHandles() {
         fill: '#ffffff',
         stroke: ca?.color ?? '#888',
         strokeWidth: 2,
-        hitStrokeWidth: 14,
         listening: true,
       })
       handle.on('mouseover', () => { if (!isDragging) cm!.stage.container().style.cursor = 'grab' })
@@ -221,9 +222,10 @@ function activateTool(mode: string) {
 
     // Drag (vertex or trace)
     cm.stage.on('mousedown.selectdrag', (e) => {
+      if (e.evt.button !== 0) return
       const target = e.target
       const id = target.id()
-      const pos = cm!.stage.getPointerPosition()
+      const pos = cm!.stage.getRelativePointerPosition()
       if (!pos || !store.activeZone) return
 
       const parsed = parseHandleId(id)
@@ -254,7 +256,7 @@ function activateTool(mode: string) {
     cm.stage.on('mousemove.selectdrag', (e) => {
       if (!dragState) return
       isDragging = true
-      const pos = cm!.stage.getPointerPosition()
+      const pos = cm!.stage.getRelativePointerPosition()
       if (!pos) return
 
       const dx = pos.x - dragState.startMouseX
@@ -292,7 +294,7 @@ function activateTool(mode: string) {
 
     cm.stage.on('mouseup.selectdrag', (e) => {
       if (!dragState) return
-      const pos = cm!.stage.getPointerPosition()
+      const pos = cm!.stage.getRelativePointerPosition()
       const wasDrag = isDragging
       const ctrlKey = e.evt.ctrlKey
       // Reset before store update so rerenderAll is not blocked
@@ -426,6 +428,50 @@ onMounted(() => {
   traceRenderer = new TraceRenderer(cm)
   numberRenderer = new NumberRenderer(cm)
 
+  // Pan avec le bouton central (molette enfoncée)
+  let panStart: { x: number; y: number; stageX: number; stageY: number } | null = null
+  cm.stage.container().addEventListener('mousedown', (e: MouseEvent) => {
+    if (e.button !== 1) return
+    e.preventDefault()
+    panStart = { x: e.clientX, y: e.clientY, stageX: cm!.stage.x(), stageY: cm!.stage.y() }
+    cm!.stage.container().style.cursor = 'grabbing'
+  }, { passive: false })
+  panMoveHandler = (e: MouseEvent) => {
+    if (!panStart || !cm) return
+    cm.stage.position({
+      x: panStart.stageX + (e.clientX - panStart.x),
+      y: panStart.stageY + (e.clientY - panStart.y),
+    })
+  }
+  panEndHandler = (e: MouseEvent) => {
+    if (e.button !== 1 || !panStart) return
+    panStart = null
+    if (cm) cm.stage.container().style.cursor = ''
+  }
+  window.addEventListener('mousemove', panMoveHandler)
+  window.addEventListener('mouseup', panEndHandler)
+
+  // Zoom Ctrl+molette
+  cm.stage.container().addEventListener('wheel', (e: WheelEvent) => {
+    if (!e.ctrlKey) return
+    e.preventDefault()
+    const stage = cm!.stage
+    const oldScale = stage.scaleX()
+    const px = e.offsetX
+    const py = e.offsetY
+    const mousePointTo = {
+      x: (px - stage.x()) / oldScale,
+      y: (py - stage.y()) / oldScale,
+    }
+    const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1
+    const newScale = Math.max(0.1, Math.min(20, oldScale * factor))
+    stage.scale({ x: newScale, y: newScale })
+    stage.position({
+      x: px - mousePointTo.x * newScale,
+      y: py - mousePointTo.y * newScale,
+    })
+  }, { passive: false })
+
   const zone = store.activeZone
   if (zone?.backgroundImage) imageLoader.load(zone.backgroundImage)
   rerenderAll()
@@ -466,6 +512,8 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  if (panMoveHandler) window.removeEventListener('mousemove', panMoveHandler)
+  if (panEndHandler) window.removeEventListener('mouseup', panEndHandler)
   cm?.destroy()
 })
 </script>

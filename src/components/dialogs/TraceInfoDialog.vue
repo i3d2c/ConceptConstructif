@@ -26,6 +26,14 @@ const chiffrage = computed(() => {
   return computeTraceChiffrage(props.trace, zone.value.scale, ca.value, ouvrage.value, constituentsMap)
 })
 
+// ── Élévation ─────────────────────────────────────────────────────────────
+const localUp = ref(props.trace.up)
+
+function applyUp() {
+  if (!zone.value) return
+  store.updateTrace(zone.value.id, props.trace.id, { up: localUp.value })
+}
+
 // ── Redimensionnement ──────────────────────────────────────────────────────
 const resizeL = ref('')
 const resizeH = ref('')
@@ -143,6 +151,16 @@ function fmtQty(n: number) {
         </div>
       </div>
       <div v-else class="hint">Posez une échelle pour voir les dimensions réelles.</div>
+
+      <!-- Élévation 3D -->
+      <div class="section">
+        <div class="section-title">Vue 3D</div>
+        <div class="resize-row">
+          <label>Sol (m)</label>
+          <input v-model.number="localUp" type="number" step="0.1" min="0" class="dim-input" @change="applyUp" @keyup.enter="applyUp" />
+        </div>
+        <div class="resize-hint">Distance au sol (surélève l'élément en 3D).</div>
+      </div>
 
       <!-- Redimensionnement -->
       <div v-if="vars" class="section">

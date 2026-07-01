@@ -52,7 +52,7 @@ export class ScaleTool {
 
   private onClick(e: Konva.KonvaEventObject<MouseEvent>) {
     if (!this.active) return
-    const raw = this.canvas.stage.getPointerPosition()
+    const raw = this.canvas.stage.getRelativePointerPosition()
     if (!raw) return
     const pos = this.snappedPos(raw, e.evt.ctrlKey)
 
@@ -67,7 +67,7 @@ export class ScaleTool {
 
   private onMouseMove(e: Konva.KonvaEventObject<MouseEvent>) {
     if (!this.active || !this.p1) return
-    const raw = this.canvas.stage.getPointerPosition()
+    const raw = this.canvas.stage.getRelativePointerPosition()
     if (!raw) return
     const pos = this.snappedPos(raw, e.evt.ctrlKey)
 
