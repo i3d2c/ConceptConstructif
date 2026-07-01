@@ -498,15 +498,25 @@ onMounted(() => {
     },
   )
 
+  // Changement de zone active ou de son image de fond : recharger l'image (repositionnée)
   watch(
-    () => store.activeZone,
-    (zone) => {
-      if (!zone) return
-      if (zone.backgroundImage) imageLoader?.load(zone.backgroundImage)
+    () => [store.project.activeZoneId, store.activeZone?.backgroundImage] as const,
+    ([, img]) => {
+      if (img) imageLoader?.load(img)
       else imageLoader?.clear()
       rerenderAll()
       activateTool(store.drawMode)
     },
+  )
+
+  // Mutations des tracés / couleurs / échelle : rerender sans retoucher l'image
+  watch(
+    () => [
+      store.activeZone?.traces,
+      store.activeZone?.colorAssignments,
+      store.activeZone?.scale,
+    ],
+    () => { rerenderAll() },
     { deep: true },
   )
 })
