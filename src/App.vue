@@ -9,6 +9,7 @@ import Scene3DFloat from './components/Scene3DFloat.vue'
 import OuvrageLibraryModal from './components/OuvrageLibraryModal.vue'
 import PrintDialog from './components/dialogs/PrintDialog.vue'
 import PrintLayout from './components/PrintLayout.vue'
+import ProjectListDialog from './components/dialogs/ProjectListDialog.vue'
 import { useProjectStore } from './stores/projectStore'
 import type { PrintConfig } from './print/PrintConfig'
 
@@ -17,6 +18,7 @@ const show3D = ref(false)
 const showChiffrage = ref(false)
 const showOuvrageModal = ref(false)
 const showPrintDialog = ref(false)
+const showProjectDialog = ref(false)
 const printConfig = ref<PrintConfig | null>(null)
 const canvas2DSnapshot = ref<string | null>(null)
 const canvas3DSnapshot = ref<string | null>(null)
@@ -88,6 +90,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
       @toggle3d="show3D = !show3D"
       @toggle-chiffrage="showChiffrage = !showChiffrage"
       @print="showPrintDialog = true"
+      @open-projects="showProjectDialog = true"
     />
 
     <div class="app-body">
@@ -112,6 +115,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
     <OuvrageLibraryModal v-if="showOuvrageModal" @close="showOuvrageModal = false" />
     <PrintDialog v-if="showPrintDialog" @print="onPrint" @cancel="showPrintDialog = false" />
+    <ProjectListDialog v-if="showProjectDialog" @close="showProjectDialog = false" />
   </div>
 
   <!-- Layout d'impression (masqué à l'écran) -->

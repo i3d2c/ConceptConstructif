@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useProjectStore } from '../stores/projectStore'
 import { importProject, downloadProject } from '../storage/JsonExporter'
 
@@ -8,10 +9,15 @@ defineEmits<{
   toggle3d: []
   toggleChiffrage: []
   print: []
+  openProjects: []
 }>()
+
+const savedMsg = ref(false)
 
 async function handleSave() {
   await store.save()
+  savedMsg.value = true
+  setTimeout(() => { savedMsg.value = false }, 2000)
 }
 
 function handleImport() {
@@ -60,7 +66,11 @@ function handleExport() {
     <div class="header-actions">
       <button class="icon" title="Annuler (Ctrl+Z)" :disabled="!store.canUndo" @click="store.undo()">↩</button>
       <button class="icon" title="Rétablir (Ctrl+Y)" :disabled="!store.canRedo" @click="store.redo()">↪</button>
-      <button class="icon" title="Sauvegarder" @click="handleSave">💾</button>
+      <button class="icon save-btn" title="Sauvegarder" @click="handleSave">
+        <span v-if="savedMsg" class="saved-msg">✓ Sauvegardé</span>
+        <span v-else>💾</span>
+      </button>
+      <button class="icon" title="Mes projets" @click="$emit('openProjects')">📁</button>
       <button class="icon" title="Importer JSON" @click="handleImport">📥</button>
       <button class="icon" title="Exporter JSON" @click="handleExport">📤</button>
       <button class="icon" title="Imprimer / PDF" @click="$emit('print')">🖨</button>
@@ -96,4 +106,6 @@ function handleExport() {
 .zone-selector select { width: 180px; }
 .header-actions { margin-left: auto; display: flex; gap: 4px; }
 button:disabled { opacity: 0.4; cursor: not-allowed; }
+.save-btn { min-width: 28px; }
+.saved-msg { font-size: 11px; color: #4ade80; white-space: nowrap; padding: 0 4px; }
 </style>
