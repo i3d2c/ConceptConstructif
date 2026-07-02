@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useProjectStore } from '../stores/projectStore'
+import { useThemeStore } from '../stores/themeStore'
 import { importProject, downloadProject } from '../storage/JsonExporter'
 
 const store = useProjectStore()
+const themeStore = useThemeStore()
 
 defineEmits<{
   toggle3d: []
@@ -73,6 +75,11 @@ function handleExport() {
       <button class="icon" title="Mes projets" @click="$emit('openProjects')">📁</button>
       <button class="icon" title="Importer JSON" @click="handleImport">📥</button>
       <button class="icon" title="Exporter JSON" @click="handleExport">📤</button>
+      <button
+        class="icon"
+        :title="themeStore.theme === 'dark' ? 'Passer en thème clair' : 'Passer en thème sombre'"
+        @click="themeStore.toggle()"
+      >{{ themeStore.theme === 'dark' ? '☀️' : '🌙' }}</button>
       <button class="icon" title="Imprimer / PDF" @click="$emit('print')">🖨</button>
     </div>
   </header>

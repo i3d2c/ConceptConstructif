@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useProjectStore } from '../stores/projectStore'
+import { useThemeStore } from '../stores/themeStore'
 
 const store = useProjectStore()
+const themeStore = useThemeStore()
 const containerRef = ref<HTMLDivElement | null>(null)
 
-type Scene3DInstance = { destroy(): void; rebuild(): void; getDataURL(): string }
+type Scene3DInstance = { destroy(): void; rebuild(): void; getDataURL(): string; refreshBackground(): void }
 let scene3d: Scene3DInstance | null = null
 
 onMounted(async () => {
@@ -28,6 +30,11 @@ watch(
 watch(
   () => store.bgLayout,
   () => scene3d?.rebuild(),
+)
+
+watch(
+  () => themeStore.theme,
+  () => scene3d?.refreshBackground(),
 )
 
 function getDataURL(): string | null {

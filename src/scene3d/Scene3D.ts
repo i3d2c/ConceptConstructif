@@ -25,7 +25,7 @@ export class Scene3D {
     container.appendChild(this.renderer.domElement)
 
     this.scene = new THREE.Scene()
-    this.scene.background = new THREE.Color('#111122')
+    this.scene.background = new THREE.Color(this.readCanvasBg())
 
     this.camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000)
     this.camera.position.set(0, 10, 20)
@@ -47,6 +47,14 @@ export class Scene3D {
     this.animId = requestAnimationFrame(() => this.animate())
     this.controls.update()
     this.renderer.render(this.scene, this.camera)
+  }
+
+  private readCanvasBg(): string {
+    return getComputedStyle(document.documentElement).getPropertyValue('--canvas-bg').trim() || '#111122'
+  }
+
+  refreshBackground() {
+    this.scene.background = new THREE.Color(this.readCanvasBg())
   }
 
   rebuild() {

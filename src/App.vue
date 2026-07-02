@@ -142,6 +142,6 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   flex: 1;
   position: relative;
   overflow: hidden;
-  background: #111122;
+  background: var(--canvas-bg);
 }
 </style>
