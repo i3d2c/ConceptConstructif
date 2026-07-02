@@ -27,11 +27,19 @@ const traceResults = computed<TraceChiffrage[]>(() => {
   return results
 })
 
-const grandTotal = computed(() =>
-  traceResults.value.reduce((s, t) => s + t.subtotal, 0),
-)
+function ouvrageAdjustedTotal(ouvrageId: string): number {
+  const scoped = traceResults.value.filter(t => t.ouvrageId === ouvrageId)
+  return ouvrageVisibleOCs(ouvrageId).reduce((s, oc) => {
+    const unitPrice = store.project.constituents.find(c => c.id === oc.constituentId)?.unitPrice ?? 0
+    return s + ocAggregatedQty(oc, scoped) * unitPrice
+  }, 0)
+}
 
-const recapOuvrageTotal = computed(() => grandTotal.value)
+const recapOuvrageTotal = computed(() =>
+  store.project.ouvrages
+    .filter(o => traceResults.value.some(t => t.ouvrageId === o.id))
+    .reduce((s, o) => s + ouvrageAdjustedTotal(o.id), 0),
+)
 
 const recapConstituentTotal = computed(() =>
   store.project.constituents.reduce((s, c) => {
@@ -129,7 +137,7 @@ function fmtQty(n: number): string {
         <tfoot>
           <tr>
             <td colspan="5" class="right grand">Total général</td>
-            <td class="num grand">{{ fmt(grandTotal) }} €</td>
+            <td class="num grand">{{ fmt(recapConstituentTotal) }} €</td>
           </tr>
         </tfoot>
       </table>
@@ -146,7 +154,7 @@ function fmtQty(n: number): string {
             <template v-if="traceResults.some(t => t.ouvrageId === ouvrage.id)">
               <tr class="ouvrage-header">
                 <td colspan="4">{{ ouvrage.name }}</td>
-                <td class="num">{{ fmt(traceResults.filter(t => t.ouvrageId === ouvrage.id).reduce((s, t) => s + t.subtotal, 0)) }} €</td>
+                <td class="num">{{ fmt(ouvrageAdjustedTotal(ouvrage.id)) }} €</td>
               </tr>
               <tr v-for="oc in ouvrageVisibleOCs(ouvrage.id)" :key="oc.id">
                 <td />
