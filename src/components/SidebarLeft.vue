@@ -16,14 +16,13 @@ const emit = defineEmits<{
     <hr class="divider" />
     <ToolsSection />
     <hr class="divider" />
-    <ColorSection />
-    <hr class="divider" />
     <button class="full-btn" @click="emit('openOuvrages')">Ouvrages &amp; Constituants</button>
-    <hr class="divider" />
     <div class="bottom-actions">
       <button @click="emit('toggleChiffrage')">Chiffrage</button>
       <button @click="emit('toggle3d')">3D</button>
     </div>
+    <hr class="divider" />
+    <ColorSection />
   </aside>
 </template>
 
@@ -33,13 +32,13 @@ const emit = defineEmits<{
   flex-shrink: 0;
   background: var(--surface);
   border-right: 1px solid var(--border);
-  overflow-y: auto;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 0;
   padding: 8px;
 }
 .full-btn { width: 100%; }
-.bottom-actions { display: flex; gap: 6px; margin-top: auto; padding-top: 8px; }
+.bottom-actions { display: flex; gap: 6px; margin-top: 6px; }
 .bottom-actions button { flex: 1; }
 </style>
