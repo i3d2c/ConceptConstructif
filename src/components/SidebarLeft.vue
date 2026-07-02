@@ -18,7 +18,7 @@ const emit = defineEmits<{
     <hr class="divider" />
     <ColorSection />
     <hr class="divider" />
-    <button class="full-btn" @click="emit('openOuvrages')">Ouvrages</button>
+    <button class="full-btn" @click="emit('openOuvrages')">Ouvrages &amp; Constituants</button>
     <hr class="divider" />
     <div class="bottom-actions">
       <button @click="emit('toggleChiffrage')">Chiffrage</button>
