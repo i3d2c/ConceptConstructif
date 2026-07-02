@@ -31,6 +31,16 @@ const grandTotal = computed(() =>
   traceResults.value.reduce((s, t) => s + t.subtotal, 0),
 )
 
+const recapOuvrageTotal = computed(() => grandTotal.value)
+
+const recapConstituentTotal = computed(() =>
+  store.project.constituents.reduce((s, c) => {
+    const ocs = constituentApplicableOCs(c.id)
+    if (ocs.length === 0) return s
+    return s + ocs.reduce((ss, oc) => ss + ocAggregatedQty(oc, traceResults.value) * c.unitPrice, 0)
+  }, 0),
+)
+
 function applyRecap(formulaRecap: string | undefined, X: number): number {
   return formulaRecap ? evaluateRecap(formulaRecap, X) : X
 }
@@ -148,6 +158,12 @@ function fmtQty(n: number): string {
             </template>
           </template>
         </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="4" class="right grand">Total général</td>
+            <td class="num grand">{{ fmt(recapOuvrageTotal) }} €</td>
+          </tr>
+        </tfoot>
       </table>
     </div>
 
@@ -180,6 +196,12 @@ function fmtQty(n: number): string {
             </template>
           </template>
         </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="5" class="right grand">Total général</td>
+            <td class="num grand">{{ fmt(recapConstituentTotal) }} €</td>
+          </tr>
+        </tfoot>
       </table>
     </div>
   </div>
