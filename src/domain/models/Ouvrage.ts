@@ -3,7 +3,6 @@ export interface OuvrageConstituent {
   constituentId: string
   position: number
   formula: string
-  formulaRecap?: string
   disabled?: boolean
   hideIfZero?: boolean
   hideIfPriceZero?: boolean

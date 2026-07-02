@@ -148,6 +148,8 @@ const cUnit = ref('')
 const cPrice = ref(0)
 const cSupplier = ref('')
 const cUrl = ref('')
+const cFormulaRecap = ref('')
+const showRecapHelp = ref(false)
 
 function openNewConstituent() {
   editingConstituent.value = null
@@ -157,6 +159,8 @@ function openNewConstituent() {
   cPrice.value = 0
   cSupplier.value = ''
   cUrl.value = ''
+  cFormulaRecap.value = ''
+  showRecapHelp.value = false
 }
 
 function openEditConstituent(c: Constituent) {
@@ -167,6 +171,8 @@ function openEditConstituent(c: Constituent) {
   cPrice.value = c.unitPrice
   cSupplier.value = c.supplier ?? ''
   cUrl.value = c.url ?? ''
+  cFormulaRecap.value = c.formulaRecap ?? ''
+  showRecapHelp.value = false
 }
 
 function saveConstituent() {
@@ -180,6 +186,7 @@ function saveConstituent() {
     unitPrice: cPrice.value,
     supplier: cSupplier.value || undefined,
     url: cUrl.value || undefined,
+    formulaRecap: cFormulaRecap.value || undefined,
   }
   if (editingConstituent.value) {
     store.updateConstituent(id, data)
@@ -270,7 +277,6 @@ function deleteConstituent(id: string) {
                 </div>
                 <div class="help-fns">Fonctions : <code>floor() ceil() round() sqrt() abs() min() max() pow()</code></div>
                 <div class="help-fns">Conditionnel : <code>if(condition; valeur_si_vrai; valeur_si_faux)</code> — ex : <code>if(L > 3; L * 2; L)</code></div>
-                <div class="help-fns">formulaRecap : variable <code>X</code> = total brut de la zone. Ex : <code>ceil(X)</code></div>
               </div>
 
               <div v-for="(oc, idx) in oConstituents" :key="oc.id" class="oc-row">
@@ -280,7 +286,6 @@ function deleteConstituent(id: string) {
                 </select>
                 <div class="oc-formulas">
                   <input v-model="oc.formula" placeholder="ex: L*H/(0.22*0.05)" title="Formule par tracé" />
-                  <input v-model="oc.formulaRecap" placeholder="récap (opt) ex: ceil(X)" title="Formule récapitulatif (variable X)" />
                 </div>
                 <div class="oc-flags-wrap">
                   <button
@@ -362,6 +367,21 @@ function deleteConstituent(id: string) {
 
             <label>URL fiche produit</label>
             <input v-model="cUrl" placeholder="https://..." />
+
+            <div class="recap-section">
+              <div class="recap-header">
+                <label>Formule récapitulatif (opt.)</label>
+                <button class="help-btn" @click="showRecapHelp = !showRecapHelp">? Variables</button>
+              </div>
+              <input v-model="cFormulaRecap" placeholder="ex: ceil(X)" title="Appliquée au total agrégé dans le récap/constituant. X = somme brute de toutes les quantités." />
+              <div v-if="showRecapHelp" class="formula-help">
+                <div class="help-grid">
+                  <span class="hk">X</span><span>Total brut agrégé de ce constituant sur tous les tracés</span>
+                </div>
+                <div class="help-fns">Fonctions : <code>ceil(X)</code> <code>floor(X)</code> <code>round(X)</code></div>
+                <div class="help-fns">Exemple : <code>ceil(X)</code> → arrondit au supérieur pour commander des quantités entières</div>
+              </div>
+            </div>
 
             <div class="form-actions">
               <span v-if="cSaveMsg" class="save-msg">{{ cSaveMsg }}</span>
@@ -494,6 +514,8 @@ function deleteConstituent(id: string) {
 .form-actions { display: flex; gap: 8px; justify-content: flex-end; align-items: center; margin-top: 8px; }
 .save-msg { font-size: 11px; color: #4ade80; margin-right: auto; }
 textarea { resize: vertical; min-height: 40px; }
+.recap-section { display: flex; flex-direction: column; gap: 4px; }
+.recap-header { display: flex; justify-content: space-between; align-items: center; }
 </style>
 
 <style>

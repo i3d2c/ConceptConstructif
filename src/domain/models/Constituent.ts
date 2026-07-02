@@ -6,4 +6,5 @@ export interface Constituent {
   unitPrice: number
   supplier?: string
   url?: string
+  formulaRecap?: string
 }

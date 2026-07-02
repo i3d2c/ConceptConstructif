@@ -41,11 +41,14 @@ const recapOuvrageTotal = computed(() =>
     .reduce((s, o) => s + ouvrageAdjustedTotal(o.id), 0),
 )
 
+const grandTotal = computed(() => traceResults.value.reduce((s, t) => s + t.subtotal, 0))
+
 const recapConstituentTotal = computed(() =>
   store.project.constituents.reduce((s, c) => {
     const ocs = constituentApplicableOCs(c.id)
     if (ocs.length === 0) return s
-    return s + ocs.reduce((ss, oc) => ss + ocAggregatedQty(oc, traceResults.value) * c.unitPrice, 0)
+    const raw = ocs.reduce((ss, oc) => ss + ocAggregatedQty(oc, traceResults.value), 0)
+    return s + applyRecap(c.formulaRecap, raw) * c.unitPrice
   }, 0),
 )
 
@@ -54,10 +57,16 @@ function applyRecap(formulaRecap: string | undefined, X: number): number {
 }
 
 function ocAggregatedQty(oc: OuvrageConstituent, scoped: TraceChiffrage[]): number {
-  const raw = scoped.flatMap(t => t.constituents)
+  return scoped.flatMap(t => t.constituents)
     .filter(c => c.ouvrageConstituentId === oc.id)
     .reduce((s, c) => s + c.quantity, 0)
-  return applyRecap(oc.formulaRecap, raw)
+}
+
+function constituentAdjustedQty(constituentId: string): number {
+  const raw = constituentApplicableOCs(constituentId)
+    .reduce((s, oc) => s + ocAggregatedQty(oc, traceResults.value), 0)
+  const c = store.project.constituents.find(c => c.id === constituentId)
+  return applyRecap(c?.formulaRecap, raw)
 }
 
 function ouvrageVisibleOCs(ouvrageId: string): OuvrageConstituent[] {
@@ -137,7 +146,7 @@ function fmtQty(n: number): string {
         <tfoot>
           <tr>
             <td colspan="5" class="right grand">Total général</td>
-            <td class="num grand">{{ fmt(recapConstituentTotal) }} €</td>
+            <td class="num grand">{{ fmt(grandTotal) }} €</td>
           </tr>
         </tfoot>
       </table>
@@ -191,16 +200,10 @@ function fmtQty(n: number): string {
                   <span v-else>{{ c.name }}</span>
                 </td>
                 <td>{{ c.supplier ?? '—' }}</td>
-                <td class="num">{{
-                  fmtQty(constituentApplicableOCs(c.id)
-                    .reduce((s, oc) => s + ocAggregatedQty(oc, traceResults), 0))
-                }}</td>
+                <td class="num">{{ fmtQty(constituentAdjustedQty(c.id)) }}</td>
                 <td>{{ c.unit }}</td>
                 <td class="num">{{ fmt(c.unitPrice) }} €</td>
-                <td class="num">{{
-                  fmt(constituentApplicableOCs(c.id)
-                    .reduce((s, oc) => s + ocAggregatedQty(oc, traceResults) * c.unitPrice, 0))
-                }} €</td>
+                <td class="num">{{ fmt(constituentAdjustedQty(c.id) * c.unitPrice) }} €</td>
               </tr>
             </template>
           </template>
