@@ -117,13 +117,13 @@ function fmtQty(n: number) {
       <h3>Récapitulatif par ouvrage</h3>
       <table class="print-table">
         <thead>
-          <tr><th>Ouvrage</th><th>Constituant</th><th>Qté tot.</th><th>Unité</th><th>Total</th></tr>
+          <tr><th>Ouvrage</th><th>Constituant</th><th>Qté tot.</th><th>Unité</th><th>P.U.</th><th>Total</th></tr>
         </thead>
         <tbody>
           <template v-for="o in store.project.ouvrages" :key="o.id">
             <template v-if="traceResults.some(t => t.ouvrageId === o.id)">
               <tr class="ouvrage-row">
-                <td colspan="4" style="font-weight:bold">{{ o.name }}</td>
+                <td colspan="5" style="font-weight:bold">{{ o.name }}</td>
                 <td style="text-align:right">{{ fmt(ouvrageAdjustedTotal(o.id)) }} €</td>
               </tr>
               <tr v-for="oc in ouvrageVisibleOCs(o.id)" :key="oc.id">
@@ -131,6 +131,7 @@ function fmtQty(n: number) {
                 <td>{{ store.project.constituents.find(c=>c.id===oc.constituentId)?.name }}</td>
                 <td style="text-align:right">{{ fmtQty(ocAggregatedQty(oc, traceResults.filter(t=>t.ouvrageId===o.id))) }}</td>
                 <td>{{ store.project.constituents.find(c=>c.id===oc.constituentId)?.unit }}</td>
+                <td style="text-align:right">{{ fmt(store.project.constituents.find(c=>c.id===oc.constituentId)?.unitPrice??0) }} €</td>
                 <td style="text-align:right">{{ fmt(ocAggregatedQty(oc, traceResults.filter(t=>t.ouvrageId===o.id)) * (store.project.constituents.find(c=>c.id===oc.constituentId)?.unitPrice??0)) }} €</td>
               </tr>
             </template>
@@ -138,7 +139,7 @@ function fmtQty(n: number) {
         </tbody>
         <tfoot>
           <tr style="font-weight:bold">
-            <td colspan="4" style="text-align:right">Total général</td>
+            <td colspan="5" style="text-align:right">Total général</td>
             <td style="text-align:right">{{ fmt(recapOuvrageTotal) }} €</td>
           </tr>
         </tfoot>

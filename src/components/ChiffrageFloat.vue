@@ -147,13 +147,13 @@ function fmtQty(n: number): string {
     <div v-else-if="tab === 'ouvrage'" class="scroll-body">
       <table>
         <thead>
-          <tr><th>Ouvrage</th><th>Constituant</th><th class="num">Qté tot.</th><th>Unité</th><th class="num">Total</th></tr>
+          <tr><th>Ouvrage</th><th>Constituant</th><th class="num">Qté tot.</th><th>Unité</th><th class="num">P.U.</th><th class="num">Total</th></tr>
         </thead>
         <tbody>
           <template v-for="ouvrage in store.project.ouvrages" :key="ouvrage.id">
             <template v-if="traceResults.some(t => t.ouvrageId === ouvrage.id)">
               <tr class="ouvrage-header">
-                <td colspan="4">{{ ouvrage.name }}</td>
+                <td colspan="5">{{ ouvrage.name }}</td>
                 <td class="num">{{ fmt(ouvrageAdjustedTotal(ouvrage.id)) }} €</td>
               </tr>
               <tr v-for="oc in ouvrageVisibleOCs(ouvrage.id)" :key="oc.id">
@@ -161,6 +161,7 @@ function fmtQty(n: number): string {
                 <td>{{ store.project.constituents.find(c => c.id === oc.constituentId)?.name }}</td>
                 <td class="num">{{ fmtQty(ocAggregatedQty(oc, traceResults.filter(t => t.ouvrageId === ouvrage.id))) }}</td>
                 <td>{{ store.project.constituents.find(c => c.id === oc.constituentId)?.unit }}</td>
+                <td class="num">{{ fmt(store.project.constituents.find(c => c.id === oc.constituentId)?.unitPrice ?? 0) }} €</td>
                 <td class="num">{{ fmt(ocAggregatedQty(oc, traceResults.filter(t => t.ouvrageId === ouvrage.id)) * (store.project.constituents.find(c => c.id === oc.constituentId)?.unitPrice ?? 0)) }} €</td>
               </tr>
             </template>
@@ -168,7 +169,7 @@ function fmtQty(n: number): string {
         </tbody>
         <tfoot>
           <tr>
-            <td colspan="4" class="right grand">Total général</td>
+            <td colspan="5" class="right grand">Total général</td>
             <td class="num grand">{{ fmt(recapOuvrageTotal) }} €</td>
           </tr>
         </tfoot>
