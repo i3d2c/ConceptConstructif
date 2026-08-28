@@ -7,4 +7,5 @@ export interface Constituent {
   supplier?: string
   url?: string
   formulaRecap?: string
+  category: string
 }

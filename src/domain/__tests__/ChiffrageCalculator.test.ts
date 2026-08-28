@@ -52,12 +52,12 @@ describe('ChiffrageCalculator', () => {
   })
 
   it('computeTraceChiffrage gère la cascade Cn entre constituants', () => {
-    const brique: Constituent = { id: 'c-1', name: 'Brique pleine', unit: 'unité', unitPrice: 0.92 }
-    const ciment: Constituent = { id: 'c-2', name: 'Ciment', unit: 'sac 25kg', unitPrice: 5 }
+    const brique: Constituent = { id: 'c-1', name: 'Brique pleine', unit: 'unité', unitPrice: 0.92, category: 'Maçonnerie' }
+    const ciment: Constituent = { id: 'c-2', name: 'Ciment', unit: 'sac 25kg', unitPrice: 5, category: 'Maçonnerie' }
     const constituentsMap = new Map<string, Constituent>([['c-1', brique], ['c-2', ciment]])
 
     const ouvrage: Ouvrage = {
-      id: 'o-1', name: 'Mur', description: '',
+      id: 'o-1', name: 'Mur', description: '', category: 'Maçonnerie',
       constituents: [
         { id: 'oc-1', constituentId: 'c-1', position: 1, formula: 'L * H / (0.220 * 0.050)' },
         { id: 'oc-2', constituentId: 'c-2', position: 2, formula: 'C1 / 300' },
@@ -75,13 +75,14 @@ describe('ChiffrageCalculator', () => {
   })
 
   it('computeTraceChiffrage calcule ~681 briques pour un mur 3m × 2.5m', () => {
-    const brique: Constituent = { id: 'c-1', name: 'Brique pleine', unit: 'unité', unitPrice: 0.92 }
+    const brique: Constituent = { id: 'c-1', name: 'Brique pleine', unit: 'unité', unitPrice: 0.92, category: 'Maçonnerie' }
     const constituentsMap = new Map<string, Constituent>([['c-1', brique]])
 
     const ouvrage: Ouvrage = {
       id: 'o-1',
       name: 'Mur brique 1B',
       description: '',
+      category: 'Maçonnerie',
       constituents: [
         { id: 'oc-1', constituentId: 'c-1', position: 1, formula: 'L * H / (0.220 * 0.050)' },
       ],

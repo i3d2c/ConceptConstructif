@@ -18,4 +18,5 @@ export interface Ouvrage {
   defaultHauteur?: number
   defaultLargeur?: number
   constituents: OuvrageConstituent[]
+  category: string
 }

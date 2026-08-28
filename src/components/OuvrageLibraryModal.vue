@@ -104,6 +104,7 @@ function saveOuvrage() {
     defaultEpaisseur: oEp.value !== '' ? Number(oEp.value) : undefined,
     defaultHauteur: oH.value !== '' ? Number(oH.value) : undefined,
     constituents: oConstituents.value,
+    category: editingOuvrage.value?.category ?? 'À catégoriser',
   }
   if (editingOuvrage.value) {
     store.updateOuvrage(id, data)
@@ -187,6 +188,7 @@ function saveConstituent() {
     supplier: cSupplier.value || undefined,
     url: cUrl.value || undefined,
     formulaRecap: cFormulaRecap.value || undefined,
+    category: editingConstituent.value?.category ?? 'À catégoriser',
   }
   if (editingConstituent.value) {
     store.updateConstituent(id, data)
