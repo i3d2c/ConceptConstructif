@@ -3,13 +3,13 @@ import { planImportConstituent, planImportOuvrage, findUnpublishedConstituents }
 import type { Constituent } from '../models/Constituent'
 import type { Ouvrage } from '../models/Ouvrage'
 
-const brique: Constituent = {
+const brick: Constituent = {
   id: 'lib-c-1', name: 'Brique pleine', unit: 'unité', unitPrice: 0.92, category: 'Maçonnerie',
 }
-const ciment: Constituent = {
+const cement: Constituent = {
   id: 'lib-c-2', name: 'Ciment', unit: 'sac 25kg', unitPrice: 5, category: 'Maçonnerie',
 }
-const murBrique: Ouvrage = {
+const brickWall: Ouvrage = {
   id: 'lib-o-1', name: 'Mur brique 1B', description: '', category: 'Maçonnerie',
   constituents: [
     { id: 'oc-1', constituentId: 'lib-c-1', position: 1, formula: 'L*H/(0.22*0.05)' },
@@ -18,15 +18,15 @@ const murBrique: Ouvrage = {
 }
 
 describe('LibraryImportService — planImportConstituent', () => {
-  it('copie le constituant bibliothèque quand il est absent localement', () => {
-    const result = planImportConstituent([], brique)
+  it('Should copy the library constituent when it is not present locally', () => {
+    const result = planImportConstituent([], brick)
     expect(result.alreadyPresent).toBe(false)
-    expect(result.constituent).toEqual(brique)
+    expect(result.constituent).toEqual(brick)
   })
 
-  it('réutilise la copie locale existante sans la modifier si déjà présente (même id)', () => {
-    const localCopy: Constituent = { ...brique, unitPrice: 1.10 } // valeur locale divergée volontairement
-    const result = planImportConstituent([localCopy], brique)
+  it('Should reuse the existing local copy without modifying it when already present (same id)', () => {
+    const localCopy: Constituent = { ...brick, unitPrice: 1.10 } // intentionally diverged local value
+    const result = planImportConstituent([localCopy], brick)
     expect(result.alreadyPresent).toBe(true)
     expect(result.constituent).toBe(localCopy)
     expect(result.constituent.unitPrice).toBe(1.10)
@@ -34,45 +34,45 @@ describe('LibraryImportService — planImportConstituent', () => {
 })
 
 describe('LibraryImportService — planImportOuvrage', () => {
-  it("ne crée aucun nouveau constituant si tous les constituants référencés sont déjà présents localement", () => {
-    const existingConstituents = [{ ...brique }, { ...ciment }]
-    const libraryConstituentsById = new Map([[brique.id, brique], [ciment.id, ciment]])
+  it('Should not create any new constituent when all referenced constituents are already present locally', () => {
+    const existingConstituents = [{ ...brick }, { ...cement }]
+    const libraryConstituentsById = new Map([[brick.id, brick], [cement.id, cement]])
 
-    const result = planImportOuvrage(existingConstituents, murBrique, libraryConstituentsById)
+    const result = planImportOuvrage(existingConstituents, brickWall, libraryConstituentsById)
 
     expect(result.newConstituents).toEqual([])
-    expect(result.ouvrage).toEqual(murBrique)
+    expect(result.ouvrage).toEqual(brickWall)
   })
 
-  it('importe en cascade les constituants référencés absents localement', () => {
-    const libraryConstituentsById = new Map([[brique.id, brique], [ciment.id, ciment]])
+  it('Should cascade-import referenced constituents that are missing locally', () => {
+    const libraryConstituentsById = new Map([[brick.id, brick], [cement.id, cement]])
 
-    const result = planImportOuvrage([], murBrique, libraryConstituentsById)
+    const result = planImportOuvrage([], brickWall, libraryConstituentsById)
 
-    expect(result.newConstituents).toEqual([brique, ciment])
+    expect(result.newConstituents).toEqual([brick, cement])
   })
 
-  it('ignore les constituants déjà présents et ne copie que ceux manquants', () => {
-    const existingConstituents = [{ ...brique }]
-    const libraryConstituentsById = new Map([[brique.id, brique], [ciment.id, ciment]])
+  it('Should skip constituents already present and only copy the missing ones', () => {
+    const existingConstituents = [{ ...brick }]
+    const libraryConstituentsById = new Map([[brick.id, brick], [cement.id, cement]])
 
-    const result = planImportOuvrage(existingConstituents, murBrique, libraryConstituentsById)
+    const result = planImportOuvrage(existingConstituents, brickWall, libraryConstituentsById)
 
-    expect(result.newConstituents).toEqual([ciment])
+    expect(result.newConstituents).toEqual([cement])
   })
 
-  it("préserve le constituentId des OuvrageConstituent copiés (pas de remap, l'id est déjà partagé)", () => {
-    const result = planImportOuvrage([], murBrique, new Map([[brique.id, brique], [ciment.id, ciment]]))
+  it('Should preserve the constituentId of copied OuvrageConstituent entries (no remap needed, the id is already shared)', () => {
+    const result = planImportOuvrage([], brickWall, new Map([[brick.id, brick], [cement.id, cement]]))
 
     expect(result.ouvrage.constituents.map(oc => oc.constituentId)).toEqual(['lib-c-1', 'lib-c-2'])
   })
 })
 
 describe('LibraryImportService — findUnpublishedConstituents', () => {
-  const localBrique: Constituent = { ...brique, id: 'local-c-1' }
-  const localCiment: Constituent = { ...ciment, id: 'local-c-2' }
+  const localBrick: Constituent = { ...brick, id: 'local-c-1' }
+  const localCement: Constituent = { ...cement, id: 'local-c-2' }
   const localOuvrage: Ouvrage = {
-    ...murBrique,
+    ...brickWall,
     id: 'local-o-1',
     constituents: [
       { id: 'oc-1', constituentId: 'local-c-1', position: 1, formula: 'L*H/(0.22*0.05)' },
@@ -80,8 +80,8 @@ describe('LibraryImportService — findUnpublishedConstituents', () => {
     ],
   }
 
-  it("ne signale rien si tous les constituants référencés sont déjà publiés dans la bibliothèque", () => {
-    const localConstituents = [localBrique, localCiment]
+  it('Should report nothing when all referenced constituents are already published to the library', () => {
+    const localConstituents = [localBrick, localCement]
     const publishedIds = new Set(['local-c-1', 'local-c-2'])
 
     const result = findUnpublishedConstituents(localOuvrage, localConstituents, publishedIds)
@@ -89,12 +89,12 @@ describe('LibraryImportService — findUnpublishedConstituents', () => {
     expect(result).toEqual([])
   })
 
-  it("signale les constituants référencés qui ne sont pas encore publiés", () => {
-    const localConstituents = [localBrique, localCiment]
-    const publishedIds = new Set(['local-c-1']) // ciment pas encore publié
+  it('Should report referenced constituents that are not yet published', () => {
+    const localConstituents = [localBrick, localCement]
+    const publishedIds = new Set(['local-c-1']) // cement not yet published
 
     const result = findUnpublishedConstituents(localOuvrage, localConstituents, publishedIds)
 
-    expect(result).toEqual([localCiment])
+    expect(result).toEqual([localCement])
   })
 })
