@@ -2,23 +2,30 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import type { Ouvrage, OuvrageConstituent } from '../../domain/models/Ouvrage'
 import type { Constituent } from '../../domain/models/Constituent'
+import { findUnpublishedConstituents } from '../../domain/services/LibraryImportService'
 import OuvrageConstituentRow from './OuvrageConstituentRow.vue'
+import CategoryInput from './CategoryInput.vue'
+import type { Scope } from './scope'
 
 const props = defineProps<{
   editingOuvrage: Ouvrage | null
   constituentOptions: Constituent[]
   defaultConstituentId: string
+  categorySuggestions: string[]
+  publishedConstituentIds: Set<string>
 }>()
 
 const emit = defineEmits<{
-  save: [data: Ouvrage, isNew: boolean]
+  save: [data: Ouvrage, isNew: boolean, scope: Scope]
 }>()
 
 const showFormulaHelp = ref(false)
 const oSaveMsg = ref('')
+const oSaveError = ref('')
 let oSaveMsgTimer: ReturnType<typeof setTimeout> | null = null
 
 const oName = ref(props.editingOuvrage?.name ?? '')
+const oCategory = ref(props.editingOuvrage?.category ?? 'À catégoriser')
 const oDesc = ref(props.editingOuvrage?.description ?? '')
 const oEp = ref<number | ''>(props.editingOuvrage?.defaultEpaisseur ?? '')
 const oH = ref<number | ''>(props.editingOuvrage?.defaultHauteur ?? '')
@@ -26,7 +33,7 @@ const oConstituents = ref<OuvrageConstituent[]>(
   props.editingOuvrage ? JSON.parse(JSON.stringify(props.editingOuvrage.constituents)) : []
 )
 
-function saveOuvrage() {
+function saveOuvrage(scope: Scope) {
   if (!oName.value) return
   const id = props.editingOuvrage?.id ?? crypto.randomUUID()
   const data: Ouvrage = {
@@ -36,9 +43,19 @@ function saveOuvrage() {
     defaultEpaisseur: oEp.value !== '' ? Number(oEp.value) : undefined,
     defaultHauteur: oH.value !== '' ? Number(oH.value) : undefined,
     constituents: oConstituents.value,
-    category: props.editingOuvrage?.category ?? 'À catégoriser',
+    category: oCategory.value,
   }
-  emit('save', data, props.editingOuvrage === null)
+
+  if (scope === 'library') {
+    const missing = findUnpublishedConstituents(data, props.constituentOptions, props.publishedConstituentIds)
+    if (missing.length > 0) {
+      oSaveError.value = `À publier d'abord dans la bibliothèque : ${missing.map(c => c.name).join(', ')}`
+      return
+    }
+  }
+  oSaveError.value = ''
+
+  emit('save', data, props.editingOuvrage === null, scope)
   oSaveMsg.value = '✓ Enregistré'
   if (oSaveMsgTimer) clearTimeout(oSaveMsgTimer)
   oSaveMsgTimer = setTimeout(() => { oSaveMsg.value = '' }, 2000)
@@ -105,6 +122,9 @@ onUnmounted(() => {
     <label>Nom *</label>
     <input v-model="oName" placeholder="ex: Mur brique 1 brique" />
 
+    <label>Catégorie</label>
+    <CategoryInput v-model="oCategory" :suggestions="categorySuggestions" list-id="ouvrage-category-list" />
+
     <label>Description</label>
     <textarea v-model="oDesc" rows="2" />
 
@@ -154,9 +174,12 @@ onUnmounted(() => {
       </div>
     </div>
 
+    <div v-if="oSaveError" class="save-error">{{ oSaveError }}</div>
+
     <div class="form-actions">
       <span v-if="oSaveMsg" class="save-msg">{{ oSaveMsg }}</span>
-      <button class="active" @click="saveOuvrage">Enregistrer</button>
+      <button @click="saveOuvrage('project')">Enregistrer pour ce projet</button>
+      <button class="active" @click="saveOuvrage('library')">Enregistrer dans la bibliothèque</button>
     </div>
   </div>
 
@@ -226,6 +249,7 @@ onUnmounted(() => {
 .help-fns code { color: var(--accent); font-family: monospace; }
 .form-actions { display: flex; gap: 8px; justify-content: flex-end; align-items: center; margin-top: 8px; }
 .save-msg { font-size: 11px; color: #4ade80; margin-right: auto; }
+.save-error { font-size: 11px; color: #f87171; }
 textarea { resize: vertical; min-height: 40px; }
 </style>
 

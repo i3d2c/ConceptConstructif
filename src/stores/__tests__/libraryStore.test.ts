@@ -34,6 +34,17 @@ describe('libraryStore', () => {
     })
   })
 
+  describe('ouvrageIds', () => {
+    it('Should reflect the current set of library ouvrage ids', async () => {
+      const store = useLibraryStore()
+      expect(store.ouvrageIds.has(brickWall.id)).toBe(false)
+
+      await store.upsertOuvrage(brickWall)
+
+      expect(store.ouvrageIds.has(brickWall.id)).toBe(true)
+    })
+  })
+
   describe('upsertOuvrage', () => {
     it('Should persist a new ouvrage and add it to local state', async () => {
       const store = useLibraryStore()

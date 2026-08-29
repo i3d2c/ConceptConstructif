@@ -1,18 +1,22 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { Constituent } from '../../domain/models/Constituent'
+import CategoryInput from './CategoryInput.vue'
+import type { Scope } from './scope'
 
 const props = defineProps<{
   editingConstituent: Constituent | null
   units: string[]
   suppliers: string[]
+  categorySuggestions: string[]
 }>()
 
 const emit = defineEmits<{
-  save: [data: Constituent, isNew: boolean]
+  save: [data: Constituent, isNew: boolean, scope: Scope]
 }>()
 
 const cName = ref(props.editingConstituent?.name ?? '')
+const cCategory = ref(props.editingConstituent?.category ?? 'À catégoriser')
 const cCode = ref(props.editingConstituent?.code ?? '')
 const cUnit = ref(props.editingConstituent?.unit ?? '')
 const cPrice = ref(props.editingConstituent?.unitPrice ?? 0)
@@ -23,7 +27,7 @@ const showRecapHelp = ref(false)
 const cSaveMsg = ref('')
 let cSaveMsgTimer: ReturnType<typeof setTimeout> | null = null
 
-function saveConstituent() {
+function saveConstituent(scope: Scope) {
   if (!cName.value) return
   const id = props.editingConstituent?.id ?? crypto.randomUUID()
   const data: Constituent = {
@@ -35,9 +39,9 @@ function saveConstituent() {
     supplier: cSupplier.value || undefined,
     url: cUrl.value || undefined,
     formulaRecap: cFormulaRecap.value || undefined,
-    category: props.editingConstituent?.category ?? 'À catégoriser',
+    category: cCategory.value,
   }
-  emit('save', data, props.editingConstituent === null)
+  emit('save', data, props.editingConstituent === null, scope)
   cSaveMsg.value = '✓ Enregistré'
   if (cSaveMsgTimer) clearTimeout(cSaveMsgTimer)
   cSaveMsgTimer = setTimeout(() => { cSaveMsg.value = '' }, 2000)
@@ -50,6 +54,9 @@ function saveConstituent() {
 
     <label>Nom *</label>
     <input v-model="cName" placeholder="ex: Brique pleine" />
+
+    <label>Catégorie</label>
+    <CategoryInput v-model="cCategory" :suggestions="categorySuggestions" list-id="constituent-category-list" />
 
     <label>Code produit</label>
     <input v-model="cCode" placeholder="ex: REF-001 (facultatif)" />
@@ -94,7 +101,8 @@ function saveConstituent() {
 
     <div class="form-actions">
       <span v-if="cSaveMsg" class="save-msg">{{ cSaveMsg }}</span>
-      <button class="active" @click="saveConstituent">Enregistrer</button>
+      <button @click="saveConstituent('project')">Enregistrer pour ce projet</button>
+      <button class="active" @click="saveConstituent('library')">Enregistrer dans la bibliothèque</button>
     </div>
   </div>
 </template>
