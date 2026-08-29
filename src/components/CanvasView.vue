@@ -409,11 +409,8 @@ function onPolygonDone(points: [number, number][]) {
   activateTool(store.drawMode)
 }
 
-// ── Image drag & drop ──────────────────────────────────────────────────────
-function handleImageDrop(e: DragEvent) {
-  e.preventDefault()
-  const file = e.dataTransfer?.files[0]
-  if (!file || !file.type.startsWith('image/')) return
+// ── Image drag & drop / paste ────────────────────────────────────────────────
+function loadImageFile(file: File) {
   const reader = new FileReader()
   reader.onload = async (ev) => {
     const dataUrl = ev.target?.result as string
@@ -421,6 +418,28 @@ function handleImageDrop(e: DragEvent) {
     store.updateZone(store.activeZone!.id, { backgroundImage: dataUrl })
   }
   reader.readAsDataURL(file)
+}
+
+function handleImageDrop(e: DragEvent) {
+  e.preventDefault()
+  const file = e.dataTransfer?.files[0]
+  if (!file || !file.type.startsWith('image/')) return
+  loadImageFile(file)
+}
+
+function isEditableTarget(el: Element | null): boolean {
+  if (!el) return false
+  const tag = el.tagName
+  return tag === 'INPUT' || tag === 'TEXTAREA' || (el as HTMLElement).isContentEditable
+}
+
+function handlePaste(e: ClipboardEvent) {
+  if (!store.activeZone || isEditableTarget(document.activeElement)) return
+  const item = Array.from(e.clipboardData?.items ?? []).find(i => i.type.startsWith('image/'))
+  const file = item?.getAsFile()
+  if (!file) return
+  e.preventDefault()
+  loadImageFile(file)
 }
 
 // ── Exposed for print ──────────────────────────────────────────────────────
@@ -466,6 +485,7 @@ onMounted(() => {
   }
   window.addEventListener('mousemove', panMoveHandler)
   window.addEventListener('mouseup', panEndHandler)
+  window.addEventListener('paste', handlePaste)
 
   // Zoom Ctrl+molette
   cm.stage.container().addEventListener('wheel', (e: WheelEvent) => {
@@ -540,6 +560,7 @@ onMounted(() => {
 onUnmounted(() => {
   if (panMoveHandler) window.removeEventListener('mousemove', panMoveHandler)
   if (panEndHandler) window.removeEventListener('mouseup', panEndHandler)
+  window.removeEventListener('paste', handlePaste)
   cm?.destroy()
 })
 </script>
