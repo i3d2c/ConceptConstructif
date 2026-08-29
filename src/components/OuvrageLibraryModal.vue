@@ -207,6 +207,11 @@ function importFromPicker(id: string) {
   if (tab.value === 'ouvrages') importOuvrage(id)
   else importConstituent(id)
 }
+
+function reloadDefaultLibrary() {
+  if (!confirm('Recharger le set de base ? Cela écrase les entrées de la bibliothèque partageant les mêmes ids (les projets déjà importés ne sont pas affectés).')) return
+  library.seedDefaultLibrary()
+}
 </script>
 
 <template>
@@ -217,6 +222,7 @@ function importFromPicker(id: string) {
           <button :class="{ active: tab === 'ouvrages' }" @click="tab = 'ouvrages'">Ouvrages</button>
           <button :class="{ active: tab === 'constituents' }" @click="tab = 'constituents'">Constituants</button>
         </div>
+        <button title="Réappliquer le set de base (src/domain/data/defaultLibrary.json) dans la bibliothèque" @click="reloadDefaultLibrary">↻ Set de base</button>
         <button class="icon" @click="emit('close')">✕</button>
       </div>
 

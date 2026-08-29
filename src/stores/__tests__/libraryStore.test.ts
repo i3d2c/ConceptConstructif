@@ -32,6 +32,45 @@ describe('libraryStore', () => {
       expect(store.ouvrages).toEqual([brickWall])
       expect(store.constituents).toEqual([brick])
     })
+
+    it('Should seed the default library when both collections are empty after loading', async () => {
+      vi.mocked(LibraryStorage.listLibraryOuvrages).mockResolvedValue([])
+      vi.mocked(LibraryStorage.listLibraryConstituents).mockResolvedValue([])
+
+      const store = useLibraryStore()
+      await store.loadLibrary()
+
+      expect(LibraryStorage.saveLibraryOuvrage).toHaveBeenCalled()
+      expect(LibraryStorage.saveLibraryConstituent).toHaveBeenCalled()
+      expect(store.ouvrages.length).toBeGreaterThan(0)
+      expect(store.constituents.length).toBeGreaterThan(0)
+    })
+
+    it('Should not seed when the library already has items', async () => {
+      vi.mocked(LibraryStorage.listLibraryOuvrages).mockResolvedValue([brickWall])
+      vi.mocked(LibraryStorage.listLibraryConstituents).mockResolvedValue([])
+
+      const store = useLibraryStore()
+      await store.loadLibrary()
+
+      expect(LibraryStorage.saveLibraryOuvrage).not.toHaveBeenCalled()
+      expect(LibraryStorage.saveLibraryConstituent).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('seedDefaultLibrary', () => {
+    it('Should upsert every ouvrage and constituent from the default library unconditionally', async () => {
+      const store = useLibraryStore()
+      await store.upsertOuvrage(brickWall)
+      vi.clearAllMocks()
+
+      await store.seedDefaultLibrary()
+
+      expect(LibraryStorage.saveLibraryOuvrage).toHaveBeenCalled()
+      expect(LibraryStorage.saveLibraryConstituent).toHaveBeenCalled()
+      expect(store.ouvrages.some(o => o.id === brickWall.id)).toBe(true)
+      expect(store.ouvrages.length).toBeGreaterThan(1)
+    })
   })
 
   describe('ouvrageIds', () => {

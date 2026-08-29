@@ -1,0 +1,116 @@
+{
+  "constituents": [
+    {
+      "id": "seed-c-brique",
+      "name": "Brique creuse 20cm",
+      "unit": "unité",
+      "unitPrice": 0,
+      "category": "Maçonnerie"
+    },
+    {
+      "id": "seed-c-mortier",
+      "name": "Mortier / ciment",
+      "unit": "sac 25kg",
+      "unitPrice": 0,
+      "category": "Maçonnerie"
+    },
+    {
+      "id": "seed-c-placo",
+      "name": "Plaque de plâtre BA13",
+      "unit": "plaque (2,6 m²)",
+      "unitPrice": 0,
+      "category": "Cloisons"
+    },
+    {
+      "id": "seed-c-rail",
+      "name": "Rail / montant métallique",
+      "unit": "ml",
+      "unitPrice": 0,
+      "category": "Cloisons"
+    },
+    {
+      "id": "seed-c-laine-verre",
+      "name": "Laine de verre",
+      "unit": "m²",
+      "unitPrice": 0,
+      "category": "Isolation"
+    },
+    {
+      "id": "seed-c-beton",
+      "name": "Béton prêt à l'emploi",
+      "unit": "m³",
+      "unitPrice": 0,
+      "category": "Gros œuvre"
+    },
+    {
+      "id": "seed-c-treillis",
+      "name": "Treillis soudé",
+      "unit": "m²",
+      "unitPrice": 0,
+      "category": "Gros œuvre"
+    },
+    {
+      "id": "seed-c-peinture",
+      "name": "Peinture",
+      "unit": "L",
+      "unitPrice": 0,
+      "category": "Finitions"
+    }
+  ],
+  "ouvrages": [
+    {
+      "id": "seed-o-mur-brique",
+      "name": "Mur brique creuse 20",
+      "description": "Mur de maçonnerie en briques creuses, à tracer comme un trait.",
+      "defaultEpaisseur": 0.2,
+      "defaultHauteur": 2.5,
+      "category": "Maçonnerie",
+      "constituents": [
+        { "id": "seed-oc-mur-brique-1", "constituentId": "seed-c-brique", "position": 1, "formula": "S/(0.22*0.05)" },
+        { "id": "seed-oc-mur-brique-2", "constituentId": "seed-c-mortier", "position": 2, "formula": "C1/300" }
+      ]
+    },
+    {
+      "id": "seed-o-cloison-placo",
+      "name": "Cloison placo BA13",
+      "description": "Cloison de distribution en plaques de plâtre sur ossature métallique, à tracer comme un trait.",
+      "defaultEpaisseur": 0.1,
+      "defaultHauteur": 2.5,
+      "category": "Cloisons",
+      "constituents": [
+        { "id": "seed-oc-cloison-1", "constituentId": "seed-c-placo", "position": 1, "formula": "ceil(S*2/2.6)" },
+        { "id": "seed-oc-cloison-2", "constituentId": "seed-c-rail", "position": 2, "formula": "L*2" },
+        { "id": "seed-oc-cloison-3", "constituentId": "seed-c-laine-verre", "position": 3, "formula": "S" }
+      ]
+    },
+    {
+      "id": "seed-o-dalle-beton",
+      "name": "Dalle béton",
+      "description": "Dalle de plancher ou de sol en béton, à tracer comme une surface.",
+      "defaultEpaisseur": 0.15,
+      "category": "Gros œuvre",
+      "constituents": [
+        { "id": "seed-oc-dalle-1", "constituentId": "seed-c-beton", "position": 1, "formula": "V" },
+        { "id": "seed-oc-dalle-2", "constituentId": "seed-c-treillis", "position": 2, "formula": "S*1.1" }
+      ]
+    },
+    {
+      "id": "seed-o-isolation-combles",
+      "name": "Isolation combles",
+      "description": "Isolation en laine de verre posée en surface, à tracer comme une surface.",
+      "category": "Isolation",
+      "constituents": [
+        { "id": "seed-oc-isolation-1", "constituentId": "seed-c-laine-verre", "position": 1, "formula": "S*1.05" }
+      ]
+    },
+    {
+      "id": "seed-o-peinture-murs",
+      "name": "Peinture murs (1 couche)",
+      "description": "Mise en peinture d'un mur ou d'une cloison déjà tracé(e).",
+      "category": "Finitions",
+      "constituents": [
+        { "id": "seed-oc-peinture-1", "constituentId": "seed-c-peinture", "position": 1, "formula": "S*0.15" }
+      ]
+    }
+  ]
+}
