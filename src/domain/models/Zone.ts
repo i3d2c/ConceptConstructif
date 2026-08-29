@@ -7,7 +7,6 @@ export interface ColorAssignment {
   ouvrageId: string
   epaisseur: number
   hauteur: number
-  defaultAngle?: number
 }
 
 export interface Zone {

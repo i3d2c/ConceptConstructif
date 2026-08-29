@@ -27,7 +27,6 @@ const color = ref(props.initial?.color ?? randomHexColor())
 const ouvrageId = ref(props.initial?.ouvrageId ?? props.ouvrages[0]?.id ?? '')
 const epaisseur = ref(props.initial?.epaisseur ?? 0.105)
 const hauteur = ref(props.initial?.hauteur ?? 2.5)
-const defaultAngle = ref(props.initial?.defaultAngle ?? 0)
 
 function onOuvrageChange() {
   const o = props.ouvrages.find(o => o.id === ouvrageId.value)
@@ -44,7 +43,6 @@ function submit() {
     ouvrageId: ouvrageId.value,
     epaisseur: epaisseur.value,
     hauteur: hauteur.value,
-    defaultAngle: defaultAngle.value || undefined,
   })
 }
 </script>
@@ -76,11 +74,6 @@ function submit() {
           <label>H — Hauteur (m)</label>
           <input type="number" v-model.number="hauteur" step="0.1" min="0" />
         </div>
-      </div>
-
-      <div class="field">
-        <label>Angle surface par défaut (°)</label>
-        <input type="number" v-model.number="defaultAngle" step="1" min="0" max="89" />
       </div>
 
       <div class="dialog-actions">

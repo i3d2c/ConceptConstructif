@@ -12,7 +12,7 @@ export interface LineTrace extends BaseTrace {
 
 export interface SurfaceTrace extends BaseTrace {
   type: 'surface'
-  angle?: number
+  angle: number
 }
 
 export type Trace = LineTrace | SurfaceTrace

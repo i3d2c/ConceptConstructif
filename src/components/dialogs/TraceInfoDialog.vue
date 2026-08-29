@@ -34,6 +34,14 @@ function applyUp() {
   store.updateTrace(zone.value.id, props.trace.id, { up: localUp.value })
 }
 
+// ── Angle ─────────────────────────────────────────────────────────────────
+const localAngle = ref(props.trace.type === 'surface' ? (props.trace.angle ?? 0) : 0)
+
+function applyAngle() {
+  if (!zone.value || props.trace.type !== 'surface') return
+  store.updateTrace(zone.value.id, props.trace.id, { angle: localAngle.value })
+}
+
 // ── Redimensionnement ──────────────────────────────────────────────────────
 const resizeL = ref('')
 const resizeH = ref('')
@@ -134,8 +142,6 @@ function fmtQty(n: number) {
         <div class="info-grid">
           <span class="label">E</span><span>{{ ca.epaisseur }} m</span>
           <span class="label">H</span><span>{{ ca.hauteur }} m</span>
-          <span v-if="trace.type === 'surface'" class="label">Angle</span>
-          <span v-if="trace.type === 'surface'">{{ (trace as any).angle ?? 0 }}°</span>
         </div>
       </div>
 
@@ -160,6 +166,14 @@ function fmtQty(n: number) {
           <input v-model.number="localUp" type="number" step="0.1" min="0" class="dim-input" @change="applyUp" @keyup.enter="applyUp" />
         </div>
         <div class="resize-hint">Distance au sol (surélève l'élément en 3D).</div>
+      </div>
+
+      <div v-if="trace.type === 'surface'" class="section">
+        <div class="resize-row">
+          <label>Angle (°)</label>
+          <input v-model.number="localAngle" type="number" step="1" min="0" max="89" class="dim-input" @change="applyAngle" @keyup.enter="applyAngle" />
+        </div>
+        <div class="resize-hint">Inclinaison de la surface (corrige l'aire réelle et l'orientation en 3D).</div>
       </div>
 
       <!-- Redimensionnement -->

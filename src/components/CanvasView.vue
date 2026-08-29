@@ -386,7 +386,7 @@ function onPolygonDone(points: [number, number][]) {
     colorAssignmentId: ca.id,
     up: 0,
     points,
-    angle: ca.defaultAngle ?? 0,
+    angle: 0,
   }
   store.addTrace(zone.id, trace)
   rerenderAll()
