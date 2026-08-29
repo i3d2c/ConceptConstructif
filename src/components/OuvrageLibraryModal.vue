@@ -1,14 +1,21 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useProjectStore } from '../stores/projectStore'
+import { useLibraryStore } from '../stores/libraryStore'
 import type { Ouvrage } from '../domain/models/Ouvrage'
 import type { Constituent } from '../domain/models/Constituent'
+import type { Scope } from './ouvrageLibrary/scope'
 import LibraryListPanel from './ouvrageLibrary/LibraryListPanel.vue'
 import OuvrageForm from './ouvrageLibrary/OuvrageForm.vue'
 import ConstituentForm from './ouvrageLibrary/ConstituentForm.vue'
 
 const store = useProjectStore()
+const library = useLibraryStore()
 const emit = defineEmits<{ close: [] }>()
+
+onMounted(() => {
+  library.loadLibrary()
+})
 
 type Tab = 'ouvrages' | 'constituents'
 const tab = ref<Tab>('ouvrages')
@@ -26,9 +33,11 @@ const sortedConstituents = computed(() =>
   [...store.project.constituents].sort((a, b) => a.name.localeCompare(b.name, 'fr'))
 )
 
-const ouvrageListItems = computed(() => sortedOuvrages.value.map(o => ({ id: o.id, label: o.name })))
+const ouvrageListItems = computed(() =>
+  sortedOuvrages.value.map(o => ({ id: o.id, label: o.name, linked: library.ouvrageIds.has(o.id) }))
+)
 const constituentListItems = computed(() =>
-  sortedConstituents.value.map(c => ({ id: c.id, label: c.name, sublabel: c.code }))
+  sortedConstituents.value.map(c => ({ id: c.id, label: c.name, sublabel: c.code, linked: library.constituentIds.has(c.id) }))
 )
 
 const defaultConstituentId = computed(() => store.project.constituents[0]?.id ?? '')
@@ -40,6 +49,18 @@ const existingUnits = computed(() =>
 const existingSuppliers = computed(() =>
   [...new Set(store.project.constituents.map(c => c.supplier).filter((s): s is string => !!s))]
 )
+const ouvrageCategorySuggestions = computed(() => [
+  ...new Set([
+    ...store.project.ouvrages.map(o => o.category),
+    ...library.ouvrages.map(o => o.category),
+  ].filter(Boolean)),
+])
+const constituentCategorySuggestions = computed(() => [
+  ...new Set([
+    ...store.project.constituents.map(c => c.category),
+    ...library.constituents.map(c => c.category),
+  ].filter(Boolean)),
+])
 
 function openNewOuvrage() {
   editingOuvrage.value = null
@@ -53,7 +74,11 @@ function openEditOuvrage(id: string) {
   oFormKey.value++
 }
 
-function saveOuvrage(data: Ouvrage, isNew: boolean) {
+async function saveOuvrage(data: Ouvrage, isNew: boolean, scope: Scope) {
+  if (scope === 'library') {
+    const result = await library.publishOuvrage(data, store.project.constituents)
+    if (!result.published) return // défensif : le formulaire bloque déjà ce cas
+  }
   if (isNew) store.addOuvrage(data)
   else store.updateOuvrage(data.id, data)
   editingOuvrage.value = store.project.ouvrages.find(o => o.id === data.id) ?? null
@@ -76,7 +101,8 @@ function openEditConstituent(id: string) {
   cFormKey.value++
 }
 
-function saveConstituent(data: Constituent, isNew: boolean) {
+async function saveConstituent(data: Constituent, isNew: boolean, scope: Scope) {
+  if (scope === 'library') await library.publishConstituent(data)
   if (isNew) store.addConstituent(data)
   else store.updateConstituent(data.id, data)
   editingConstituent.value = store.project.constituents.find(c => c.id === data.id) ?? null
@@ -116,6 +142,8 @@ function deleteConstituent(id: string) {
             :editing-ouvrage="editingOuvrage"
             :constituent-options="sortedConstituents"
             :default-constituent-id="defaultConstituentId"
+            :category-suggestions="ouvrageCategorySuggestions"
+            :published-constituent-ids="library.constituentIds"
             @save="saveOuvrage"
           />
         </template>
@@ -135,6 +163,7 @@ function deleteConstituent(id: string) {
             :editing-constituent="editingConstituent"
             :units="existingUnits"
             :suppliers="existingSuppliers"
+            :category-suggestions="constituentCategorySuggestions"
             @save="saveConstituent"
           />
         </template>

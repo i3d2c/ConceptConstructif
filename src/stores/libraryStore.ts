@@ -46,6 +46,7 @@ export const useLibraryStore = defineStore('library', () => {
     constituents.value = constituents.value.filter(c => c.id !== id)
   }
 
+  const ouvrageIds = computed(() => new Set(ouvrages.value.map(o => o.id)))
   const constituentIds = computed(() => new Set(constituents.value.map(c => c.id)))
   const constituentsById = computed(() => new Map(constituents.value.map(c => [c.id, c])))
 
@@ -69,6 +70,7 @@ export const useLibraryStore = defineStore('library', () => {
     upsertConstituent,
     removeOuvrage,
     removeConstituent,
+    ouvrageIds,
     constituentIds,
     constituentsById,
     publishOuvrage,
