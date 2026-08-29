@@ -17,8 +17,8 @@ const emit = defineEmits<{
       <p>Cet item est présent dans la bibliothèque partagée. Que voulez-vous supprimer ?</p>
       <div class="dialog-actions">
         <button @click="emit('cancel')">Annuler</button>
-        <button class="active" @click="emit('deleteLocal')">Ce projet uniquement</button>
-        <button class="danger" @click="emit('deleteFromLibrary')">La bibliothèque</button>
+        <button class="active" @click="emit('deleteLocal')">De ce projet uniquement</button>
+        <button class="danger" @click="emit('deleteFromLibrary')">De la bibliothèque</button>
       </div>
     </div>
   </div>
