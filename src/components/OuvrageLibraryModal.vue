@@ -45,10 +45,12 @@ const sortedConstituents = computed(() =>
 )
 
 const ouvrageListItems = computed(() =>
-  sortedOuvrages.value.map(o => ({ id: o.id, label: o.name, linked: library.ouvrageIds.has(o.id) }))
+  sortedOuvrages.value.map(o => ({ id: o.id, label: o.name, linked: library.ouvrageIds.has(o.id), category: o.category }))
 )
 const constituentListItems = computed(() =>
-  sortedConstituents.value.map(c => ({ id: c.id, label: c.name, sublabel: c.code, linked: library.constituentIds.has(c.id) }))
+  sortedConstituents.value.map(c => ({
+    id: c.id, label: c.name, sublabel: c.code, linked: library.constituentIds.has(c.id), category: c.category,
+  }))
 )
 
 const defaultConstituentId = computed(() => store.project.constituents[0]?.id ?? '')

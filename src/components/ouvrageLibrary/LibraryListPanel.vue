@@ -1,12 +1,16 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useCategoryFilter } from './useCategoryFilter'
+
 export interface LibraryListItem {
   id: string
   label: string
   sublabel?: string
   linked: boolean
+  category: string
 }
 
-defineProps<{
+const props = defineProps<{
   title: string
   items: LibraryListItem[]
   selectedId: string | null
@@ -18,6 +22,8 @@ const emit = defineEmits<{
   create: []
   browseLibrary: []
 }>()
+
+const { categoryFilter, categories, filteredItems } = useCategoryFilter(computed(() => props.items))
 </script>
 
 <template>
@@ -28,9 +34,13 @@ const emit = defineEmits<{
         <button @click="emit('browseLibrary')">Bibliothèque</button>
         <button @click="emit('create')">+ Nouveau</button>
       </div>
+      <select v-model="categoryFilter" v-if="categories.length > 0">
+        <option value="">Toutes catégories</option>
+        <option v-for="c in categories" :key="c" :value="c">{{ c }}</option>
+      </select>
     </div>
     <div
-      v-for="item in items" :key="item.id"
+      v-for="item in filteredItems" :key="item.id"
       class="list-item"
       :class="{ selected: selectedId === item.id }"
       @click="emit('select', item.id)"
