@@ -9,6 +9,7 @@ import LibraryListPanel from './ouvrageLibrary/LibraryListPanel.vue'
 import OuvrageForm from './ouvrageLibrary/OuvrageForm.vue'
 import ConstituentForm from './ouvrageLibrary/ConstituentForm.vue'
 import LibraryPickerDialog from './dialogs/LibraryPickerDialog.vue'
+import DeleteChoiceDialog from './dialogs/DeleteChoiceDialog.vue'
 
 const store = useProjectStore()
 const library = useLibraryStore()
@@ -27,6 +28,14 @@ const editingConstituent = ref<Constituent | null>(null)
 const oFormKey = ref(0)
 const cFormKey = ref(0)
 const showPicker = ref(false)
+const pendingDelete = ref<{ type: 'ouvrage' | 'constituent'; id: string } | null>(null)
+const pendingDeleteName = computed(() => {
+  if (!pendingDelete.value) return ''
+  if (pendingDelete.value.type === 'ouvrage') {
+    return store.project.ouvrages.find(o => o.id === pendingDelete.value!.id)?.name ?? ''
+  }
+  return store.project.constituents.find(c => c.id === pendingDelete.value!.id)?.name ?? ''
+})
 
 const sortedOuvrages = computed(() =>
   [...store.project.ouvrages].sort((a, b) => a.name.localeCompare(b.name, 'fr'))
@@ -112,6 +121,10 @@ async function saveOuvrage(data: Ouvrage, isNew: boolean, scope: Scope) {
 }
 
 function deleteOuvrage(id: string) {
+  if (library.ouvrageIds.has(id)) {
+    pendingDelete.value = { type: 'ouvrage', id }
+    return
+  }
   if (!confirm('Supprimer cet ouvrage ?')) return
   store.removeOuvrage(id)
 }
@@ -151,8 +164,26 @@ async function saveConstituent(data: Constituent, isNew: boolean, scope: Scope) 
 }
 
 function deleteConstituent(id: string) {
+  if (library.constituentIds.has(id)) {
+    pendingDelete.value = { type: 'constituent', id }
+    return
+  }
   if (!confirm('Supprimer ce constituant ?')) return
   store.removeConstituent(id)
+}
+
+function confirmDeleteLocal() {
+  if (!pendingDelete.value) return
+  if (pendingDelete.value.type === 'ouvrage') store.removeOuvrage(pendingDelete.value.id)
+  else store.removeConstituent(pendingDelete.value.id)
+  pendingDelete.value = null
+}
+
+function confirmDeleteFromLibrary() {
+  if (!pendingDelete.value) return
+  if (pendingDelete.value.type === 'ouvrage') library.removeOuvrage(pendingDelete.value.id)
+  else library.removeConstituent(pendingDelete.value.id)
+  pendingDelete.value = null
 }
 
 function updateConstituentFromLibrary() {
@@ -246,6 +277,14 @@ function importFromPicker(id: string) {
     :items="tab === 'ouvrages' ? ouvragePickerItems : constituentPickerItems"
     @select="importFromPicker"
     @close="showPicker = false"
+  />
+
+  <DeleteChoiceDialog
+    v-if="pendingDelete"
+    :item-name="pendingDeleteName"
+    @delete-local="confirmDeleteLocal"
+    @delete-from-library="confirmDeleteFromLibrary"
+    @cancel="pendingDelete = null"
   />
 </template>
 
