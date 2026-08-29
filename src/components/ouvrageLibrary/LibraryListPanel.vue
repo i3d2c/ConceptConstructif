@@ -16,14 +16,18 @@ const emit = defineEmits<{
   select: [id: string]
   delete: [id: string]
   create: []
+  browseLibrary: []
 }>()
 </script>
 
 <template>
   <div class="list-col">
     <div class="list-header">
-      <span>{{ title }}</span>
-      <button @click="emit('create')">+ Nouveau</button>
+      <span class="list-title">{{ title }}</span>
+      <div class="list-header-actions">
+        <button @click="emit('browseLibrary')">Bibliothèque</button>
+        <button @click="emit('create')">+ Nouveau</button>
+      </div>
     </div>
     <div
       v-for="item in items" :key="item.id"
@@ -47,9 +51,12 @@ const emit = defineEmits<{
   display: flex; flex-direction: column; overflow-y: auto;
 }
 .list-header {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; flex-direction: column; gap: 6px;
   padding: 8px; border-bottom: 1px solid var(--border); flex-shrink: 0;
 }
+.list-title { font-weight: 600; }
+.list-header-actions { display: flex; gap: 6px; }
+.list-header-actions button { flex: 1; }
 .list-item {
   display: flex; align-items: center; justify-content: space-between;
   padding: 6px 10px; cursor: pointer; font-size: 12px;

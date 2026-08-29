@@ -13,10 +13,12 @@ const props = defineProps<{
   defaultConstituentId: string
   categorySuggestions: string[]
   publishedConstituentIds: Set<string>
+  isLinkedToLibrary: boolean
 }>()
 
 const emit = defineEmits<{
   save: [data: Ouvrage, isNew: boolean, scope: Scope]
+  updateFromLibrary: []
 }>()
 
 const showFormulaHelp = ref(false)
@@ -117,7 +119,12 @@ onUnmounted(() => {
 
 <template>
   <div class="form-col">
-    <div class="form-title">{{ editingOuvrage ? 'Modifier' : 'Nouvel' }} ouvrage</div>
+    <div class="form-title-row">
+      <div class="form-title">{{ editingOuvrage ? 'Modifier' : 'Nouvel' }} ouvrage</div>
+      <button v-if="editingOuvrage !== null && isLinkedToLibrary" class="help-btn" @click="emit('updateFromLibrary')">
+        ⟳ Mettre à jour depuis la bibliothèque
+      </button>
+    </div>
 
     <label>Nom *</label>
     <input v-model="oName" placeholder="ex: Mur brique 1 brique" />
@@ -219,7 +226,8 @@ onUnmounted(() => {
   flex: 1; padding: 16px; overflow-y: auto;
   display: flex; flex-direction: column; gap: 8px;
 }
-.form-title { font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+.form-title-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+.form-title { font-weight: 600; font-size: 13px; }
 .field-row { display: flex; gap: 10px; }
 .field-row > div { flex: 1; display: flex; flex-direction: column; gap: 4px; }
 .oc-section { display: flex; flex-direction: column; gap: 6px; }
