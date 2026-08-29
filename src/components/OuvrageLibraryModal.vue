@@ -8,6 +8,7 @@ import type { Scope } from './ouvrageLibrary/scope'
 import LibraryListPanel from './ouvrageLibrary/LibraryListPanel.vue'
 import OuvrageForm from './ouvrageLibrary/OuvrageForm.vue'
 import ConstituentForm from './ouvrageLibrary/ConstituentForm.vue'
+import LibraryPickerDialog from './dialogs/LibraryPickerDialog.vue'
 
 const store = useProjectStore()
 const library = useLibraryStore()
@@ -25,6 +26,7 @@ const editingConstituent = ref<Constituent | null>(null)
 // discards any unsaved draft — mirrors the previous imperative reset.
 const oFormKey = ref(0)
 const cFormKey = ref(0)
+const showPicker = ref(false)
 
 const sortedOuvrages = computed(() =>
   [...store.project.ouvrages].sort((a, b) => a.name.localeCompare(b.name, 'fr'))
@@ -62,6 +64,31 @@ const constituentCategorySuggestions = computed(() => [
   ].filter(Boolean)),
 ])
 
+const ouvragePickerItems = computed(() =>
+  library.ouvrages.map(o => ({
+    id: o.id,
+    label: o.name,
+    category: o.category,
+    alreadyInProject: store.project.ouvrages.some(local => local.id === o.id),
+  }))
+)
+const constituentPickerItems = computed(() =>
+  library.constituents.map(c => ({
+    id: c.id,
+    label: c.name,
+    sublabel: c.code,
+    category: c.category,
+    alreadyInProject: store.project.constituents.some(local => local.id === c.id),
+  }))
+)
+
+const editingOuvrageIsLinked = computed(() =>
+  editingOuvrage.value !== null && library.ouvrageIds.has(editingOuvrage.value.id)
+)
+const editingConstituentIsLinked = computed(() =>
+  editingConstituent.value !== null && library.constituentIds.has(editingConstituent.value.id)
+)
+
 function openNewOuvrage() {
   editingOuvrage.value = null
   oFormKey.value++
@@ -89,6 +116,21 @@ function deleteOuvrage(id: string) {
   store.removeOuvrage(id)
 }
 
+function updateOuvrageFromLibrary() {
+  if (!editingOuvrage.value) return
+  const libOuvrage = library.ouvrages.find(o => o.id === editingOuvrage.value!.id)
+  if (!libOuvrage) return
+  store.updateOuvrageFromLibrary(libOuvrage, library.constituentsById)
+  editingOuvrage.value = store.project.ouvrages.find(o => o.id === libOuvrage.id) ?? null
+  oFormKey.value++
+}
+
+function importOuvrage(id: string) {
+  const libOuvrage = library.ouvrages.find(o => o.id === id)
+  if (!libOuvrage) return
+  store.importOuvrageFromLibrary(libOuvrage, library.constituentsById)
+}
+
 function openNewConstituent() {
   editingConstituent.value = null
   cFormKey.value++
@@ -111,6 +153,26 @@ async function saveConstituent(data: Constituent, isNew: boolean, scope: Scope) 
 function deleteConstituent(id: string) {
   if (!confirm('Supprimer ce constituant ?')) return
   store.removeConstituent(id)
+}
+
+function updateConstituentFromLibrary() {
+  if (!editingConstituent.value) return
+  const libConstituent = library.constituents.find(c => c.id === editingConstituent.value!.id)
+  if (!libConstituent) return
+  store.updateConstituent(libConstituent.id, libConstituent)
+  editingConstituent.value = store.project.constituents.find(c => c.id === libConstituent.id) ?? null
+  cFormKey.value++
+}
+
+function importConstituent(id: string) {
+  const libConstituent = library.constituents.find(c => c.id === id)
+  if (!libConstituent) return
+  store.importConstituentFromLibrary(libConstituent)
+}
+
+function importFromPicker(id: string) {
+  if (tab.value === 'ouvrages') importOuvrage(id)
+  else importConstituent(id)
 }
 </script>
 
@@ -136,6 +198,7 @@ function deleteConstituent(id: string) {
             @create="openNewOuvrage"
             @select="openEditOuvrage"
             @delete="deleteOuvrage"
+            @browse-library="showPicker = true"
           />
           <OuvrageForm
             :key="oFormKey"
@@ -144,7 +207,9 @@ function deleteConstituent(id: string) {
             :default-constituent-id="defaultConstituentId"
             :category-suggestions="ouvrageCategorySuggestions"
             :published-constituent-ids="library.constituentIds"
+            :is-linked-to-library="editingOuvrageIsLinked"
             @save="saveOuvrage"
+            @update-from-library="updateOuvrageFromLibrary"
           />
         </template>
 
@@ -157,6 +222,7 @@ function deleteConstituent(id: string) {
             @create="openNewConstituent"
             @select="openEditConstituent"
             @delete="deleteConstituent"
+            @browse-library="showPicker = true"
           />
           <ConstituentForm
             :key="cFormKey"
@@ -164,13 +230,23 @@ function deleteConstituent(id: string) {
             :units="existingUnits"
             :suppliers="existingSuppliers"
             :category-suggestions="constituentCategorySuggestions"
+            :is-linked-to-library="editingConstituentIsLinked"
             @save="saveConstituent"
+            @update-from-library="updateConstituentFromLibrary"
           />
         </template>
 
       </div>
     </div>
   </div>
+
+  <LibraryPickerDialog
+    v-if="showPicker"
+    :title="tab === 'ouvrages' ? 'Importer un ouvrage depuis la bibliothèque' : 'Importer un constituant depuis la bibliothèque'"
+    :items="tab === 'ouvrages' ? ouvragePickerItems : constituentPickerItems"
+    @select="importFromPicker"
+    @close="showPicker = false"
+  />
 </template>
 
 <style scoped>
