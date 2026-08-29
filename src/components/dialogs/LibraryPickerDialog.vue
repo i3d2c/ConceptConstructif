@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useCategoryFilter } from '../ouvrageLibrary/useCategoryFilter'
 
 export interface LibraryPickerItem {
   id: string
@@ -20,16 +21,13 @@ const emit = defineEmits<{
 }>()
 
 const search = ref('')
-const categoryFilter = ref('')
-
-const categories = computed(() =>
-  [...new Set(props.items.map(i => i.category))].filter(Boolean).sort((a, b) => a.localeCompare(b, 'fr'))
+const { categoryFilter, categories, filteredItems: categoryFilteredItems } = useCategoryFilter(
+  computed(() => props.items)
 )
 
 const filteredItems = computed(() => {
   const q = search.value.trim().toLowerCase()
-  return props.items
-    .filter(i => !categoryFilter.value || i.category === categoryFilter.value)
+  return categoryFilteredItems.value
     .filter(i => !q || i.label.toLowerCase().includes(q) || (i.sublabel?.toLowerCase().includes(q) ?? false))
     .sort((a, b) => a.label.localeCompare(b.label, 'fr'))
 })
