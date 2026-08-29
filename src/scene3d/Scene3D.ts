@@ -8,6 +8,8 @@ interface StoreRef {
   bgLayout: { x: number; y: number; w: number; h: number } | null
 }
 
+const OUVRAGE_OPACITY = 0.8
+
 export class Scene3D {
   private renderer: THREE.WebGLRenderer
   private scene: THREE.Scene
@@ -86,7 +88,7 @@ export class Scene3D {
 
           const length = Math.hypot(wx2 - wx1, wz2 - wz1)
           const geom = new THREE.BoxGeometry(length, H, E)
-          const mat = new THREE.MeshLambertMaterial({ color })
+          const mat = new THREE.MeshLambertMaterial({ color, transparent: true, opacity: OUVRAGE_OPACITY })
           const mesh = new THREE.Mesh(geom, mat)
 
           const cx = (wx1 + wx2) / 2
@@ -105,7 +107,7 @@ export class Scene3D {
         shape.closePath()
 
         const geom = new THREE.ExtrudeGeometry(shape, { depth: ca.epaisseur, bevelEnabled: false })
-        const mat = new THREE.MeshLambertMaterial({ color, side: THREE.DoubleSide })
+        const mat = new THREE.MeshLambertMaterial({ color, side: THREE.DoubleSide, transparent: true, opacity: OUVRAGE_OPACITY })
         const mesh = new THREE.Mesh(geom, mat)
         const angleRad = trace.angle ? (trace.angle * Math.PI) / 180 : 0
         mesh.rotation.x = Math.PI / 2 - angleRad
