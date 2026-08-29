@@ -7,6 +7,7 @@ import type { Constituent } from '../domain/models/Constituent'
 import type { Trace } from '../domain/models/Trace'
 import type { ColorAssignment } from '../domain/models/Zone'
 import { HistoryManager } from '../domain/services/HistoryManager'
+import { planImportOuvrage, planImportConstituent } from '../domain/services/LibraryImportService'
 import { saveProject, loadProject } from '../storage/ProjectStore'
 
 function newProject(): Project {
@@ -180,6 +181,34 @@ export const useProjectStore = defineStore('project', () => {
     project.value.constituents = project.value.constituents.filter(c => c.id !== id)
   }
 
+  // ── Bibliothèque commune ───────────────────────────────────────────────
+  function importOuvrageFromLibrary(libraryOuvrage: Ouvrage, libraryConstituentsById: Map<string, Constituent>): boolean {
+    if (project.value.ouvrages.some(o => o.id === libraryOuvrage.id)) return false
+    snapshot()
+    const result = planImportOuvrage(project.value.constituents, libraryOuvrage, libraryConstituentsById)
+    project.value.constituents.push(...result.newConstituents)
+    project.value.ouvrages.push(result.ouvrage)
+    return true
+  }
+
+  function importConstituentFromLibrary(libraryConstituent: Constituent): boolean {
+    const result = planImportConstituent(project.value.constituents, libraryConstituent)
+    if (result.alreadyPresent) return false
+    snapshot()
+    project.value.constituents.push(result.constituent)
+    return true
+  }
+
+  function updateOuvrageFromLibrary(libraryOuvrage: Ouvrage, libraryConstituentsById: Map<string, Constituent>): boolean {
+    const idx = project.value.ouvrages.findIndex(o => o.id === libraryOuvrage.id)
+    if (idx === -1) return false
+    snapshot()
+    const result = planImportOuvrage(project.value.constituents, libraryOuvrage, libraryConstituentsById)
+    project.value.constituents.push(...result.newConstituents)
+    project.value.ouvrages[idx] = result.ouvrage
+    return true
+  }
+
   // ── Persistence ────────────────────────────────────────────────────────
   async function save() {
     project.value.updatedAt = new Date().toISOString()
@@ -231,6 +260,9 @@ export const useProjectStore = defineStore('project', () => {
     addConstituent,
     updateConstituent,
     removeConstituent,
+    importOuvrageFromLibrary,
+    importConstituentFromLibrary,
+    updateOuvrageFromLibrary,
     bgLayout,
     setBackgroundImageLayout,
     save,
