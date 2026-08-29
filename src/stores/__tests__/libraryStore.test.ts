@@ -21,102 +21,116 @@ describe('libraryStore', () => {
     vi.clearAllMocks()
   })
 
-  it('Should populate ouvrages and constituents from storage on loadLibrary', async () => {
-    vi.mocked(LibraryStorage.listLibraryOuvrages).mockResolvedValue([brickWall])
-    vi.mocked(LibraryStorage.listLibraryConstituents).mockResolvedValue([brick])
+  describe('loadLibrary', () => {
+    it('Should populate ouvrages and constituents from storage', async () => {
+      vi.mocked(LibraryStorage.listLibraryOuvrages).mockResolvedValue([brickWall])
+      vi.mocked(LibraryStorage.listLibraryConstituents).mockResolvedValue([brick])
 
-    const store = useLibraryStore()
-    await store.loadLibrary()
+      const store = useLibraryStore()
+      await store.loadLibrary()
 
-    expect(store.ouvrages).toEqual([brickWall])
-    expect(store.constituents).toEqual([brick])
+      expect(store.ouvrages).toEqual([brickWall])
+      expect(store.constituents).toEqual([brick])
+    })
   })
 
-  it('Should persist a new ouvrage and add it to local state', async () => {
-    const store = useLibraryStore()
+  describe('upsertOuvrage', () => {
+    it('Should persist a new ouvrage and add it to local state', async () => {
+      const store = useLibraryStore()
 
-    await store.upsertOuvrage(brickWall)
+      await store.upsertOuvrage(brickWall)
 
-    expect(LibraryStorage.saveLibraryOuvrage).toHaveBeenCalledWith(brickWall)
-    expect(store.ouvrages).toEqual([brickWall])
+      expect(LibraryStorage.saveLibraryOuvrage).toHaveBeenCalledWith(brickWall)
+      expect(store.ouvrages).toEqual([brickWall])
+    })
+
+    it('Should persist an updated ouvrage and replace it in local state (same id)', async () => {
+      const store = useLibraryStore()
+      await store.upsertOuvrage(brickWall)
+
+      const updated = { ...brickWall, name: 'Mur brique 20cm' }
+      await store.upsertOuvrage(updated)
+
+      expect(store.ouvrages).toEqual([updated])
+    })
   })
 
-  it('Should persist an updated ouvrage and replace it in local state (same id)', async () => {
-    const store = useLibraryStore()
-    await store.upsertOuvrage(brickWall)
+  describe('upsertConstituent', () => {
+    it('Should persist a new constituent and add it to local state', async () => {
+      const store = useLibraryStore()
 
-    const updated = { ...brickWall, name: 'Mur brique 20cm' }
-    await store.upsertOuvrage(updated)
+      await store.upsertConstituent(brick)
 
-    expect(store.ouvrages).toEqual([updated])
+      expect(LibraryStorage.saveLibraryConstituent).toHaveBeenCalledWith(brick)
+      expect(store.constituents).toEqual([brick])
+    })
+
+    it('Should persist an updated constituent and replace it in local state (same id)', async () => {
+      const store = useLibraryStore()
+      await store.upsertConstituent(brick)
+
+      const updated = { ...brick, unitPrice: 1.05 }
+      await store.upsertConstituent(updated)
+
+      expect(store.constituents).toEqual([updated])
+    })
   })
 
-  it('Should persist a new constituent and add it to local state', async () => {
-    const store = useLibraryStore()
+  describe('removeOuvrage', () => {
+    it('Should delete an ouvrage from storage and remove it from local state', async () => {
+      const store = useLibraryStore()
+      await store.upsertOuvrage(brickWall)
 
-    await store.upsertConstituent(brick)
+      await store.removeOuvrage(brickWall.id)
 
-    expect(LibraryStorage.saveLibraryConstituent).toHaveBeenCalledWith(brick)
-    expect(store.constituents).toEqual([brick])
+      expect(LibraryStorage.deleteLibraryOuvrage).toHaveBeenCalledWith(brickWall.id)
+      expect(store.ouvrages).toEqual([])
+    })
   })
 
-  it('Should persist an updated constituent and replace it in local state (same id)', async () => {
-    const store = useLibraryStore()
-    await store.upsertConstituent(brick)
+  describe('removeConstituent', () => {
+    it('Should delete a constituent from storage and remove it from local state', async () => {
+      const store = useLibraryStore()
+      await store.upsertConstituent(brick)
 
-    const updated = { ...brick, unitPrice: 1.05 }
-    await store.upsertConstituent(updated)
+      await store.removeConstituent(brick.id)
 
-    expect(store.constituents).toEqual([updated])
+      expect(LibraryStorage.deleteLibraryConstituent).toHaveBeenCalledWith(brick.id)
+      expect(store.constituents).toEqual([])
+    })
   })
 
-  it('Should delete an ouvrage from storage and remove it from local state', async () => {
-    const store = useLibraryStore()
-    await store.upsertOuvrage(brickWall)
+  describe('publishOuvrage', () => {
+    it('Should refuse to publish an ouvrage referencing a constituent not yet in the library', async () => {
+      const store = useLibraryStore()
+      // brick is NOT published to the library yet
 
-    await store.removeOuvrage(brickWall.id)
+      const result = await store.publishOuvrage(brickWall, [brick])
 
-    expect(LibraryStorage.deleteLibraryOuvrage).toHaveBeenCalledWith(brickWall.id)
-    expect(store.ouvrages).toEqual([])
+      expect(result).toEqual({ published: false, missing: [brick] })
+      expect(store.ouvrages).toEqual([])
+      expect(LibraryStorage.saveLibraryOuvrage).not.toHaveBeenCalled()
+    })
+
+    it('Should publish an ouvrage once all its referenced constituents are already in the library', async () => {
+      const store = useLibraryStore()
+      await store.upsertConstituent(brick)
+
+      const result = await store.publishOuvrage(brickWall, [brick])
+
+      expect(result).toEqual({ published: true })
+      expect(store.ouvrages).toEqual([brickWall])
+    })
   })
 
-  it('Should delete a constituent from storage and remove it from local state', async () => {
-    const store = useLibraryStore()
-    await store.upsertConstituent(brick)
+  describe('publishConstituent', () => {
+    it('Should publish a standalone constituent unconditionally', async () => {
+      const store = useLibraryStore()
 
-    await store.removeConstituent(brick.id)
+      const result = await store.publishConstituent(brick)
 
-    expect(LibraryStorage.deleteLibraryConstituent).toHaveBeenCalledWith(brick.id)
-    expect(store.constituents).toEqual([])
-  })
-
-  it('Should refuse to publish an ouvrage referencing a constituent not yet in the library', async () => {
-    const store = useLibraryStore()
-    // brick is NOT published to the library yet
-
-    const result = await store.publishOuvrage(brickWall, [brick])
-
-    expect(result).toEqual({ published: false, missing: [brick] })
-    expect(store.ouvrages).toEqual([])
-    expect(LibraryStorage.saveLibraryOuvrage).not.toHaveBeenCalled()
-  })
-
-  it('Should publish an ouvrage once all its referenced constituents are already in the library', async () => {
-    const store = useLibraryStore()
-    await store.upsertConstituent(brick)
-
-    const result = await store.publishOuvrage(brickWall, [brick])
-
-    expect(result).toEqual({ published: true })
-    expect(store.ouvrages).toEqual([brickWall])
-  })
-
-  it('Should publish a standalone constituent unconditionally', async () => {
-    const store = useLibraryStore()
-
-    const result = await store.publishConstituent(brick)
-
-    expect(result).toEqual({ published: true })
-    expect(store.constituents).toEqual([brick])
+      expect(result).toEqual({ published: true })
+      expect(store.constituents).toEqual([brick])
+    })
   })
 })
