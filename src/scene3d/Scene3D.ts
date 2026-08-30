@@ -8,6 +8,8 @@ interface StoreRef {
   bgLayout: { x: number; y: number; w: number; h: number } | null
 }
 
+const OUVRAGE_OPACITY = 0.8
+
 export class Scene3D {
   private renderer: THREE.WebGLRenderer
   private scene: THREE.Scene
@@ -86,7 +88,7 @@ export class Scene3D {
 
           const length = Math.hypot(wx2 - wx1, wz2 - wz1)
           const geom = new THREE.BoxGeometry(length, H, E)
-          const mat = new THREE.MeshLambertMaterial({ color })
+          const mat = new THREE.MeshLambertMaterial({ color, transparent: true, opacity: OUVRAGE_OPACITY })
           const mesh = new THREE.Mesh(geom, mat)
 
           const cx = (wx1 + wx2) / 2
@@ -98,18 +100,25 @@ export class Scene3D {
           this.scene.add(mesh)
         }
       } else {
+        const worldPts: [number, number][] = trace.points.map(([px, py]) => [px * scale.ratio, py * scale.ratio])
+
+        const wxs = worldPts.map(p => p[0])
+        const wzs = worldPts.map(p => p[1])
+        const cx = (Math.min(...wxs) + Math.max(...wxs)) / 2
+        const cz = (Math.min(...wzs) + Math.max(...wzs)) / 2
+
         const shape = new THREE.Shape()
-        const pts: [number, number][] = trace.points.map(([px, py]) => [px * scale.ratio, py * scale.ratio])
+        const pts: [number, number][] = worldPts.map(([wx, wz]) => [wx - cx, wz - cz])
         shape.moveTo(pts[0][0], pts[0][1])
         for (let i = 1; i < pts.length; i++) shape.lineTo(pts[i][0], pts[i][1])
         shape.closePath()
 
         const geom = new THREE.ExtrudeGeometry(shape, { depth: ca.epaisseur, bevelEnabled: false })
-        const mat = new THREE.MeshLambertMaterial({ color, side: THREE.DoubleSide })
+        const mat = new THREE.MeshLambertMaterial({ color, side: THREE.DoubleSide, transparent: true, opacity: OUVRAGE_OPACITY })
         const mesh = new THREE.Mesh(geom, mat)
         const angleRad = trace.angle ? (trace.angle * Math.PI) / 180 : 0
         mesh.rotation.x = Math.PI / 2 - angleRad
-        mesh.position.y = trace.up
+        mesh.position.set(cx, trace.up, cz)
 
         mesh.userData['trace'] = true
         this.scene.add(mesh)

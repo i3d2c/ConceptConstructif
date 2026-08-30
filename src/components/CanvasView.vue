@@ -62,10 +62,10 @@ type DragState = {
   startMouseX: number
   startMouseY: number
   startPoints: [number, number][]
-  isCtrl: boolean
 }
 let dragState: DragState | null = null
 let isDragging = false
+let dupPreview: Konva.Line | null = null
 
 // Vertex handle IDs: "vh_${traceId}_${idx}"
 // (underscore separators avoid CSS selector issues with UUID dashes)
@@ -237,7 +237,6 @@ function activateTool(mode: string) {
           type: 'vertex', traceId: parsed.traceId, vertexIdx: parsed.idx,
           startMouseX: pos.x, startMouseY: pos.y,
           startPoints: trace.points.map(p => [p[0], p[1]] as [number, number]),
-          isCtrl: false,
         }
         cm!.stage.container().style.cursor = 'grabbing'
       } else if (store.activeZone.traces.some(t => t.id === id)) {
@@ -247,7 +246,6 @@ function activateTool(mode: string) {
           type: 'trace', traceId: id, vertexIdx: -1,
           startMouseX: pos.x, startMouseY: pos.y,
           startPoints: trace.points.map(p => [p[0], p[1]] as [number, number]),
-          isCtrl: e.evt.ctrlKey,
         }
         cm!.stage.container().style.cursor = e.evt.ctrlKey ? 'copy' : 'grabbing'
       }
@@ -280,15 +278,32 @@ function activateTool(mode: string) {
         handle?.position({ x: vPos.x, y: vPos.y })
         cm!.layers.tool.batchDraw()
       } else {
+        const liveCtrl = e.evt.ctrlKey
         const newPts = dragState.startPoints.map(p => [p[0] + dx, p[1] + dy] as [number, number])
         const lineNode = cm!.layers.traces.findOne<Konva.Line>('#' + dragState.traceId)
-        lineNode?.points(newPts.flat())
-        cm!.layers.traces.batchDraw()
-        // Move all handles
-        for (let i = 0; i < dragState.startPoints.length; i++) {
-          getHandle(dragState.traceId, i)?.position({ x: newPts[i][0], y: newPts[i][1] })
+
+        if (liveCtrl) {
+          // Freeze the original in place, show a moving duplicate preview instead
+          lineNode?.points(dragState.startPoints.flat())
+          for (let i = 0; i < dragState.startPoints.length; i++) {
+            getHandle(dragState.traceId, i)?.position({ x: dragState.startPoints[i][0], y: dragState.startPoints[i][1] })
+          }
+          if (!dupPreview && lineNode) {
+            dupPreview = lineNode.clone({ opacity: 0.5, listening: false }) as Konva.Line
+            dupPreview.id('')
+            cm!.layers.tool.add(dupPreview)
+          }
+          dupPreview?.points(newPts.flat())
+        } else {
+          if (dupPreview) { dupPreview.destroy(); dupPreview = null }
+          lineNode?.points(newPts.flat())
+          for (let i = 0; i < dragState.startPoints.length; i++) {
+            getHandle(dragState.traceId, i)?.position({ x: newPts[i][0], y: newPts[i][1] })
+          }
         }
+        cm!.layers.traces.batchDraw()
         cm!.layers.tool.batchDraw()
+        cm!.stage.container().style.cursor = liveCtrl ? 'copy' : 'grabbing'
       }
     })
 
@@ -302,6 +317,7 @@ function activateTool(mode: string) {
       dragState = null
       isDragging = false
       cm!.stage.container().style.cursor = 'default'
+      if (dupPreview) { dupPreview.destroy(); dupPreview = null }
 
       if (!pos || !store.activeZone) return
       const dx = pos.x - ds.startMouseX
@@ -318,7 +334,7 @@ function activateTool(mode: string) {
         } else {
           newPts = ds.startPoints.map(p => [p[0] + dx, p[1] + dy] as [number, number])
         }
-        if (ds.isCtrl && ds.type === 'trace') {
+        if (ctrlKey && ds.type === 'trace') {
           const orig = zone.traces.find(t => t.id === ds.traceId)
           if (orig) {
             store.addTrace(zone.id, {
@@ -386,18 +402,15 @@ function onPolygonDone(points: [number, number][]) {
     colorAssignmentId: ca.id,
     up: 0,
     points,
-    angle: ca.defaultAngle ?? 0,
+    angle: 0,
   }
   store.addTrace(zone.id, trace)
   rerenderAll()
   activateTool(store.drawMode)
 }
 
-// ── Image drag & drop ──────────────────────────────────────────────────────
-function handleImageDrop(e: DragEvent) {
-  e.preventDefault()
-  const file = e.dataTransfer?.files[0]
-  if (!file || !file.type.startsWith('image/')) return
+// ── Image drag & drop / paste ────────────────────────────────────────────────
+function loadImageFile(file: File) {
   const reader = new FileReader()
   reader.onload = async (ev) => {
     const dataUrl = ev.target?.result as string
@@ -405,6 +418,28 @@ function handleImageDrop(e: DragEvent) {
     store.updateZone(store.activeZone!.id, { backgroundImage: dataUrl })
   }
   reader.readAsDataURL(file)
+}
+
+function handleImageDrop(e: DragEvent) {
+  e.preventDefault()
+  const file = e.dataTransfer?.files[0]
+  if (!file || !file.type.startsWith('image/')) return
+  loadImageFile(file)
+}
+
+function isEditableTarget(el: Element | null): boolean {
+  if (!el) return false
+  const tag = el.tagName
+  return tag === 'INPUT' || tag === 'TEXTAREA' || (el as HTMLElement).isContentEditable
+}
+
+function handlePaste(e: ClipboardEvent) {
+  if (!store.activeZone || isEditableTarget(document.activeElement)) return
+  const item = Array.from(e.clipboardData?.items ?? []).find(i => i.type.startsWith('image/'))
+  const file = item?.getAsFile()
+  if (!file) return
+  e.preventDefault()
+  loadImageFile(file)
 }
 
 // ── Exposed for print ──────────────────────────────────────────────────────
@@ -450,6 +485,7 @@ onMounted(() => {
   }
   window.addEventListener('mousemove', panMoveHandler)
   window.addEventListener('mouseup', panEndHandler)
+  window.addEventListener('paste', handlePaste)
 
   // Zoom Ctrl+molette
   cm.stage.container().addEventListener('wheel', (e: WheelEvent) => {
@@ -524,6 +560,7 @@ onMounted(() => {
 onUnmounted(() => {
   if (panMoveHandler) window.removeEventListener('mousemove', panMoveHandler)
   if (panEndHandler) window.removeEventListener('mouseup', panEndHandler)
+  window.removeEventListener('paste', handlePaste)
   cm?.destroy()
 })
 </script>

@@ -8,6 +8,7 @@ import {
   saveLibraryOuvrage, saveLibraryConstituent,
   deleteLibraryOuvrage, deleteLibraryConstituent,
 } from '../storage/LibraryStore'
+import defaultLibrary from '../domain/data/defaultLibrary.json'
 
 export type PublishResult =
   | { published: true }
@@ -17,9 +18,21 @@ export const useLibraryStore = defineStore('library', () => {
   const ouvrages = ref<Ouvrage[]>([])
   const constituents = ref<Constituent[]>([])
 
+  async function seedDefaultLibrary() {
+    for (const constituent of defaultLibrary.constituents) {
+      await upsertConstituent(constituent)
+    }
+    for (const ouvrage of defaultLibrary.ouvrages) {
+      await upsertOuvrage(ouvrage)
+    }
+  }
+
   async function loadLibrary() {
     ouvrages.value = await listLibraryOuvrages()
     constituents.value = await listLibraryConstituents()
+    if (ouvrages.value.length === 0 && constituents.value.length === 0) {
+      await seedDefaultLibrary()
+    }
   }
 
   async function upsertOuvrage(ouvrage: Ouvrage) {
@@ -66,6 +79,7 @@ export const useLibraryStore = defineStore('library', () => {
     ouvrages,
     constituents,
     loadLibrary,
+    seedDefaultLibrary,
     upsertOuvrage,
     upsertConstituent,
     removeOuvrage,
