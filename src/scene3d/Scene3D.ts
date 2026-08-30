@@ -100,8 +100,15 @@ export class Scene3D {
           this.scene.add(mesh)
         }
       } else {
+        const worldPts: [number, number][] = trace.points.map(([px, py]) => [px * scale.ratio, py * scale.ratio])
+
+        const wxs = worldPts.map(p => p[0])
+        const wzs = worldPts.map(p => p[1])
+        const cx = (Math.min(...wxs) + Math.max(...wxs)) / 2
+        const cz = (Math.min(...wzs) + Math.max(...wzs)) / 2
+
         const shape = new THREE.Shape()
-        const pts: [number, number][] = trace.points.map(([px, py]) => [px * scale.ratio, py * scale.ratio])
+        const pts: [number, number][] = worldPts.map(([wx, wz]) => [wx - cx, wz - cz])
         shape.moveTo(pts[0][0], pts[0][1])
         for (let i = 1; i < pts.length; i++) shape.lineTo(pts[i][0], pts[i][1])
         shape.closePath()
@@ -111,7 +118,7 @@ export class Scene3D {
         const mesh = new THREE.Mesh(geom, mat)
         const angleRad = trace.angle ? (trace.angle * Math.PI) / 180 : 0
         mesh.rotation.x = Math.PI / 2 - angleRad
-        mesh.position.y = trace.up
+        mesh.position.set(cx, trace.up, cz)
 
         mesh.userData['trace'] = true
         this.scene.add(mesh)
