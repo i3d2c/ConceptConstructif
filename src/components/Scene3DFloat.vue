@@ -45,9 +45,27 @@ defineExpose({ getDataURL })
 </script>
 
 <template>
-  <div ref="containerRef" class="scene3d-container" />
+  <div class="scene3d-wrapper">
+    <div ref="containerRef" class="scene3d-container" />
+    <div v-if="!store.activeZone?.scale" class="hint">
+      Définissez d'abord l'échelle pour afficher la vue 3D.
+    </div>
+  </div>
 </template>
 
 <style scoped>
+.scene3d-wrapper { position: relative; width: 100%; height: 100%; }
 .scene3d-container { width: 100%; height: 100%; }
+.hint {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.6);
+  color: var(--text-muted);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 11px;
+  pointer-events: none;
+}
 </style>
