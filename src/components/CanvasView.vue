@@ -403,6 +403,7 @@ function onPolygonDone(points: [number, number][]) {
     up: 0,
     points,
     angle: 0,
+    slopeDirection: 'top',
   }
   store.addTrace(zone.id, trace)
   rerenderAll()
