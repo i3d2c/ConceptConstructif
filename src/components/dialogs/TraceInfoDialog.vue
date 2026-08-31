@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useProjectStore } from '../../stores/projectStore'
 import { computeTraceVariables, computeTraceChiffrage } from '../../domain/services/ChiffrageCalculator'
-import type { Trace } from '../../domain/models/Trace'
+import type { Trace, SlopeDirection } from '../../domain/models/Trace'
 import type { Scale } from '../../domain/models/Scale'
 
 const props = defineProps<{ trace: Trace }>()
@@ -40,6 +40,14 @@ const localAngle = ref(props.trace.type === 'surface' ? (props.trace.angle ?? 0)
 function applyAngle() {
   if (!zone.value || props.trace.type !== 'surface') return
   store.updateTrace(zone.value.id, props.trace.id, { angle: localAngle.value })
+}
+
+const localDirection = ref<SlopeDirection>(props.trace.type === 'surface' ? (props.trace.slopeDirection ?? 'top') : 'top')
+
+function setDirection(d: SlopeDirection) {
+  if (!zone.value || props.trace.type !== 'surface') return
+  localDirection.value = d
+  store.updateTrace(zone.value.id, props.trace.id, { slopeDirection: d })
 }
 
 // ── Redimensionnement ──────────────────────────────────────────────────────
@@ -174,6 +182,17 @@ function fmtQty(n: number) {
           <input v-model.number="localAngle" type="number" step="1" min="0" max="89" class="dim-input" @change="applyAngle" @keyup.enter="applyAngle" />
         </div>
         <div class="resize-hint">Inclinaison de la surface (corrige l'aire réelle et l'orientation en 3D).</div>
+
+        <div class="resize-row">
+          <label>Pente</label>
+          <div class="dir-btns">
+            <button :class="{ active: localDirection === 'top' }" @click="setDirection('top')">Haut</button>
+            <button :class="{ active: localDirection === 'bottom' }" @click="setDirection('bottom')">Bas</button>
+            <button :class="{ active: localDirection === 'left' }" @click="setDirection('left')">Gauche</button>
+            <button :class="{ active: localDirection === 'right' }" @click="setDirection('right')">Droite</button>
+          </div>
+        </div>
+        <div class="resize-hint">Bord bas de la pente ; le bord opposé remonte, symétriquement autour du centre.</div>
       </div>
 
       <!-- Redimensionnement -->
@@ -268,6 +287,8 @@ function fmtQty(n: number) {
 .resize-row label { width: 36px; font-size: 11px; color: var(--text-muted); flex-shrink: 0; }
 .resize-col { display: flex; flex-direction: column; gap: 6px; }
 .dim-input { width: 90px; font-size: 12px; text-align: right; }
+.dir-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; flex: 1; }
+.dir-btns button { padding: 3px 6px; font-size: 11px; }
 .resize-hint { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
 .small { padding: 3px 10px; font-size: 11px; }
 .mini-table { width: 100%; border-collapse: collapse; font-size: 11px; }

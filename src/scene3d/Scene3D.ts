@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import type { Zone } from '../domain/models/Zone'
 import type { Scale } from '../domain/models/Scale'
+import { tiltScale, applyTilt } from './tiltGeometry'
 
 interface StoreRef {
   activeZone: Zone | undefined
@@ -107,8 +108,12 @@ export class Scene3D {
         const cx = (Math.min(...wxs) + Math.max(...wxs)) / 2
         const cz = (Math.min(...wzs) + Math.max(...wzs)) / 2
 
+        const angleRad = trace.angle ? (trace.angle * Math.PI) / 180 : 0
+        const dir = trace.slopeDirection ?? 'top'
+        const s = tiltScale(dir, angleRad)
+
         const shape = new THREE.Shape()
-        const pts: [number, number][] = worldPts.map(([wx, wz]) => [wx - cx, wz - cz])
+        const pts: [number, number][] = worldPts.map(([wx, wz]) => [(wx - cx) * s.x, (wz - cz) * s.z])
         shape.moveTo(pts[0][0], pts[0][1])
         for (let i = 1; i < pts.length; i++) shape.lineTo(pts[i][0], pts[i][1])
         shape.closePath()
@@ -116,8 +121,7 @@ export class Scene3D {
         const geom = new THREE.ExtrudeGeometry(shape, { depth: ca.epaisseur, bevelEnabled: false })
         const mat = new THREE.MeshLambertMaterial({ color, side: THREE.DoubleSide, transparent: true, opacity: OUVRAGE_OPACITY })
         const mesh = new THREE.Mesh(geom, mat)
-        const angleRad = trace.angle ? (trace.angle * Math.PI) / 180 : 0
-        mesh.rotation.x = Math.PI / 2 - angleRad
+        applyTilt(mesh, angleRad, dir)
         mesh.position.set(cx, trace.up, cz)
 
         mesh.userData['trace'] = true

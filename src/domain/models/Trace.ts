@@ -10,9 +10,12 @@ export interface LineTrace extends BaseTrace {
   type: 'line'
 }
 
+export type SlopeDirection = 'top' | 'bottom' | 'left' | 'right'
+
 export interface SurfaceTrace extends BaseTrace {
   type: 'surface'
   angle: number
+  slopeDirection: SlopeDirection
 }
 
 export type Trace = LineTrace | SurfaceTrace
