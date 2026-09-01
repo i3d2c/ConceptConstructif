@@ -84,7 +84,9 @@ function ouvrageVisibleOCs(ouvrageId: string): OuvrageConstituent[] {
 
 function constituentApplicableOCs(constituentId: string): OuvrageConstituent[] {
   const unitPrice = store.project.constituents.find(c => c.id === constituentId)?.unitPrice ?? 0
-  return store.project.ouvrages.flatMap(o => o.constituents)
+  return store.project.ouvrages
+    .filter(o => traceResults.value.some(t => t.ouvrageId === o.id))
+    .flatMap(o => o.constituents)
     .filter(oc => oc.constituentId === constituentId && !oc.disabled && !oc.hideFromRecapConstituent)
     .filter(oc => !(oc.hideIfZero && ocAggregatedQty(oc, traceResults.value) === 0))
     .filter(oc => !(oc.hideIfPriceZero && unitPrice === 0))
