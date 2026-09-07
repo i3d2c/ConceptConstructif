@@ -5,6 +5,7 @@ import { useLibraryStore } from '../stores/libraryStore'
 import type { Ouvrage } from '../domain/models/Ouvrage'
 import type { Constituent } from '../domain/models/Constituent'
 import type { Scope } from './ouvrageLibrary/scope'
+import { duplicateOuvrage } from '../domain/services/OuvrageDuplicator'
 import LibraryListPanel from './ouvrageLibrary/LibraryListPanel.vue'
 import OuvrageForm from './ouvrageLibrary/OuvrageForm.vue'
 import ConstituentForm from './ouvrageLibrary/ConstituentForm.vue'
@@ -22,6 +23,7 @@ onMounted(() => {
 type Tab = 'ouvrages' | 'constituents'
 const tab = ref<Tab>('ouvrages')
 const editingOuvrage = ref<Ouvrage | null>(null)
+const duplicateDraft = ref<Ouvrage | null>(null)
 const editingConstituent = ref<Constituent | null>(null)
 // Bumped on every "+ Nouveau"/selection click so the form remounts and
 // discards any unsaved draft — mirrors the previous imperative reset.
@@ -102,6 +104,7 @@ const editingConstituentIsLinked = computed(() =>
 
 function openNewOuvrage() {
   editingOuvrage.value = null
+  duplicateDraft.value = null
   oFormKey.value++
 }
 
@@ -109,6 +112,14 @@ function openEditOuvrage(id: string) {
   const o = store.project.ouvrages.find(o => o.id === id)
   if (!o) return
   editingOuvrage.value = o
+  duplicateDraft.value = null
+  oFormKey.value++
+}
+
+function duplicateCurrentOuvrage() {
+  if (!editingOuvrage.value) return
+  duplicateDraft.value = duplicateOuvrage(editingOuvrage.value, crypto.randomUUID())
+  editingOuvrage.value = null
   oFormKey.value++
 }
 
@@ -242,6 +253,7 @@ function reloadDefaultLibrary() {
           <OuvrageForm
             :key="oFormKey"
             :editing-ouvrage="editingOuvrage"
+            :draft-ouvrage="duplicateDraft"
             :constituent-options="sortedConstituents"
             :default-constituent-id="defaultConstituentId"
             :category-suggestions="ouvrageCategorySuggestions"
@@ -249,6 +261,7 @@ function reloadDefaultLibrary() {
             :is-linked-to-library="editingOuvrageIsLinked"
             @save="saveOuvrage"
             @update-from-library="updateOuvrageFromLibrary"
+            @duplicate="duplicateCurrentOuvrage"
           />
         </template>
 

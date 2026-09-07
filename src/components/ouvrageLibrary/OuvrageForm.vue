@@ -9,6 +9,7 @@ import type { Scope } from './scope'
 
 const props = defineProps<{
   editingOuvrage: Ouvrage | null
+  draftOuvrage: Ouvrage | null
   constituentOptions: Constituent[]
   defaultConstituentId: string
   categorySuggestions: string[]
@@ -19,6 +20,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   save: [data: Ouvrage, isNew: boolean, scope: Scope]
   updateFromLibrary: []
+  duplicate: []
 }>()
 
 const showFormulaHelp = ref(false)
@@ -26,18 +28,18 @@ const oSaveMsg = ref('')
 const oSaveError = ref('')
 let oSaveMsgTimer: ReturnType<typeof setTimeout> | null = null
 
-const oName = ref(props.editingOuvrage?.name ?? '')
-const oCategory = ref(props.editingOuvrage?.category ?? 'À catégoriser')
-const oDesc = ref(props.editingOuvrage?.description ?? '')
-const oEp = ref<number | ''>(props.editingOuvrage?.defaultEpaisseur ?? '')
-const oH = ref<number | ''>(props.editingOuvrage?.defaultHauteur ?? '')
+const oName = ref(props.editingOuvrage?.name ?? props.draftOuvrage?.name ?? '')
+const oCategory = ref(props.editingOuvrage?.category ?? props.draftOuvrage?.category ?? 'À catégoriser')
+const oDesc = ref(props.editingOuvrage?.description ?? props.draftOuvrage?.description ?? '')
+const oEp = ref<number | ''>(props.editingOuvrage?.defaultEpaisseur ?? props.draftOuvrage?.defaultEpaisseur ?? '')
+const oH = ref<number | ''>(props.editingOuvrage?.defaultHauteur ?? props.draftOuvrage?.defaultHauteur ?? '')
 const oConstituents = ref<OuvrageConstituent[]>(
-  props.editingOuvrage ? JSON.parse(JSON.stringify(props.editingOuvrage.constituents)) : []
+  JSON.parse(JSON.stringify(props.editingOuvrage?.constituents ?? props.draftOuvrage?.constituents ?? []))
 )
 
 function saveOuvrage(scope: Scope) {
   if (!oName.value) return
-  const id = props.editingOuvrage?.id ?? crypto.randomUUID()
+  const id = props.editingOuvrage?.id ?? props.draftOuvrage?.id ?? crypto.randomUUID()
   const data: Ouvrage = {
     id,
     name: oName.value,
@@ -121,6 +123,9 @@ onUnmounted(() => {
   <div class="form-col">
     <div class="form-title-row">
       <div class="form-title">{{ editingOuvrage ? 'Modifier' : 'Nouvel' }} ouvrage</div>
+      <button v-if="editingOuvrage !== null" class="help-btn" @click="emit('duplicate')">
+        ⎘ Dupliquer
+      </button>
       <button v-if="editingOuvrage !== null && isLinkedToLibrary" class="help-btn" @click="emit('updateFromLibrary')">
         ⟳ Mettre à jour depuis la bibliothèque
       </button>
