@@ -11,6 +11,7 @@ import OuvrageForm from './ouvrageLibrary/OuvrageForm.vue'
 import ConstituentForm from './ouvrageLibrary/ConstituentForm.vue'
 import LibraryPickerDialog from './dialogs/LibraryPickerDialog.vue'
 import DeleteChoiceDialog from './dialogs/DeleteChoiceDialog.vue'
+import UnsavedChangesDialog from './dialogs/UnsavedChangesDialog.vue'
 
 const store = useProjectStore()
 const library = useLibraryStore()
@@ -30,6 +31,25 @@ const oFormKey = ref(0)
 const cFormKey = ref(0)
 const showPicker = ref(false)
 const pendingDelete = ref<{ type: 'ouvrage' | 'constituent'; id: string } | null>(null)
+const pendingNavigation = ref<(() => void) | null>(null)
+const oFormRef = ref<{ isDirty: boolean } | null>(null)
+const cFormRef = ref<{ isDirty: boolean } | null>(null)
+
+function runGuarded(action: () => void) {
+  const dirty = tab.value === 'ouvrages' ? oFormRef.value?.isDirty : cFormRef.value?.isDirty
+  if (dirty) pendingNavigation.value = action
+  else action()
+}
+
+function confirmDiscardNavigation() {
+  const action = pendingNavigation.value
+  pendingNavigation.value = null
+  action?.()
+}
+
+function cancelNavigation() {
+  pendingNavigation.value = null
+}
 const pendingDeleteName = computed(() => {
   if (!pendingDelete.value) return ''
   if (pendingDelete.value.type === 'ouvrage') {
@@ -224,15 +244,15 @@ function reloadDefaultLibrary() {
 </script>
 
 <template>
-  <div class="modal-overlay" @click.self="emit('close')">
+  <div class="modal-overlay" @click.self="runGuarded(() => emit('close'))">
     <div class="modal">
       <div class="modal-header">
         <div class="tabs">
-          <button :class="{ active: tab === 'ouvrages' }" @click="tab = 'ouvrages'">Ouvrages</button>
-          <button :class="{ active: tab === 'constituents' }" @click="tab = 'constituents'">Constituants</button>
+          <button :class="{ active: tab === 'ouvrages' }" @click="runGuarded(() => tab = 'ouvrages')">Ouvrages</button>
+          <button :class="{ active: tab === 'constituents' }" @click="runGuarded(() => tab = 'constituents')">Constituants</button>
         </div>
         <button title="Réappliquer le set de base (src/domain/data/defaultLibrary.json) dans la bibliothèque" @click="reloadDefaultLibrary">↻ Set de base</button>
-        <button class="icon" @click="emit('close')">✕</button>
+        <button class="icon" @click="runGuarded(() => emit('close'))">✕</button>
       </div>
 
       <div class="modal-body">
@@ -243,12 +263,13 @@ function reloadDefaultLibrary() {
             title="Ouvrages"
             :items="ouvrageListItems"
             :selected-id="editingOuvrage?.id ?? null"
-            @create="openNewOuvrage"
-            @select="openEditOuvrage"
+            @create="runGuarded(openNewOuvrage)"
+            @select="(id) => runGuarded(() => openEditOuvrage(id))"
             @delete="deleteOuvrage"
             @browse-library="showPicker = true"
           />
           <OuvrageForm
+            ref="oFormRef"
             :key="oFormKey"
             :editing-ouvrage="editingOuvrage"
             :constituent-options="sortedConstituents"
@@ -257,8 +278,8 @@ function reloadDefaultLibrary() {
             :published-constituent-ids="library.constituentIds"
             :is-linked-to-library="editingOuvrageIsLinked"
             @save="saveOuvrage"
-            @update-from-library="updateOuvrageFromLibrary"
-            @duplicate="duplicateCurrentOuvrage"
+            @update-from-library="runGuarded(updateOuvrageFromLibrary)"
+            @duplicate="runGuarded(duplicateCurrentOuvrage)"
           />
         </template>
 
@@ -268,12 +289,13 @@ function reloadDefaultLibrary() {
             title="Constituants"
             :items="constituentListItems"
             :selected-id="editingConstituent?.id ?? null"
-            @create="openNewConstituent"
-            @select="openEditConstituent"
+            @create="runGuarded(openNewConstituent)"
+            @select="(id) => runGuarded(() => openEditConstituent(id))"
             @delete="deleteConstituent"
             @browse-library="showPicker = true"
           />
           <ConstituentForm
+            ref="cFormRef"
             :key="cFormKey"
             :editing-constituent="editingConstituent"
             :units="existingUnits"
@@ -281,7 +303,7 @@ function reloadDefaultLibrary() {
             :category-suggestions="constituentCategorySuggestions"
             :is-linked-to-library="editingConstituentIsLinked"
             @save="saveConstituent"
-            @update-from-library="updateConstituentFromLibrary"
+            @update-from-library="runGuarded(updateConstituentFromLibrary)"
           />
         </template>
 
@@ -303,6 +325,13 @@ function reloadDefaultLibrary() {
     @delete-local="confirmDeleteLocal"
     @delete-from-library="confirmDeleteFromLibrary"
     @cancel="pendingDelete = null"
+  />
+
+  <UnsavedChangesDialog
+    v-if="pendingNavigation"
+    :entity-label="tab === 'ouvrages' ? 'ouvrage' : 'constituant'"
+    @discard="confirmDiscardNavigation"
+    @cancel="cancelNavigation"
   />
 </template>
 
