@@ -5,6 +5,7 @@ import { useLibraryStore } from '../stores/libraryStore'
 import type { Ouvrage } from '../domain/models/Ouvrage'
 import type { Constituent } from '../domain/models/Constituent'
 import type { Scope } from './ouvrageLibrary/scope'
+import { duplicateOuvrage } from '../domain/services/OuvrageDuplicator'
 import LibraryListPanel from './ouvrageLibrary/LibraryListPanel.vue'
 import OuvrageForm from './ouvrageLibrary/OuvrageForm.vue'
 import ConstituentForm from './ouvrageLibrary/ConstituentForm.vue'
@@ -109,6 +110,14 @@ function openEditOuvrage(id: string) {
   const o = store.project.ouvrages.find(o => o.id === id)
   if (!o) return
   editingOuvrage.value = o
+  oFormKey.value++
+}
+
+function duplicateCurrentOuvrage() {
+  if (!editingOuvrage.value) return
+  const copy = duplicateOuvrage(editingOuvrage.value, crypto.randomUUID())
+  store.addOuvrage(copy)
+  editingOuvrage.value = copy
   oFormKey.value++
 }
 
@@ -249,6 +258,7 @@ function reloadDefaultLibrary() {
             :is-linked-to-library="editingOuvrageIsLinked"
             @save="saveOuvrage"
             @update-from-library="updateOuvrageFromLibrary"
+            @duplicate="duplicateCurrentOuvrage"
           />
         </template>
 

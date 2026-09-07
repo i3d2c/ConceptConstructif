@@ -20,6 +20,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   save: [data: Ouvrage, isNew: boolean, scope: Scope]
   updateFromLibrary: []
+  duplicate: []
 }>()
 
 const showFormulaHelp = ref(false)
@@ -135,6 +136,9 @@ onUnmounted(() => {
   <div class="form-col">
     <div class="form-title-row">
       <div class="form-title">{{ editingOuvrage ? 'Modifier' : 'Nouvel' }} ouvrage</div>
+      <button v-if="editingOuvrage !== null" class="help-btn" @click="emit('duplicate')">
+        ⎘ Dupliquer
+      </button>
       <button v-if="editingOuvrage !== null && isLinkedToLibrary" class="help-btn" @click="emit('updateFromLibrary')">
         ⟳ Mettre à jour depuis la bibliothèque
       </button>
