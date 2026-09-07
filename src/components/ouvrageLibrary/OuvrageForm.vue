@@ -84,16 +84,17 @@ function removeOC(idx: number) {
   oConstituents.value.forEach((oc, i) => { oc.position = i + 1 })
 }
 
-const draggedIndex = ref<number | null>(null)
+const draggedId = ref<string | null>(null)
 
-function onDragStart(idx: number) {
-  draggedIndex.value = idx
-}
-
-function onDrop(idx: number) {
-  if (draggedIndex.value === null || draggedIndex.value === idx) { draggedIndex.value = null; return }
-  oConstituents.value = reorderOuvrageConstituents(oConstituents.value, draggedIndex.value, idx)
-  draggedIndex.value = null
+function onDragOverRow(hoverIdx: number, pointerRatio: number) {
+  if (draggedId.value === null) return
+  const fromIdx = oConstituents.value.findIndex(oc => oc.id === draggedId.value)
+  if (fromIdx === -1 || fromIdx === hoverIdx) return
+  // Hystérésis : ne bascule qu'une fois le milieu de la ligne franchi dans le sens du déplacement,
+  // sinon deux lignes voisines s'échangent en boucle dès que le curseur touche la frontière.
+  const isPastMidpointInTravelDirection = hoverIdx > fromIdx ? pointerRatio > 0.5 : pointerRatio < 0.5
+  if (!isPastMidpointInTravelDirection) return
+  oConstituents.value = reorderOuvrageConstituents(oConstituents.value, fromIdx, hoverIdx)
 }
 
 // ── Popover "flags" (options d'affichage par constituant) ────────────────
@@ -182,16 +183,19 @@ onUnmounted(() => {
         <div class="help-fns">Conditionnel : <code>if(condition; valeur_si_vrai; valeur_si_faux)</code> — ex : <code>if(L > 3; L * 2; L)</code></div>
       </div>
 
-      <OuvrageConstituentRow
-        v-for="(oc, idx) in oConstituents" :key="oc.id"
-        :oc="oc"
-        :constituent-options="constituentOptions"
-        :index="idx"
-        @remove="removeOC(idx)"
-        @toggle-flags="toggleFlags"
-        @dragstart="onDragStart"
-        @drop="onDrop"
-      />
+      <TransitionGroup tag="div" name="oc-list" class="oc-list">
+        <OuvrageConstituentRow
+          v-for="(oc, idx) in oConstituents" :key="oc.id"
+          :oc="oc"
+          :constituent-options="constituentOptions"
+          :is-dragging="oc.id === draggedId"
+          @remove="removeOC(idx)"
+          @toggle-flags="toggleFlags"
+          @dragstart="draggedId = oc.id"
+          @dragover="onDragOverRow(idx, $event)"
+          @dragend="draggedId = null"
+        />
+      </TransitionGroup>
       <div v-if="oConstituents.length === 0" class="oc-empty">
         Aucun constituant. Cliquez "+ Ajouter" pour en ajouter un avec une formule.
       </div>
@@ -247,6 +251,8 @@ onUnmounted(() => {
 .field-row { display: flex; gap: 10px; }
 .field-row > div { flex: 1; display: flex; flex-direction: column; gap: 4px; }
 .oc-section { display: flex; flex-direction: column; gap: 6px; }
+.oc-list { display: flex; flex-direction: column; gap: 6px; }
+.oc-list-move { transition: transform 0.2s ease; }
 .oc-header { display: flex; justify-content: space-between; align-items: center; }
 .oc-empty { color: var(--text-muted); font-size: 11px; }
 .help-btn { font-size: 10px; padding: 2px 7px; }
