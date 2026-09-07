@@ -53,7 +53,7 @@ function removeCa(ca: ColorAssignment, e: MouseEvent) {
   <div class="color-section">
     <div class="section-label">Couleurs</div>
 
-    <button class="add-btn" @click="openNew">+ Couleur</button>
+    <button data-tour="tour-add-color" class="add-btn" @click="openNew">+ Couleur</button>
 
     <div
       v-if="(store.drawMode === 'line' || store.drawMode === 'surface') && !store.selectedCaId"

@@ -2,10 +2,12 @@
 import { ref } from 'vue'
 import { useProjectStore } from '../stores/projectStore'
 import { useThemeStore } from '../stores/themeStore'
+import { useOnboardingTourStore } from '../stores/onboardingTourStore'
 import { importProject, downloadProject } from '../storage/JsonExporter'
 
 const store = useProjectStore()
 const themeStore = useThemeStore()
+const tourStore = useOnboardingTourStore()
 
 defineEmits<{
   toggle3d: []
@@ -81,6 +83,7 @@ function handleExport() {
         @click="themeStore.toggle()"
       >{{ themeStore.theme === 'dark' ? '☀️' : '🌙' }}</button>
       <button class="icon" title="Imprimer / PDF" @click="$emit('print')">🖨</button>
+      <button class="icon" title="Revoir la visite guidée" @click="tourStore.start()">?</button>
     </div>
   </header>
 </template>

@@ -11,12 +11,15 @@ import PrintDialog from './components/dialogs/PrintDialog.vue'
 import PrintLayout from './components/PrintLayout.vue'
 import ProjectListDialog from './components/dialogs/ProjectListDialog.vue'
 import WhatsNewDialog from './components/dialogs/WhatsNewDialog.vue'
+import TourOverlay from './components/onboarding/TourOverlay.vue'
 import { useProjectStore } from './stores/projectStore'
 import { useWhatsNewStore } from './stores/whatsNewStore'
+import { useOnboardingTourStore } from './stores/onboardingTourStore'
 import type { PrintConfig } from './print/PrintConfig'
 
 const store = useProjectStore()
 const whatsNewStore = useWhatsNewStore()
+const tourStore = useOnboardingTourStore()
 const show3D = ref(false)
 const showChiffrage = ref(false)
 const showOuvrageModal = ref(false)
@@ -83,8 +86,13 @@ onMounted(async () => {
   const lastId = localStorage.getItem('cc_last_project')
   if (lastId) await store.load(lastId)
 
-  whatsNewStore.init()
-  showWhatsNew.value = whatsNewStore.shouldShow
+  tourStore.init()
+  if (tourStore.shouldShow) {
+    tourStore.start()
+  } else {
+    whatsNewStore.init()
+    showWhatsNew.value = whatsNewStore.shouldShow
+  }
 })
 onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 </script>
@@ -124,6 +132,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
     <PrintDialog v-if="showPrintDialog" @print="onPrint" @cancel="showPrintDialog = false" />
     <ProjectListDialog v-if="showProjectDialog" @close="showProjectDialog = false" />
     <WhatsNewDialog v-if="showWhatsNew" @close="whatsNewStore.markSeen(); showWhatsNew = false" />
+    <TourOverlay v-if="tourStore.isActive" />
   </div>
 
   <!-- Layout d'impression (masqué à l'écran) -->

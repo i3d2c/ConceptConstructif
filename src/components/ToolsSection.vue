@@ -8,9 +8,9 @@ const store = useProjectStore()
   <div class="tools-section">
     <div class="section-label">Outils</div>
     <div class="tool-btns">
-      <button :class="{ active: store.drawMode === 'scale' }" title="Tracer l'échelle" @click="store.setDrawMode('scale')">Echelle</button>
-      <button :class="{ active: store.drawMode === 'line' }" title="Tracer un trait (mur)" @click="store.setDrawMode('line')">Trait</button>
-      <button :class="{ active: store.drawMode === 'surface' }" title="Tracer une surface" @click="store.setDrawMode('surface')">Surface</button>
+      <button data-tour="tour-scale" :class="{ active: store.drawMode === 'scale' }" title="Tracer l'échelle" @click="store.setDrawMode('scale')">Echelle</button>
+      <button data-tour="tour-trace" :class="{ active: store.drawMode === 'line' }" title="Tracer un trait (mur)" @click="store.setDrawMode('line')">Trait</button>
+      <button data-tour="tour-trace" :class="{ active: store.drawMode === 'surface' }" title="Tracer une surface" @click="store.setDrawMode('surface')">Surface</button>
       <button :class="{ active: store.drawMode === 'select' }" title="Sélectionner" @click="store.setDrawMode('select')">Select.</button>
     </div>
     <label class="switch-row" :title="store.showNumbers ? 'Masquer les numéros' : 'Afficher les numéros'">

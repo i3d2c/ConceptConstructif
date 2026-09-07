@@ -16,10 +16,10 @@ const emit = defineEmits<{
     <hr class="divider" />
     <ToolsSection />
     <hr class="divider" />
-    <button class="full-btn" @click="emit('openOuvrages')">Ouvrages &amp; Constituants</button>
+    <button data-tour="tour-ouvrages" class="full-btn" @click="emit('openOuvrages')">Ouvrages &amp; Constituants</button>
     <div class="bottom-actions">
-      <button @click="emit('toggleChiffrage')">Chiffrage</button>
-      <button @click="emit('toggle3d')">3D</button>
+      <button data-tour="tour-chiffrage" @click="emit('toggleChiffrage')">Chiffrage</button>
+      <button data-tour="tour-3d" @click="emit('toggle3d')">3D</button>
     </div>
     <hr class="divider" />
     <ColorSection />
