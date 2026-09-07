@@ -23,7 +23,6 @@ onMounted(() => {
 type Tab = 'ouvrages' | 'constituents'
 const tab = ref<Tab>('ouvrages')
 const editingOuvrage = ref<Ouvrage | null>(null)
-const duplicateDraft = ref<Ouvrage | null>(null)
 const editingConstituent = ref<Constituent | null>(null)
 // Bumped on every "+ Nouveau"/selection click so the form remounts and
 // discards any unsaved draft — mirrors the previous imperative reset.
@@ -104,7 +103,6 @@ const editingConstituentIsLinked = computed(() =>
 
 function openNewOuvrage() {
   editingOuvrage.value = null
-  duplicateDraft.value = null
   oFormKey.value++
 }
 
@@ -112,14 +110,14 @@ function openEditOuvrage(id: string) {
   const o = store.project.ouvrages.find(o => o.id === id)
   if (!o) return
   editingOuvrage.value = o
-  duplicateDraft.value = null
   oFormKey.value++
 }
 
 function duplicateCurrentOuvrage() {
   if (!editingOuvrage.value) return
-  duplicateDraft.value = duplicateOuvrage(editingOuvrage.value, crypto.randomUUID())
-  editingOuvrage.value = null
+  const copy = duplicateOuvrage(editingOuvrage.value, crypto.randomUUID())
+  store.addOuvrage(copy)
+  editingOuvrage.value = copy
   oFormKey.value++
 }
 
@@ -253,7 +251,6 @@ function reloadDefaultLibrary() {
           <OuvrageForm
             :key="oFormKey"
             :editing-ouvrage="editingOuvrage"
-            :draft-ouvrage="duplicateDraft"
             :constituent-options="sortedConstituents"
             :default-constituent-id="defaultConstituentId"
             :category-suggestions="ouvrageCategorySuggestions"

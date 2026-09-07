@@ -9,7 +9,6 @@ import type { Scope } from './scope'
 
 const props = defineProps<{
   editingOuvrage: Ouvrage | null
-  draftOuvrage: Ouvrage | null
   constituentOptions: Constituent[]
   defaultConstituentId: string
   categorySuggestions: string[]
@@ -28,18 +27,18 @@ const oSaveMsg = ref('')
 const oSaveError = ref('')
 let oSaveMsgTimer: ReturnType<typeof setTimeout> | null = null
 
-const oName = ref(props.editingOuvrage?.name ?? props.draftOuvrage?.name ?? '')
-const oCategory = ref(props.editingOuvrage?.category ?? props.draftOuvrage?.category ?? 'À catégoriser')
-const oDesc = ref(props.editingOuvrage?.description ?? props.draftOuvrage?.description ?? '')
-const oEp = ref<number | ''>(props.editingOuvrage?.defaultEpaisseur ?? props.draftOuvrage?.defaultEpaisseur ?? '')
-const oH = ref<number | ''>(props.editingOuvrage?.defaultHauteur ?? props.draftOuvrage?.defaultHauteur ?? '')
+const oName = ref(props.editingOuvrage?.name ?? '')
+const oCategory = ref(props.editingOuvrage?.category ?? 'À catégoriser')
+const oDesc = ref(props.editingOuvrage?.description ?? '')
+const oEp = ref<number | ''>(props.editingOuvrage?.defaultEpaisseur ?? '')
+const oH = ref<number | ''>(props.editingOuvrage?.defaultHauteur ?? '')
 const oConstituents = ref<OuvrageConstituent[]>(
-  JSON.parse(JSON.stringify(props.editingOuvrage?.constituents ?? props.draftOuvrage?.constituents ?? []))
+  props.editingOuvrage ? JSON.parse(JSON.stringify(props.editingOuvrage.constituents)) : []
 )
 
 function saveOuvrage(scope: Scope) {
   if (!oName.value) return
-  const id = props.editingOuvrage?.id ?? props.draftOuvrage?.id ?? crypto.randomUUID()
+  const id = props.editingOuvrage?.id ?? crypto.randomUUID()
   const data: Ouvrage = {
     id,
     name: oName.value,
