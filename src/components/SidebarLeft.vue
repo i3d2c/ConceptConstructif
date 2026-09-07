@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AdBlock from './AdBlock.vue'
 import ColorSection from './ColorSection.vue'
 import ZoneSection from './ZoneSection.vue'
 import ToolsSection from './ToolsSection.vue'
@@ -23,6 +24,9 @@ const emit = defineEmits<{
     </div>
     <hr class="divider" />
     <ColorSection />
+    <div class="ad-slot no-print">
+      <AdBlock />
+    </div>
   </aside>
 </template>
 
@@ -41,4 +45,5 @@ const emit = defineEmits<{
 .full-btn { width: 100%; }
 .bottom-actions { display: flex; gap: 6px; margin-top: 6px; }
 .bottom-actions button { flex: 1; }
+.ad-slot { flex-shrink: 0; margin-top: 8px; }
 </style>
