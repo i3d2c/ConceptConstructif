@@ -48,3 +48,8 @@ export function validateFormula(formula: string): string | null {
 export function usesLorH(formula: string): boolean {
   return /\bL\b/.test(formula) || /\bH\b/.test(formula)
 }
+
+export function findForwardReferences(formula: string, position: number): number[] {
+  const referenced = [...formula.matchAll(/\bC(\d+)\b/g)].map(m => Number(m[1]))
+  return [...new Set(referenced)].filter(n => n >= position)
+}

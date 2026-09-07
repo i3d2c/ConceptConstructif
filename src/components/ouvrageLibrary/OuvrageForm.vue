@@ -3,6 +3,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import type { Ouvrage, OuvrageConstituent } from '../../domain/models/Ouvrage'
 import type { Constituent } from '../../domain/models/Constituent'
 import { findUnpublishedConstituents } from '../../domain/services/LibraryImportService'
+import { reorderOuvrageConstituents } from '../../domain/services/OuvrageReorderService'
 import OuvrageConstituentRow from './OuvrageConstituentRow.vue'
 import CategoryInput from './CategoryInput.vue'
 import type { Scope } from './scope'
@@ -81,6 +82,18 @@ function addOC() {
 function removeOC(idx: number) {
   oConstituents.value.splice(idx, 1)
   oConstituents.value.forEach((oc, i) => { oc.position = i + 1 })
+}
+
+const draggedIndex = ref<number | null>(null)
+
+function onDragStart(idx: number) {
+  draggedIndex.value = idx
+}
+
+function onDrop(idx: number) {
+  if (draggedIndex.value === null || draggedIndex.value === idx) { draggedIndex.value = null; return }
+  oConstituents.value = reorderOuvrageConstituents(oConstituents.value, draggedIndex.value, idx)
+  draggedIndex.value = null
 }
 
 // ── Popover "flags" (options d'affichage par constituant) ────────────────
@@ -163,7 +176,7 @@ onUnmounted(() => {
           <span class="hk">E</span><span>Épaisseur (m) — depuis la couleur</span>
           <span class="hk">S</span><span>Surface (m²) — trait : L×H ; surface : aire réelle (corrigée angle)</span>
           <span class="hk">V</span><span>Volume (m³) = S × E</span>
-          <span class="hk">Cn</span><span>Quantité du constituant en position n (cascade)</span>
+          <span class="hk">Cn</span><span>Quantité du constituant en position n (cascade) — n doit être strictement inférieur à la position du constituant courant</span>
         </div>
         <div class="help-fns">Fonctions : <code>floor() ceil() round() sqrt() abs() min() max() pow()</code></div>
         <div class="help-fns">Conditionnel : <code>if(condition; valeur_si_vrai; valeur_si_faux)</code> — ex : <code>if(L > 3; L * 2; L)</code></div>
@@ -173,8 +186,11 @@ onUnmounted(() => {
         v-for="(oc, idx) in oConstituents" :key="oc.id"
         :oc="oc"
         :constituent-options="constituentOptions"
+        :index="idx"
         @remove="removeOC(idx)"
         @toggle-flags="toggleFlags"
+        @dragstart="onDragStart"
+        @drop="onDrop"
       />
       <div v-if="oConstituents.length === 0" class="oc-empty">
         Aucun constituant. Cliquez "+ Ajouter" pour en ajouter un avec une formule.

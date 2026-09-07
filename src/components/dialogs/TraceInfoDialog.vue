@@ -212,7 +212,10 @@ function fmtQty(n: number) {
           <tbody>
             <tr v-for="c in chiffrage.constituents" :key="c.ouvrageConstituentId">
               <td>{{ c.name }}</td>
-              <td style="text-align:right">{{ fmtQty(c.quantity) }}</td>
+              <td style="text-align:right" :title="c.error || undefined">
+                <span v-if="c.error" class="error-cell">⚠ Erreur</span>
+                <span v-else>{{ fmtQty(c.quantity) }}</span>
+              </td>
               <td>{{ c.unit }}</td>
               <td style="text-align:right">{{ fmt(c.total) }} €</td>
             </tr>
@@ -277,4 +280,5 @@ function fmtQty(n: number) {
 .dialog-actions { padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; }
 button.danger { background: #7f1d1d; color: #fca5a5; border-color: #991b1b; }
 button.danger:hover { background: #991b1b; }
+.error-cell { color: #f87171; font-style: italic; }
 </style>

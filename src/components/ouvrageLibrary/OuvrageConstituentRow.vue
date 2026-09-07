@@ -2,31 +2,46 @@
 import { computed } from 'vue'
 import type { OuvrageConstituent } from '../../domain/models/Ouvrage'
 import type { Constituent } from '../../domain/models/Constituent'
+import { findForwardReferences } from '../../domain/services/FormulaEvaluator'
 
 const props = defineProps<{
   oc: OuvrageConstituent
   constituentOptions: Constituent[]
+  index: number
 }>()
 
 const emit = defineEmits<{
   remove: []
   toggleFlags: [id: string, event: MouseEvent]
+  dragstart: [index: number]
+  drop: [index: number]
 }>()
 
 const flagsCount = computed(() =>
   [props.oc.disabled, props.oc.hideIfZero, props.oc.hideIfPriceZero, props.oc.hideFromRecapOuvrage, props.oc.hideFromRecapConstituent]
     .filter(Boolean).length
 )
+
+const forwardReferences = computed(() => findForwardReferences(props.oc.formula, props.oc.position))
 </script>
 
 <template>
-  <div class="oc-row">
+  <div class="oc-row" @dragover.prevent @drop="emit('drop', index)">
+    <span
+      class="oc-drag-handle"
+      draggable="true"
+      title="Glisser pour réordonner"
+      @dragstart="emit('dragstart', index)"
+    >⠿</span>
     <span class="oc-pos">C{{ oc.position }}</span>
     <select v-model="oc.constituentId" style="flex:1">
       <option v-for="c in constituentOptions" :key="c.id" :value="c.id">{{ c.name }}</option>
     </select>
     <div class="oc-formulas">
       <input v-model="oc.formula" placeholder="ex: L*H/(0.22*0.05)" title="Formule par tracé" />
+      <span v-if="forwardReferences.length > 0" class="oc-formula-warning">
+        ⚠ référence en avant invalide : {{ forwardReferences.map(n => `C${n}`).join(', ') }}
+      </span>
     </div>
     <div class="oc-flags-wrap">
       <button
@@ -48,8 +63,10 @@ const flagsCount = computed(() =>
 
 <style scoped>
 .oc-row { display: flex; align-items: center; gap: 6px; }
+.oc-drag-handle { cursor: grab; color: var(--text-muted); flex-shrink: 0; user-select: none; }
 .oc-formulas { display: flex; flex-direction: column; gap: 3px; flex: 3; }
 .oc-formulas input { font-size: 11px; }
+.oc-formula-warning { font-size: 10px; color: #f59e0b; }
 .oc-pos { width: 24px; text-align: right; color: var(--text-muted); font-size: 11px; flex-shrink: 0; }
 .oc-flags-wrap { flex-shrink: 0; }
 .flags-btn { position: relative; color: var(--text-muted); }

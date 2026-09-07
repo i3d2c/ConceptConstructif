@@ -62,6 +62,10 @@ function ocAggregatedQty(oc: OuvrageConstituent, scoped: TraceChiffrage[]): numb
     .reduce((s, c) => s + c.quantity, 0)
 }
 
+function ocHasError(oc: OuvrageConstituent, scoped: TraceChiffrage[]): boolean {
+  return scoped.flatMap(t => t.constituents).some(c => c.ouvrageConstituentId === oc.id && c.error)
+}
+
 function constituentAdjustedQty(constituentId: string): number {
   const raw = constituentApplicableOCs(constituentId)
     .reduce((s, oc) => s + ocAggregatedQty(oc, traceResults.value), 0)
@@ -80,6 +84,10 @@ function ouvrageVisibleOCs(ouvrageId: string): OuvrageConstituent[] {
       && !(oc.hideIfZero && ocAggregatedQty(oc, scoped) === 0)
       && !(oc.hideIfPriceZero && unitPrice === 0)
   })
+}
+
+function constituentHasError(constituentId: string): boolean {
+  return constituentApplicableOCs(constituentId).some(oc => ocHasError(oc, traceResults.value))
 }
 
 function constituentApplicableOCs(constituentId: string): OuvrageConstituent[] {
@@ -133,7 +141,10 @@ function fmtQty(n: number): string {
                   <a v-if="c.url" :href="c.url" target="_blank" rel="noopener">{{ c.name }}</a>
                   <span v-else>{{ c.name }}</span>
                 </td>
-                <td class="num">{{ fmtQty(c.quantity) }}</td>
+                <td class="num" :title="c.error || undefined">
+                  <span v-if="c.error" class="error-cell">⚠ Erreur formule</span>
+                  <span v-else>{{ fmtQty(c.quantity) }}</span>
+                </td>
                 <td>{{ c.unit }}</td>
                 <td class="num">{{ fmt(c.unitPrice) }} €</td>
                 <td class="num">{{ fmt(c.total) }} €</td>
@@ -169,7 +180,10 @@ function fmtQty(n: number): string {
               </tr>
               <tr v-for="oc in ouvrageVisibleOCs(ouvrage.id)" :key="oc.id">
                 <td />
-                <td>{{ store.project.constituents.find(c => c.id === oc.constituentId)?.name }}</td>
+                <td>
+                  {{ store.project.constituents.find(c => c.id === oc.constituentId)?.name }}
+                  <span v-if="ocHasError(oc, traceResults.filter(t => t.ouvrageId === ouvrage.id))" class="error-icon" title="Une formule de ce constituant est en erreur sur au moins un tracé">⚠</span>
+                </td>
                 <td class="num">{{ fmtQty(ocAggregatedQty(oc, traceResults.filter(t => t.ouvrageId === ouvrage.id))) }}</td>
                 <td>{{ store.project.constituents.find(c => c.id === oc.constituentId)?.unit }}</td>
                 <td class="num">{{ fmt(store.project.constituents.find(c => c.id === oc.constituentId)?.unitPrice ?? 0) }} €</td>
@@ -200,6 +214,7 @@ function fmtQty(n: number): string {
                 <td>
                   <a v-if="c.url" :href="c.url" target="_blank" rel="noopener">{{ c.name }}</a>
                   <span v-else>{{ c.name }}</span>
+                  <span v-if="constituentHasError(c.id)" class="error-icon" title="Une formule de ce constituant est en erreur sur au moins un tracé">⚠</span>
                 </td>
                 <td>{{ c.supplier ?? '—' }}</td>
                 <td class="num">{{ fmtQty(constituentAdjustedQty(c.id)) }}</td>
@@ -237,4 +252,6 @@ td { padding: 3px 6px; border-bottom: 1px solid var(--border); }
 .subtotal-row td { color: var(--text-muted); font-size: 10px; }
 .grand { font-weight: 700; font-size: 12px; }
 a { color: #60a5fa; }
+.error-cell { color: #f87171; font-style: italic; }
+.error-icon { color: #f59e0b; margin-left: 4px; cursor: help; }
 </style>
