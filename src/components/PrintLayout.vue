@@ -64,6 +64,10 @@ function ocAggregatedQty(oc: OuvrageConstituent, scoped: TraceChiffrage[]): numb
     .reduce((s, c) => s + c.quantity, 0)
 }
 
+function ocHasError(oc: OuvrageConstituent, scoped: TraceChiffrage[]): boolean {
+  return scoped.flatMap(t => t.constituents).some(c => c.ouvrageConstituentId === oc.id && c.error)
+}
+
 function constituentAdjustedQty(constituentId: string): number {
   const raw = constituentApplicableOCs(constituentId)
     .reduce((s, oc) => s + ocAggregatedQty(oc, traceResults.value), 0)
@@ -82,6 +86,10 @@ function ouvrageVisibleOCs(ouvrageId: string): OuvrageConstituent[] {
       && !(oc.hideIfZero && ocAggregatedQty(oc, scoped) === 0)
       && !(oc.hideIfPriceZero && unitPrice === 0)
   })
+}
+
+function constituentHasError(constituentId: string): boolean {
+  return constituentApplicableOCs(constituentId).some(oc => ocHasError(oc, traceResults.value))
 }
 
 function constituentApplicableOCs(constituentId: string): OuvrageConstituent[] {
@@ -139,7 +147,10 @@ function fmtQty(n: number) {
               </tr>
               <tr v-for="oc in ouvrageVisibleOCs(o.id)" :key="oc.id">
                 <td />
-                <td>{{ store.project.constituents.find(c=>c.id===oc.constituentId)?.name }}</td>
+                <td>
+                  {{ store.project.constituents.find(c=>c.id===oc.constituentId)?.name }}
+                  <span v-if="ocHasError(oc, traceResults.filter(t=>t.ouvrageId===o.id))" class="error-icon" title="Formule en erreur sur au moins un tracé">⚠</span>
+                </td>
                 <td style="text-align:right">{{ fmtQty(ocAggregatedQty(oc, traceResults.filter(t=>t.ouvrageId===o.id))) }}</td>
                 <td>{{ store.project.constituents.find(c=>c.id===oc.constituentId)?.unit }}</td>
                 <td style="text-align:right">{{ fmt(store.project.constituents.find(c=>c.id===oc.constituentId)?.unitPrice??0) }} €</td>
@@ -167,7 +178,10 @@ function fmtQty(n: number) {
         <tbody>
           <tr v-for="c in store.project.constituents" :key="c.id">
             <template v-if="constituentApplicableOCs(c.id).length > 0">
-              <td>{{ c.name }}</td>
+              <td>
+                {{ c.name }}
+                <span v-if="constituentHasError(c.id)" class="error-icon" title="Formule en erreur sur au moins un tracé">⚠</span>
+              </td>
               <td>{{ c.supplier ?? '—' }}</td>
               <td style="text-align:right">{{ fmtQty(constituentAdjustedQty(c.id)) }}</td>
               <td>{{ c.unit }}</td>
@@ -201,7 +215,10 @@ function fmtQty(n: number) {
               <tr v-if="!(c.hideIfZero && c.quantity === 0) && !(c.hideIfPriceZero && c.unitPrice === 0)">
                 <td />
                 <td>{{ c.name }}</td>
-                <td style="text-align:right">{{ fmtQty(c.quantity) }}</td>
+                <td style="text-align:right" :title="c.error || undefined">
+                  <span v-if="c.error" class="error-cell">⚠ Erreur</span>
+                  <span v-else>{{ fmtQty(c.quantity) }}</span>
+                </td>
                 <td>{{ c.unit }}</td>
                 <td style="text-align:right">{{ fmt(c.unitPrice) }} €</td>
                 <td style="text-align:right">{{ fmt(c.total) }} €</td>
@@ -239,4 +256,6 @@ function fmtQty(n: number) {
 .print-table td { padding: 2pt 5pt; border: 1px solid #ddd; }
 .ouvrage-row td { background: #f5f5f5; }
 .trace-row td { background: #f0f4ff; font-style: italic; }
+.error-cell { color: #b91c1c; font-style: italic; }
+.error-icon { color: #b45309; margin-left: 4px; }
 </style>

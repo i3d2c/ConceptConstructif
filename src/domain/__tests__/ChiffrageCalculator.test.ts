@@ -101,4 +101,50 @@ describe('ChiffrageCalculator', () => {
     expect(result.constituents[0].quantity).toBeCloseTo(681.81, 0)
     expect(result.constituents[0].total).toBeCloseTo(627.27, 0)
   })
+
+  it('should mark a constituent as errored instead of throwing when its formula is invalid', () => {
+    const brique: Constituent = { id: 'c-1', name: 'Brique pleine', unit: 'unité', unitPrice: 0.92, category: 'Maçonnerie' }
+    const constituentsMap = new Map<string, Constituent>([['c-1', brique]])
+
+    const ouvrage: Ouvrage = {
+      id: 'o-1', name: 'Mur', description: '', category: 'Maçonnerie',
+      constituents: [
+        { id: 'oc-1', constituentId: 'c-1', position: 1, formula: 'C99' },
+      ],
+    }
+
+    const trace: LineTrace = {
+      id: 't-1', type: 'line', number: 1, colorAssignmentId: 'ca-1', up: 0,
+      points: [[0, 0], [60, 0]],
+    }
+
+    expect(() => computeTraceChiffrage(trace, scale, colorAssignment, ouvrage, constituentsMap)).not.toThrow()
+    const result = computeTraceChiffrage(trace, scale, colorAssignment, ouvrage, constituentsMap)
+    expect(result.constituents[0].error).toBeTruthy()
+    expect(result.constituents[0].quantity).toBe(0)
+  })
+
+  it('should still compute the constituents after an errored one, using zero as its cascade value', () => {
+    const brique: Constituent = { id: 'c-1', name: 'Brique pleine', unit: 'unité', unitPrice: 0.92, category: 'Maçonnerie' }
+    const ciment: Constituent = { id: 'c-2', name: 'Ciment', unit: 'sac 25kg', unitPrice: 5, category: 'Maçonnerie' }
+    const constituentsMap = new Map<string, Constituent>([['c-1', brique], ['c-2', ciment]])
+
+    const ouvrage: Ouvrage = {
+      id: 'o-1', name: 'Mur', description: '', category: 'Maçonnerie',
+      constituents: [
+        { id: 'oc-1', constituentId: 'c-1', position: 1, formula: 'C99' },
+        { id: 'oc-2', constituentId: 'c-2', position: 2, formula: 'C1 + 5' },
+      ],
+    }
+
+    const trace: LineTrace = {
+      id: 't-1', type: 'line', number: 1, colorAssignmentId: 'ca-1', up: 0,
+      points: [[0, 0], [60, 0]],
+    }
+
+    const result = computeTraceChiffrage(trace, scale, colorAssignment, ouvrage, constituentsMap)
+    expect(result.constituents[0].error).toBeTruthy()
+    expect(result.constituents[1].error).toBeFalsy()
+    expect(result.constituents[1].quantity).toBe(5)
+  })
 })

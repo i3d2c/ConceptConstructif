@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { evaluateFormula, validateFormula, usesLorH } from '../services/FormulaEvaluator'
+import { evaluateFormula, validateFormula, usesLorH, findForwardReferences } from '../services/FormulaEvaluator'
 
 describe('FormulaEvaluator', () => {
   it('évalue une formule simple avec L et H', () => {
@@ -62,5 +62,19 @@ describe('FormulaEvaluator', () => {
     const vars = { L: 3, H: 2.5, E: 0.105, S: 7.5, V: 0.7875 }
     // L > 10 → faux ; L > 2 → vrai → L / 2 = 1.5
     expect(evaluateFormula('if(L > 10; L; if(L > 2; L / 2; 0))', vars)).toBeCloseTo(1.5)
+  })
+})
+
+describe('findForwardReferences', () => {
+  it('should return positions that are not strictly before the given position', () => {
+    expect(findForwardReferences('C3 + C4', 3)).toEqual([3, 4])
+  })
+
+  it('should return an empty array when all references precede the given position', () => {
+    expect(findForwardReferences('C1 + C2', 3)).toEqual([])
+  })
+
+  it('should extract the full multi-digit number in references like C15 or C23 instead of matching a leading digit', () => {
+    expect(findForwardReferences('C15 + C2 + C23', 1)).toEqual([15, 2, 23])
   })
 })
