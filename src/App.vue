@@ -10,15 +10,19 @@ import OuvrageLibraryModal from './components/OuvrageLibraryModal.vue'
 import PrintDialog from './components/dialogs/PrintDialog.vue'
 import PrintLayout from './components/PrintLayout.vue'
 import ProjectListDialog from './components/dialogs/ProjectListDialog.vue'
+import WhatsNewDialog from './components/dialogs/WhatsNewDialog.vue'
 import { useProjectStore } from './stores/projectStore'
+import { useWhatsNewStore } from './stores/whatsNewStore'
 import type { PrintConfig } from './print/PrintConfig'
 
 const store = useProjectStore()
+const whatsNewStore = useWhatsNewStore()
 const show3D = ref(false)
 const showChiffrage = ref(false)
 const showOuvrageModal = ref(false)
 const showPrintDialog = ref(false)
 const showProjectDialog = ref(false)
+const showWhatsNew = ref(false)
 const printConfig = ref<PrintConfig | null>(null)
 const canvas2DSnapshot = ref<string | null>(null)
 const canvas3DSnapshot = ref<string | null>(null)
@@ -78,6 +82,9 @@ onMounted(async () => {
   window.addEventListener('keydown', onKeydown)
   const lastId = localStorage.getItem('cc_last_project')
   if (lastId) await store.load(lastId)
+
+  whatsNewStore.init()
+  showWhatsNew.value = whatsNewStore.shouldShow
 })
 onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 </script>
@@ -116,6 +123,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
     <OuvrageLibraryModal v-if="showOuvrageModal" @close="showOuvrageModal = false" />
     <PrintDialog v-if="showPrintDialog" @print="onPrint" @cancel="showPrintDialog = false" />
     <ProjectListDialog v-if="showProjectDialog" @close="showProjectDialog = false" />
+    <WhatsNewDialog v-if="showWhatsNew" @close="whatsNewStore.markSeen(); showWhatsNew = false" />
   </div>
 
   <!-- Layout d'impression (masqué à l'écran) -->
