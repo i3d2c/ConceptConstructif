@@ -37,6 +37,19 @@ const oConstituents = ref<OuvrageConstituent[]>(
   props.editingOuvrage ? JSON.parse(JSON.stringify(props.editingOuvrage.constituents)) : []
 )
 
+function currentSnapshot(): string {
+  return JSON.stringify({
+    name: oName.value,
+    category: oCategory.value,
+    description: oDesc.value,
+    defaultEpaisseur: oEp.value,
+    defaultHauteur: oH.value,
+    constituents: oConstituents.value,
+  })
+}
+const savedSnapshot = ref(currentSnapshot())
+const isDirty = computed(() => currentSnapshot() !== savedSnapshot.value)
+
 function saveOuvrage(scope: Scope) {
   if (!oName.value) return
   const id = props.editingOuvrage?.id ?? crypto.randomUUID()
@@ -60,6 +73,7 @@ function saveOuvrage(scope: Scope) {
   oSaveError.value = ''
 
   emit('save', data, props.editingOuvrage === null, scope)
+  savedSnapshot.value = currentSnapshot()
   oSaveMsg.value = '✓ Enregistré'
   if (oSaveMsgTimer) clearTimeout(oSaveMsgTimer)
   oSaveMsgTimer = setTimeout(() => { oSaveMsg.value = '' }, 2000)
@@ -130,6 +144,8 @@ onUnmounted(() => {
   window.removeEventListener('click', onWindowClick)
   window.removeEventListener('scroll', onAnyScroll, true)
 })
+
+defineExpose({ isDirty })
 </script>
 
 <template>

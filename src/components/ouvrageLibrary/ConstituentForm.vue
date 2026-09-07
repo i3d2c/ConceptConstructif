@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import type { Constituent } from '../../domain/models/Constituent'
 import CategoryInput from './CategoryInput.vue'
 import type { Scope } from './scope'
@@ -29,6 +29,21 @@ const showRecapHelp = ref(false)
 const cSaveMsg = ref('')
 let cSaveMsgTimer: ReturnType<typeof setTimeout> | null = null
 
+function currentSnapshot(): string {
+  return JSON.stringify({
+    name: cName.value,
+    category: cCategory.value,
+    code: cCode.value,
+    unit: cUnit.value,
+    unitPrice: cPrice.value,
+    supplier: cSupplier.value,
+    url: cUrl.value,
+    formulaRecap: cFormulaRecap.value,
+  })
+}
+const savedSnapshot = ref(currentSnapshot())
+const isDirty = computed(() => currentSnapshot() !== savedSnapshot.value)
+
 function saveConstituent(scope: Scope) {
   if (!cName.value) return
   const id = props.editingConstituent?.id ?? crypto.randomUUID()
@@ -44,10 +59,13 @@ function saveConstituent(scope: Scope) {
     category: cCategory.value,
   }
   emit('save', data, props.editingConstituent === null, scope)
+  savedSnapshot.value = currentSnapshot()
   cSaveMsg.value = '✓ Enregistré'
   if (cSaveMsgTimer) clearTimeout(cSaveMsgTimer)
   cSaveMsgTimer = setTimeout(() => { cSaveMsg.value = '' }, 2000)
 }
+
+defineExpose({ isDirty })
 </script>
 
 <template>
