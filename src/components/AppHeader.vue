@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useProjectStore } from '../stores/projectStore'
 import { useThemeStore } from '../stores/themeStore'
 import { useOnboardingTourStore } from '../stores/onboardingTourStore'
 import { importProject, downloadProject } from '../storage/JsonExporter'
+import { duplicateZone } from '../domain/services/ZoneDuplicator'
 
 const store = useProjectStore()
 const themeStore = useThemeStore()
@@ -17,6 +18,50 @@ defineEmits<{
 }>()
 
 const savedMsg = ref(false)
+const showZoneMenu = ref(false)
+const zoneMenuRef = ref<HTMLDivElement | null>(null)
+
+function onClickOutsideZoneMenu(e: MouseEvent) {
+  if (zoneMenuRef.value && !zoneMenuRef.value.contains(e.target as Node)) {
+    showZoneMenu.value = false
+  }
+}
+onMounted(() => window.addEventListener('mousedown', onClickOutsideZoneMenu))
+onUnmounted(() => window.removeEventListener('mousedown', onClickOutsideZoneMenu))
+
+function addZone() {
+  const id = crypto.randomUUID()
+  store.addZone({
+    id,
+    name: `Zone ${store.project.zones.length + 1}`,
+    scale: null,
+    backgroundImage: null,
+    colorAssignments: [],
+    traces: [],
+  })
+  showZoneMenu.value = false
+}
+
+function dupZone() {
+  const active = store.activeZone
+  if (active) {
+    const copy = duplicateZone(active, crypto.randomUUID(), `${active.name} (copie)`)
+    store.addZone(copy)
+  }
+  showZoneMenu.value = false
+}
+
+function removeZone() {
+  const active = store.activeZone
+  showZoneMenu.value = false
+  if (!active) return
+  if (store.project.zones.length <= 1) {
+    alert('Impossible de supprimer la dernière zone.')
+    return
+  }
+  if (!confirm(`Supprimer la zone "${active.name}" ? Cette action peut être annulée avec Ctrl+Z.`)) return
+  store.removeZone(active.id)
+}
 
 async function handleSave() {
   await store.save()
@@ -65,6 +110,18 @@ function handleExport() {
           {{ z.name }}
         </option>
       </select>
+      <div class="zone-menu-wrap" ref="zoneMenuRef">
+        <button
+          class="icon"
+          title="Actions sur la zone"
+          @click="showZoneMenu = !showZoneMenu"
+        >⋯</button>
+        <div v-if="showZoneMenu" class="zone-menu">
+          <button title="Nouvelle zone" @click="addZone">+ Nouvelle zone</button>
+          <button title="Dupliquer la zone active" @click="dupZone">Dupliquer la zone active</button>
+          <button title="Supprimer la zone active" @click="removeZone">Supprimer la zone active</button>
+        </div>
+      </div>
     </div>
 
     <div class="header-actions">
@@ -113,7 +170,17 @@ function handleExport() {
 }
 .project-name:hover { border-color: var(--border); }
 .project-name:focus { border-color: var(--accent); outline: none; background: var(--surface2); }
+.zone-selector { display: flex; align-items: center; gap: 4px; }
 .zone-selector select { width: 180px; }
+.zone-menu-wrap { position: relative; }
+.zone-menu {
+  position: absolute; top: calc(100% + 4px); left: 0; z-index: 20;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
+  display: flex; flex-direction: column; min-width: 180px; padding: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+.zone-menu button { text-align: left; border: none; background: none; padding: 6px 8px; }
+.zone-menu button:hover { background: var(--hover); }
 .header-actions { margin-left: auto; display: flex; gap: 4px; }
 button:disabled { opacity: 0.4; cursor: not-allowed; }
 .save-btn { min-width: 28px; }

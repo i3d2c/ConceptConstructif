@@ -467,7 +467,7 @@ async function getStageDataURL(): Promise<string> {
   return cm?.toDataURL() ?? ''
 }
 
-defineExpose({ getStageDataURL })
+defineExpose({ getStageDataURL, loadImageFile })
 
 // ── Lifecycle ──────────────────────────────────────────────────────────────
 onMounted(() => {

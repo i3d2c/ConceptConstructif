@@ -13,16 +13,20 @@ describe('tourSteps', () => {
     expect(new Set(ids).size).toBe(ids.length)
   })
 
-  it('Should have no target for the first two steps', () => {
+  it('Should have no target for the welcome step', () => {
     expect(TOUR_STEPS[0].target).toBeNull()
-    expect(TOUR_STEPS[1].target).toBeNull()
   })
 
-  it('Should have a non-null target selector for steps 3 through 8', () => {
-    for (const step of TOUR_STEPS.slice(2)) {
+  it('Should have a non-null target selector for steps 2 through 8', () => {
+    for (const step of TOUR_STEPS.slice(1)) {
       expect(step.target).not.toBeNull()
       expect(typeof step.target).toBe('string')
     }
+  })
+
+  it('Should target the "Importer un plan" button for the plan step', () => {
+    const planStep = TOUR_STEPS.find(s => s.id === 'plan')
+    expect(planStep?.target).toBe('[data-tour="tour-import-plan"]')
   })
 
   it('Should use a valid placement for every step', () => {

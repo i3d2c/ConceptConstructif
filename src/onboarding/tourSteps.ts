@@ -18,10 +18,10 @@ export const TOUR_STEPS: TourStep[] = [
   },
   {
     id: 'plan',
-    target: null,
-    title: 'Collez votre plan',
-    body: 'Collez une image (Ctrl+V) ou glissez-déposez un fichier directement sur la zone de dessin pour l\'utiliser comme fond de plan.',
-    placement: 'center',
+    target: '[data-tour="tour-import-plan"]',
+    title: 'Importez votre plan',
+    body: 'Cliquez ici pour choisir une image, ou collez-la (Ctrl+V)/glissez-la directement sur la zone de dessin.',
+    placement: 'right',
   },
   {
     id: 'scale',
