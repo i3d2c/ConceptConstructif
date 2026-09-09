@@ -12,9 +12,8 @@ import { TraceRenderer } from '../canvas/renderers/TraceRenderer'
 import { NumberRenderer } from '../canvas/renderers/NumberRenderer'
 import { buildScale } from '../domain/services/ScaleCalculator'
 import { computeTraceVariables } from '../domain/services/ChiffrageCalculator'
-import type { LineTrace, SurfaceTrace, Trace } from '../domain/models/Trace'
+import type { LineTrace, SurfaceTrace } from '../domain/models/Trace'
 import ScaleDialog from './dialogs/ScaleDialog.vue'
-import TraceInfoDialog from './dialogs/TraceInfoDialog.vue'
 
 const store = useProjectStore()
 const containerRef = ref<HTMLDivElement | null>(null)
@@ -32,7 +31,6 @@ let numberRenderer: NumberRenderer | null = null
 
 const showScaleDialog = ref(false)
 const pendingScalePoints = ref<[[number, number], [number, number]] | null>(null)
-const infoTrace = ref<Trace | null>(null)
 
 // Hover tooltip
 const hoverTraceId = ref<string | null>(null)
@@ -126,7 +124,8 @@ function renderSelectHandles() {
   const zone = store.activeZone
   cm.layers.tool.destroyChildren()
 
-  for (const trace of zone.traces) {
+  const trace = zone.traces.find(t => t.id === store.selectedTraceId)
+  if (trace) {
     const ca = zone.colorAssignments.find(c => c.id === trace.colorAssignmentId)
     for (let i = 0; i < trace.points.length; i++) {
       const [px, py] = trace.points[i]
@@ -148,6 +147,18 @@ function renderSelectHandles() {
 }
 
 // ── Tool activation ────────────────────────────────────────────────────────
+// Sélectionne (ou désélectionne) un tracé immédiatement, avec surbrillance et poignées à jour
+// dans la même frame — utilisé dès le mousedown pour que le drag d'un tracé non pré-sélectionné
+// bascule le panneau et affiche les poignées sans attendre le drop.
+function selectTrace(id: string | null) {
+  const prev = store.selectedTraceId
+  if (prev === id) return
+  if (prev) traceRenderer?.highlight(prev, false)
+  if (id) traceRenderer?.highlight(id, true)
+  store.selectedTraceId = id
+  if (store.drawMode === 'select') renderSelectHandles()
+}
+
 function deactivateSelectHandlers() {
   cm?.layers.traces.off('.select')
   cm?.stage.off('.select')
@@ -157,6 +168,7 @@ function deactivateSelectHandlers() {
   hoverTraceId.value = null
   dragState = null
   isDragging = false
+  store.liveTracePoints = null
   if (cm && (cm as any)._selectDeleteCleanup) {
     ;(cm as any)._selectDeleteCleanup()
     ;(cm as any)._selectDeleteCleanup = null
@@ -186,12 +198,11 @@ function activateTool(mode: string) {
   } else if (mode === 'select') {
     renderSelectHandles()
 
-    // Touche Suppr / Delete sur le tracé survolé
+    // Touche Suppr / Delete sur le tracé sélectionné
     const onDeleteKey = (e: KeyboardEvent) => {
       if (e.key !== 'Delete' && e.key !== 'Backspace') return
-      if (!hoverTraceId.value || !store.activeZone) return
-      store.removeTrace(store.activeZone.id, hoverTraceId.value)
-      hoverTraceId.value = null
+      if (!store.selectedTraceId || !store.activeZone) return
+      store.removeTrace(store.activeZone.id, store.selectedTraceId)
     }
     window.addEventListener('keydown', onDeleteKey)
     cm.stage.on('destroyed.select', () => window.removeEventListener('keydown', onDeleteKey))
@@ -210,7 +221,7 @@ function activateTool(mode: string) {
     cm.layers.traces.on('mouseout.select', (e) => {
       if (isDragging) return
       const id = e.target.id()
-      traceRenderer?.highlight(id, false)
+      if (id !== store.selectedTraceId) traceRenderer?.highlight(id, false)
       hoverTraceId.value = null
       cm!.stage.container().style.cursor = 'default'
     })
@@ -240,14 +251,18 @@ function activateTool(mode: string) {
         }
         cm!.stage.container().style.cursor = 'grabbing'
       } else if (store.activeZone.traces.some(t => t.id === id)) {
-        // Trace body
+        // Trace body : sélection immédiate, avant même de savoir si ça deviendra un drag
         const trace = store.activeZone.traces.find(t => t.id === id)!
+        selectTrace(id)
         dragState = {
           type: 'trace', traceId: id, vertexIdx: -1,
           startMouseX: pos.x, startMouseY: pos.y,
           startPoints: trace.points.map(p => [p[0], p[1]] as [number, number]),
         }
         cm!.stage.container().style.cursor = e.evt.ctrlKey ? 'copy' : 'grabbing'
+      } else if (!id) {
+        // Clic sur le fond du canvas : désélection
+        selectTrace(null)
       }
     })
 
@@ -277,6 +292,7 @@ function activateTool(mode: string) {
         const handle = getHandle(dragState.traceId, dragState.vertexIdx)
         handle?.position({ x: vPos.x, y: vPos.y })
         cm!.layers.tool.batchDraw()
+        store.liveTracePoints = newPts
       } else {
         const liveCtrl = e.evt.ctrlKey
         const newPts = dragState.startPoints.map(p => [p[0] + dx, p[1] + dy] as [number, number])
@@ -294,12 +310,15 @@ function activateTool(mode: string) {
             cm!.layers.tool.add(dupPreview)
           }
           dupPreview?.points(newPts.flat())
+          // L'original ne bouge pas : pas d'aperçu de dimensions à modifier
+          store.liveTracePoints = null
         } else {
           if (dupPreview) { dupPreview.destroy(); dupPreview = null }
           lineNode?.points(newPts.flat())
           for (let i = 0; i < dragState.startPoints.length; i++) {
             getHandle(dragState.traceId, i)?.position({ x: newPts[i][0], y: newPts[i][1] })
           }
+          store.liveTracePoints = newPts
         }
         cm!.layers.traces.batchDraw()
         cm!.layers.tool.batchDraw()
@@ -316,6 +335,7 @@ function activateTool(mode: string) {
       const ds = dragState
       dragState = null
       isDragging = false
+      store.liveTracePoints = null
       cm!.stage.container().style.cursor = 'default'
       if (dupPreview) { dupPreview.destroy(); dupPreview = null }
 
@@ -337,21 +357,20 @@ function activateTool(mode: string) {
         if (ctrlKey && ds.type === 'trace') {
           const orig = zone.traces.find(t => t.id === ds.traceId)
           if (orig) {
+            const duplicateId = crypto.randomUUID()
             store.addTrace(zone.id, {
               ...JSON.parse(JSON.stringify(orig)),
-              id: crypto.randomUUID(),
+              id: duplicateId,
               number: nextTraceNumber(),
               points: newPts,
             })
+            selectTrace(duplicateId)
           }
         } else {
           store.updateTrace(zone.id, ds.traceId, { points: newPts })
         }
-      } else if (ds.type === 'trace') {
-        // Simple click without drag → TraceInfoDialog
-        const t = zone.traces.find(t => t.id === ds.traceId)
-        if (t) infoTrace.value = t
       }
+      // Simple clic ou drag d'un tracé : déjà sélectionné dès le mousedown
 
       void e
     })
@@ -556,6 +575,16 @@ onMounted(() => {
     () => { rerenderAll() },
     { deep: true },
   )
+
+  // Changement de sélection : les poignées et la surbrillance ne s'affichent que sur le tracé sélectionné
+  watch(
+    () => store.selectedTraceId,
+    (id, prevId) => {
+      if (prevId) traceRenderer?.highlight(prevId, false)
+      if (id) traceRenderer?.highlight(id, true)
+      if (store.drawMode === 'select') renderSelectHandles()
+    },
+  )
 })
 
 onUnmounted(() => {
@@ -588,12 +617,6 @@ onUnmounted(() => {
       v-if="showScaleDialog"
       @confirm="onScaleConfirm"
       @cancel="showScaleDialog = false"
-    />
-
-    <TraceInfoDialog
-      v-if="infoTrace"
-      :trace="infoTrace"
-      @close="infoTrace = null"
     />
 
     <div v-if="!store.activeZone?.scale" class="hint">
