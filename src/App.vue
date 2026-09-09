@@ -2,6 +2,7 @@
 import { onMounted, onUnmounted, ref, nextTick } from 'vue'
 import AppHeader from './components/AppHeader.vue'
 import SidebarLeft from './components/SidebarLeft.vue'
+import SidebarRight from './components/SidebarRight.vue'
 import CanvasView from './components/CanvasView.vue'
 import FloatingPanel from './components/FloatingPanel.vue'
 import ChiffrageFloat from './components/ChiffrageFloat.vue'
@@ -126,6 +127,8 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
           <ChiffrageFloat />
         </FloatingPanel>
       </main>
+
+      <SidebarRight />
     </div>
 
     <OuvrageLibraryModal v-if="showOuvrageModal" @close="showOuvrageModal = false" />

@@ -3,6 +3,8 @@ import { setActivePinia, createPinia } from 'pinia'
 import { useProjectStore } from '../projectStore'
 import type { Ouvrage } from '../../domain/models/Ouvrage'
 import type { Constituent } from '../../domain/models/Constituent'
+import type { Trace } from '../../domain/models/Trace'
+import type { ColorAssignment } from '../../domain/models/Zone'
 
 vi.mock('../../storage/ProjectStore')
 
@@ -100,6 +102,95 @@ describe('projectStore — library cascade actions', () => {
 
       expect(result).toBe(false)
       expect(store.project.ouvrages).toEqual([])
+    })
+  })
+})
+
+const ca: ColorAssignment = { id: 'ca-1', color: '#ff0000', ouvrageId: 'o-1', epaisseur: 0.2, hauteur: 2.5 }
+const lineTrace: Trace = { id: 't-1', number: 1, type: 'line', colorAssignmentId: 'ca-1', up: 0, points: [[0, 0], [1, 1]] }
+const otherTrace: Trace = { id: 't-2', number: 2, type: 'line', colorAssignmentId: 'ca-1', up: 0, points: [[0, 0], [2, 2]] }
+
+describe('projectStore — trace selection', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  describe('selectedTrace', () => {
+    it('Should have no selected trace by default', () => {
+      const store = useProjectStore()
+
+      expect(store.selectedTraceId).toBeNull()
+      expect(store.selectedTrace).toBeNull()
+    })
+
+    it('Should resolve selectedTrace from selectedTraceId within the active zone', () => {
+      const store = useProjectStore()
+      store.addTrace(store.activeZone!.id, lineTrace)
+
+      store.selectedTraceId = lineTrace.id
+
+      expect(store.selectedTrace).toEqual(lineTrace)
+    })
+
+    it('Should resolve selectedTrace to null when selectedTraceId matches no trace', () => {
+      const store = useProjectStore()
+
+      store.selectedTraceId = 'unknown-id'
+
+      expect(store.selectedTrace).toBeNull()
+    })
+  })
+
+  describe('setActiveZone', () => {
+    it('Should clear the selection when switching the active zone', () => {
+      const store = useProjectStore()
+      store.addTrace(store.activeZone!.id, lineTrace)
+      store.selectedTraceId = lineTrace.id
+      const zoneId = store.activeZone!.id
+      store.addZone({ id: 'zone-2', name: 'Zone 2', scale: null, backgroundImage: null, colorAssignments: [], traces: [] })
+
+      store.setActiveZone(zoneId)
+
+      expect(store.selectedTraceId).toBeNull()
+    })
+  })
+
+  describe('removeTrace', () => {
+    it('Should clear the selection when the selected trace is removed', () => {
+      const store = useProjectStore()
+      const zoneId = store.activeZone!.id
+      store.addTrace(zoneId, lineTrace)
+      store.selectedTraceId = lineTrace.id
+
+      store.removeTrace(zoneId, lineTrace.id)
+
+      expect(store.selectedTraceId).toBeNull()
+    })
+
+    it('Should keep the selection when a different trace is removed', () => {
+      const store = useProjectStore()
+      const zoneId = store.activeZone!.id
+      store.addTrace(zoneId, lineTrace)
+      store.addTrace(zoneId, otherTrace)
+      store.selectedTraceId = lineTrace.id
+
+      store.removeTrace(zoneId, otherTrace.id)
+
+      expect(store.selectedTraceId).toBe(lineTrace.id)
+    })
+  })
+
+  describe('removeColorAssignment', () => {
+    it('Should clear the selection when the color assignment cascade-removes the selected trace', () => {
+      const store = useProjectStore()
+      const zoneId = store.activeZone!.id
+      store.addColorAssignment(zoneId, ca)
+      store.addTrace(zoneId, lineTrace)
+      store.selectedTraceId = lineTrace.id
+
+      store.removeColorAssignment(zoneId, ca.id)
+
+      expect(store.selectedTraceId).toBeNull()
     })
   })
 })

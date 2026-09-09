@@ -40,6 +40,9 @@ export const useProjectStore = defineStore('project', () => {
   // UI state (non persisté)
   const drawMode = ref<DrawMode>('select')
   const selectedCaId = ref<string | null>(null)
+  const selectedTraceId = ref<string | null>(null)
+  // Aperçu (non persisté) des points du tracé sélectionné pendant un drag en cours sur le canvas
+  const liveTracePoints = ref<[number, number][] | null>(null)
   const showNumbers = ref(true)
   const bgLayout = ref<{ x: number; y: number; w: number; h: number } | null>(null)
 
@@ -49,6 +52,10 @@ export const useProjectStore = defineStore('project', () => {
 
   const activeZone = computed<Zone | undefined>(
     () => project.value.zones.find(z => z.id === project.value.activeZoneId),
+  )
+
+  const selectedTrace = computed<Trace | null>(
+    () => activeZone.value?.traces.find(t => t.id === selectedTraceId.value) ?? null,
   )
 
   function snapshot() {
@@ -80,6 +87,7 @@ export const useProjectStore = defineStore('project', () => {
   function setActiveZone(id: string) {
     project.value.activeZoneId = id
     selectedCaId.value = null
+    selectedTraceId.value = null
   }
 
   function addZone(zone: Zone) {
@@ -122,6 +130,7 @@ export const useProjectStore = defineStore('project', () => {
     snapshot()
     const z = project.value.zones.find(z => z.id === zoneId)
     if (z) z.traces = z.traces.filter(t => t.id !== traceId)
+    if (selectedTraceId.value === traceId) selectedTraceId.value = null
   }
 
   // ── ColorAssignments ───────────────────────────────────────────────────
@@ -145,6 +154,9 @@ export const useProjectStore = defineStore('project', () => {
     if (!z) return
     z.colorAssignments = z.colorAssignments.filter(c => c.id !== caId)
     z.traces = z.traces.filter(t => t.colorAssignmentId !== caId)
+    if (selectedTraceId.value && !z.traces.some(t => t.id === selectedTraceId.value)) {
+      selectedTraceId.value = null
+    }
   }
 
   // ── Ouvrages ───────────────────────────────────────────────────────────
@@ -237,6 +249,9 @@ export const useProjectStore = defineStore('project', () => {
     activeZone,
     drawMode,
     selectedCaId,
+    selectedTraceId,
+    selectedTrace,
+    liveTracePoints,
     showNumbers,
     setDrawMode,
     setSelectedCaId,
