@@ -129,6 +129,8 @@ onUnmounted(() => {
   window.removeEventListener('scroll', onAnyScroll, true)
   document.removeEventListener('focusout', onFocusOut)
 })
+
+defineExpose({ focus: () => inputRef.value?.focus() })
 </script>
 
 <template>

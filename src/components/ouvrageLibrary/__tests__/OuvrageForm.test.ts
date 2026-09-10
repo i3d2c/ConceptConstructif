@@ -6,6 +6,7 @@ import type { Constituent } from '../../../domain/models/Constituent'
 
 const constituent: Constituent = {
   id: 'c-1', name: 'Brique pleine', unit: 'unité', unitPrice: 0.92, category: 'Maçonnerie',
+  formuleTypique: 'L*H/(0.22*0.05)',
 }
 
 const existingOuvrage: Ouvrage = {
@@ -41,7 +42,7 @@ describe('OuvrageForm', () => {
 
     it('Should become dirty after adding a constituent row', async () => {
       const wrapper = mountForm(existingOuvrage)
-      await wrapper.find('.oc-header button:not(.help-btn)').trigger('click')
+      await wrapper.find('.oc-add-btn').trigger('click')
       expect((wrapper.vm as unknown as { isDirty: boolean }).isDirty).toBe(true)
     })
 
@@ -61,6 +62,43 @@ describe('OuvrageForm', () => {
       const wrapper = mountForm(existingOuvrage)
       await wrapper.find('textarea[placeholder]').setValue('Notes internes')
       expect((wrapper.vm as unknown as { isDirty: boolean }).isDirty).toBe(true)
+    })
+  })
+
+  describe('addOC', () => {
+    it("Should prefill the new line's formula with the default constituent's formuleTypique", async () => {
+      const wrapper = mountForm(existingOuvrage)
+      await wrapper.find('.oc-add-btn').trigger('click')
+      const formulaInputs = wrapper.findAll('.oc-formulas input')
+      const lastFormulaInput = formulaInputs[formulaInputs.length - 1].element as HTMLInputElement
+      expect(lastFormulaInput.value).toBe('L*H/(0.22*0.05)')
+    })
+  })
+
+  describe('+ Constituant button', () => {
+    it('Should render the + Constituant button below the constituent list rather than in the header', () => {
+      const wrapper = mountForm(existingOuvrage)
+      expect(wrapper.find('.oc-header button:not(.help-btn)').exists()).toBe(false)
+      expect(wrapper.find('.oc-add-btn').text()).toBe('+ Constituant')
+    })
+
+    it("Should focus the new row's constituent selector after clicking + Constituant", async () => {
+      const wrapper = mount(OuvrageForm, {
+        attachTo: document.body,
+        props: {
+          editingOuvrage: existingOuvrage,
+          constituentOptions: [constituent],
+          defaultConstituentId: constituent.id,
+          categorySuggestions: [],
+          publishedConstituentIds: new Set<string>(),
+          isLinkedToLibrary: false,
+        },
+      })
+      await wrapper.find('.oc-add-btn').trigger('click')
+      const comboboxInputs = wrapper.findAll('.oc-row .cc-combobox input')
+      const lastComboboxInput = comboboxInputs[comboboxInputs.length - 1].element
+      expect(document.activeElement).toBe(lastComboboxInput)
+      wrapper.unmount()
     })
   })
 

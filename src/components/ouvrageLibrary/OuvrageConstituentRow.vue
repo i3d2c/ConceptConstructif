@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { OuvrageConstituent } from '../../domain/models/Ouvrage'
 import type { Constituent } from '../../domain/models/Constituent'
 import { findForwardReferences } from '../../domain/services/FormulaEvaluator'
+import { prefillFormula } from '../../domain/services/ConstituentFormulaPrefill'
 import ConstituentCombobox from './ConstituentCombobox.vue'
 
 const props = defineProps<{
@@ -26,7 +27,15 @@ const flagsCount = computed(() =>
 
 const forwardReferences = computed(() => findForwardReferences(props.oc.formula, props.oc.position))
 
+watch(() => props.oc.constituentId, () => {
+  const newConstituent = props.constituentOptions.find(c => c.id === props.oc.constituentId)
+  props.oc.formula = prefillFormula(props.oc.formula, newConstituent)
+})
+
 const rowRef = ref<HTMLElement | null>(null)
+const comboboxRef = ref<InstanceType<typeof ConstituentCombobox> | null>(null)
+
+defineExpose({ focusConstituent: () => comboboxRef.value?.focus() })
 
 function onDragStart(e: DragEvent) {
   if (e.dataTransfer) {
@@ -59,7 +68,7 @@ function onDragOver(e: DragEvent) {
       @dragend="emit('dragend')"
     >⠿</span>
     <span class="oc-pos">C{{ oc.position }}</span>
-    <ConstituentCombobox v-model="oc.constituentId" :constituent-options="constituentOptions" />
+    <ConstituentCombobox ref="comboboxRef" v-model="oc.constituentId" :constituent-options="constituentOptions" />
     <div class="oc-formulas">
       <input v-model="oc.formula" placeholder="ex: L*H/(0.22*0.05)" title="Formule par tracé" />
       <span v-if="forwardReferences.length > 0" class="oc-formula-warning">

@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import type { Ouvrage, OuvrageConstituent } from '../../domain/models/Ouvrage'
 import type { Constituent } from '../../domain/models/Constituent'
 import { findUnpublishedConstituents } from '../../domain/services/LibraryImportService'
 import { reorderOuvrageConstituents } from '../../domain/services/OuvrageReorderService'
+import { prefillFormula } from '../../domain/services/ConstituentFormulaPrefill'
 import OuvrageConstituentRow from './OuvrageConstituentRow.vue'
 import CategoryInput from './CategoryInput.vue'
 import type { Scope } from './scope'
@@ -82,19 +83,24 @@ function saveOuvrage(scope: Scope) {
   oSaveMsgTimer = setTimeout(() => { oSaveMsg.value = '' }, 2000)
 }
 
-function addOC() {
+const ocRowRefs = ref<InstanceType<typeof OuvrageConstituentRow>[]>([])
+
+async function addOC() {
   const pos = oConstituents.value.length + 1
+  const defaultConstituent = props.constituentOptions.find(c => c.id === props.defaultConstituentId)
   oConstituents.value.push({
     id: crypto.randomUUID(),
     constituentId: props.defaultConstituentId,
     position: pos,
-    formula: '',
+    formula: prefillFormula('', defaultConstituent),
     disabled: false,
     hideIfZero: false,
     hideIfPriceZero: false,
     hideFromRecapOuvrage: false,
     hideFromRecapConstituent: false,
   })
+  await nextTick()
+  ocRowRefs.value[ocRowRefs.value.length - 1]?.focusConstituent()
 }
 
 function removeOC(idx: number) {
@@ -191,7 +197,6 @@ defineExpose({ isDirty })
         <span>Constituants</span>
         <div style="display:flex;gap:6px">
           <button class="help-btn" @click="showFormulaHelp = !showFormulaHelp">? Variables</button>
-          <button @click="addOC">+ Ajouter</button>
         </div>
       </div>
 
@@ -212,6 +217,7 @@ defineExpose({ isDirty })
       <TransitionGroup tag="div" name="oc-list" class="oc-list">
         <OuvrageConstituentRow
           v-for="(oc, idx) in oConstituents" :key="oc.id"
+          ref="ocRowRefs"
           :oc="oc"
           :constituent-options="constituentOptions"
           :is-dragging="oc.id === draggedId"
@@ -223,7 +229,10 @@ defineExpose({ isDirty })
         />
       </TransitionGroup>
       <div v-if="oConstituents.length === 0" class="oc-empty">
-        Aucun constituant. Cliquez "+ Ajouter" pour en ajouter un avec une formule.
+        Aucun constituant. Cliquez "+ Constituant" pour en ajouter un avec une formule.
+      </div>
+      <div class="oc-footer">
+        <button class="oc-add-btn" @click="addOC">+ Constituant</button>
       </div>
     </div>
 
@@ -281,6 +290,7 @@ defineExpose({ isDirty })
 .oc-list-move { transition: transform 0.2s ease; }
 .oc-header { display: flex; justify-content: space-between; align-items: center; }
 .oc-empty { color: var(--text-muted); font-size: 11px; }
+.oc-footer { display: flex; justify-content: flex-start; margin-top: 6px; }
 .help-btn { font-size: 10px; padding: 2px 7px; }
 .formula-help {
   background: var(--surface2);
@@ -303,7 +313,7 @@ defineExpose({ isDirty })
 }
 .help-fns { color: var(--text-muted); }
 .help-fns code { color: var(--accent); font-family: monospace; }
-.form-actions { display: flex; gap: 8px; justify-content: flex-end; align-items: center; margin-top: 8px; }
+.form-actions { display: flex; gap: 8px; justify-content: flex-end; align-items: center; margin-top: 20px; }
 .save-msg { font-size: 11px; color: #4ade80; margin-right: auto; }
 .save-error { font-size: 11px; color: #f87171; }
 textarea { resize: vertical; min-height: 40px; }

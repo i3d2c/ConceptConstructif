@@ -25,6 +25,7 @@ const cPrice = ref(props.editingConstituent?.unitPrice ?? 0)
 const cSupplier = ref(props.editingConstituent?.supplier ?? '')
 const cUrl = ref(props.editingConstituent?.url ?? '')
 const cFormulaRecap = ref(props.editingConstituent?.formulaRecap ?? '')
+const cFormuleTypique = ref(props.editingConstituent?.formuleTypique ?? '')
 const showRecapHelp = ref(false)
 const cSaveMsg = ref('')
 let cSaveMsgTimer: ReturnType<typeof setTimeout> | null = null
@@ -39,6 +40,7 @@ function currentSnapshot(): string {
     supplier: cSupplier.value,
     url: cUrl.value,
     formulaRecap: cFormulaRecap.value,
+    formuleTypique: cFormuleTypique.value,
   })
 }
 const savedSnapshot = ref(currentSnapshot())
@@ -56,6 +58,7 @@ function saveConstituent(scope: Scope) {
     supplier: cSupplier.value || undefined,
     url: cUrl.value || undefined,
     formulaRecap: cFormulaRecap.value || undefined,
+    formuleTypique: cFormuleTypique.value || undefined,
     category: cCategory.value,
   }
   emit('save', data, props.editingConstituent === null, scope)
@@ -123,6 +126,9 @@ defineExpose({ isDirty })
         <div class="help-fns">Exemple : <code>ceil(X)</code> → arrondit au supérieur pour commander des quantités entières</div>
       </div>
     </div>
+
+    <label>Formule typique</label>
+    <input v-model="cFormuleTypique" placeholder="ex: L*H/(0.22*0.05)" title="Préremplit la formule de calcul quand ce constituant est ajouté ou choisi dans un ouvrage" />
 
     <div class="form-actions">
       <span v-if="cSaveMsg" class="save-msg">{{ cSaveMsg }}</span>

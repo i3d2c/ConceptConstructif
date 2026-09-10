@@ -151,6 +151,14 @@ describe('ConstituentCombobox', () => {
     })
   })
 
+  describe('exposed focus method', () => {
+    it('Should expose a focus method that focuses the input', () => {
+      const wrapper = mountCombobox()
+      ;(wrapper.vm as unknown as { focus: () => void }).focus()
+      expect(document.activeElement).toBe(wrapper.find('input').element)
+    })
+  })
+
   describe('v-model consistency', () => {
     it('Should update the closed display when modelValue changes from outside', async () => {
       const wrapper = mountCombobox(brique.id)
