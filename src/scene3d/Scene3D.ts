@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import type { Zone } from '../domain/models/Zone'
 import type { Scale } from '../domain/models/Scale'
 import { tiltScale, applyTilt } from './tiltGeometry'
+import { computeFramingCamera } from './cameraFraming'
 
 interface StoreRef {
   activeZone: Zone | undefined
@@ -18,6 +19,7 @@ export class Scene3D {
   private controls: OrbitControls
   private store: StoreRef
   private animId = 0
+  private framed = false
 
   constructor(container: HTMLElement, store: StoreRef) {
     this.store = store
@@ -40,8 +42,6 @@ export class Scene3D {
     const dir = new THREE.DirectionalLight(0xffffff, 0.8)
     dir.position.set(10, 20, 10)
     this.scene.add(dir)
-
-    this.scene.add(new THREE.GridHelper(50, 50, 0x2a2a4a, 0x1a1a2e))
 
     this.animate()
   }
@@ -68,6 +68,16 @@ export class Scene3D {
     if (!zone?.scale) return
 
     const scale: Scale = zone.scale
+
+    if (!this.framed) {
+      const framing = computeFramingCamera(zone, scale, this.camera.fov)
+      if (framing) {
+        this.camera.position.set(framing.position.x, framing.position.y, framing.position.z)
+        this.controls.target.set(framing.target.x, framing.target.y, framing.target.z)
+        this.controls.update()
+        this.framed = true
+      }
+    }
 
     for (const trace of zone.traces) {
       const ca = zone.colorAssignments.find(c => c.id === trace.colorAssignmentId)
@@ -136,7 +146,7 @@ export class Scene3D {
       const planeW = layout.w * scale.ratio
       const planeH = layout.h * scale.ratio
       const geom = new THREE.PlaneGeometry(planeW, planeH)
-      const mat = new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: 0.4, side: THREE.DoubleSide })
+      const mat = new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: 0.8, side: THREE.DoubleSide })
       const mesh = new THREE.Mesh(geom, mat)
       mesh.rotation.x = -Math.PI / 2
       mesh.position.set(
