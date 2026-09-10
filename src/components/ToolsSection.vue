@@ -76,7 +76,7 @@ function removeCa(ca: ColorAssignment, e: MouseEvent) {
           <div class="entry-dim">E={{ ca.epaisseur }}m · H={{ ca.hauteur }}m</div>
         </div>
         <button class="edit-btn" title="Modifier" @click="openEdit(ca, $event)">✎</button>
-        <button class="delete-btn" title="Supprimer" @click="removeCa(ca, $event)">🗑</button>
+        <button class="delete-btn" title="Supprimer" @click="removeCa(ca, $event)">✕</button>
       </div>
     </div>
 
