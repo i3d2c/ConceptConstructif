@@ -175,19 +175,18 @@ function fmtQty(n: number) {
       <h3>Devis</h3>
       <table class="print-table">
         <thead>
-          <tr><th>Ouvrage</th><th>Description</th><th>Total</th></tr>
+          <tr><th>Ouvrage</th><th>Description</th></tr>
         </thead>
         <tbody>
           <tr v-for="o in usedOuvrages" :key="o.id">
             <td>{{ o.name }}</td>
             <td>{{ o.description }}</td>
-            <td style="text-align:right">{{ fmt(ouvrageAdjustedTotal(o.id)) }} €</td>
           </tr>
         </tbody>
         <tfoot>
           <tr style="font-weight:bold">
-            <td colspan="2" style="text-align:right">Total général</td>
-            <td style="text-align:right">{{ fmt(recapOuvrageTotal) }} €</td>
+            <td style="text-align:right">Total</td>
+            <td style="text-align:right">{{ fmt(recapConstituentTotal) }} €</td>
           </tr>
         </tfoot>
       </table>

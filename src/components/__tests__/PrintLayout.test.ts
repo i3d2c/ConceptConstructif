@@ -10,7 +10,7 @@ import type { ColorAssignment } from '../../domain/models/Zone'
 import type { LineTrace } from '../../domain/models/Trace'
 
 const usedConstituent: Constituent = {
-  id: 'c-used', name: 'Brique pleine', unit: 'unité', unitPrice: 0.92, category: 'Maçonnerie',
+  id: 'c-used', name: 'Brique pleine', unit: 'unité', unitPrice: 0.92, category: 'Maçonnerie', formulaRecap: 'ceil(X)',
 }
 const unusedConstituent: Constituent = {
   id: 'c-unused', name: 'Peinture', unit: 'litre', unitPrice: 12, category: 'Finition',
@@ -18,7 +18,7 @@ const unusedConstituent: Constituent = {
 
 const usedOuvrage: Ouvrage = {
   id: 'o-used', name: 'Mur brique', description: 'Mur en brique pleine porteuse', category: 'Maçonnerie',
-  constituents: [{ id: 'oc-used', constituentId: usedConstituent.id, position: 1, formula: 'L' }],
+  constituents: [{ id: 'oc-used', constituentId: usedConstituent.id, position: 1, formula: 'L/3' }],
 }
 const unusedOuvrage: Ouvrage = {
   id: 'o-unused', name: 'Peinture murale', description: 'Peinture murale deux couches', category: 'Finition',
@@ -68,12 +68,14 @@ describe('PrintLayout', () => {
   })
 
   describe('Devis section', () => {
-    it('Should list an ouvrage that has a trace in the active zone, with its description and total price', () => {
+    it('Should list an ouvrage that has a trace in the active zone, with its description but no per-ouvrage price', () => {
       const wrapper = mountWithUsedAndUnusedOuvrages()
       const section = wrapper.find('[data-testid="devis-section"]')
+      const row = section.findAll('tbody tr').find(r => r.text().includes(usedOuvrage.name))
 
-      expect(section.text()).toContain(usedOuvrage.name)
-      expect(section.text()).toContain(usedOuvrage.description)
+      expect(row).toBeTruthy()
+      expect(row!.text()).toContain(usedOuvrage.description)
+      expect(row!.text()).not.toContain('€')
     })
 
     it('Should not list an ouvrage that has no trace in the active zone', () => {
@@ -88,6 +90,24 @@ describe('PrintLayout', () => {
       const section = wrapper.find('[data-testid="devis-section"]')
 
       expect(section.text()).not.toContain(usedConstituent.name)
+    })
+
+    it('Should label the overall total "Total" instead of "Total général"', () => {
+      const wrapper = mountWithUsedAndUnusedOuvrages()
+      const section = wrapper.find('[data-testid="devis-section"]')
+
+      expect(section.text()).toContain('Total')
+      expect(section.text()).not.toContain('Total général')
+    })
+
+    it('Should use the récap par constituant total, including formulaRecap rounding, as the overall total', () => {
+      const wrapper = mountWithUsedAndUnusedOuvrages()
+      const section = wrapper.find('[data-testid="devis-section"]')
+      const roundedQty = Math.ceil(5 / 3)
+      const expectedTotal = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        .format(roundedQty * usedConstituent.unitPrice)
+
+      expect(section.text()).toContain(`${expectedTotal} €`)
     })
   })
 })

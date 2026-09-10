@@ -9,7 +9,7 @@ import type { ColorAssignment } from '../../domain/models/Zone'
 import type { LineTrace } from '../../domain/models/Trace'
 
 const usedConstituent: Constituent = {
-  id: 'c-used', name: 'Brique pleine', unit: 'unité', unitPrice: 0.92, category: 'Maçonnerie',
+  id: 'c-used', name: 'Brique pleine', unit: 'unité', unitPrice: 0.92, category: 'Maçonnerie', formulaRecap: 'ceil(X)',
 }
 const unusedConstituent: Constituent = {
   id: 'c-unused', name: 'Peinture', unit: 'litre', unitPrice: 12, category: 'Finition',
@@ -17,7 +17,7 @@ const unusedConstituent: Constituent = {
 
 const usedOuvrage: Ouvrage = {
   id: 'o-used', name: 'Mur brique', description: 'Mur en brique pleine porteuse', category: 'Maçonnerie',
-  constituents: [{ id: 'oc-used', constituentId: usedConstituent.id, position: 1, formula: 'L' }],
+  constituents: [{ id: 'oc-used', constituentId: usedConstituent.id, position: 1, formula: 'L/3' }],
 }
 const unusedOuvrage: Ouvrage = {
   id: 'o-unused', name: 'Peinture murale', description: 'Peinture murale deux couches', category: 'Finition',
@@ -83,12 +83,14 @@ describe('ChiffrageFloat', () => {
   })
 
   describe('Devis tab', () => {
-    it('Should list an ouvrage that has a trace in the active zone, with its description and total price', async () => {
+    it('Should list an ouvrage that has a trace in the active zone, with its description but no per-ouvrage price', async () => {
       const wrapper = await mountOnDevisTab()
       const panel = wrapper.find('[data-testid="devis-panel"]')
+      const row = panel.findAll('tbody tr').find(r => r.text().includes(usedOuvrage.name))
 
-      expect(panel.text()).toContain(usedOuvrage.name)
-      expect(panel.text()).toContain(usedOuvrage.description)
+      expect(row).toBeTruthy()
+      expect(row!.text()).toContain(usedOuvrage.description)
+      expect(row!.text()).not.toContain('€')
     })
 
     it('Should not list an ouvrage that has no trace in the active zone', async () => {
@@ -103,6 +105,24 @@ describe('ChiffrageFloat', () => {
       const panel = wrapper.find('[data-testid="devis-panel"]')
 
       expect(panel.text()).not.toContain(usedConstituent.name)
+    })
+
+    it('Should label the overall total "Total" instead of "Total général"', async () => {
+      const wrapper = await mountOnDevisTab()
+      const panel = wrapper.find('[data-testid="devis-panel"]')
+
+      expect(panel.text()).toContain('Total')
+      expect(panel.text()).not.toContain('Total général')
+    })
+
+    it('Should use the récap par constituant total, including formulaRecap rounding, as the overall total', async () => {
+      const wrapper = await mountOnDevisTab()
+      const panel = wrapper.find('[data-testid="devis-panel"]')
+      const roundedQty = Math.ceil(5 / 3)
+      const expectedTotal = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        .format(roundedQty * usedConstituent.unitPrice)
+
+      expect(panel.text()).toContain(`${expectedTotal} €`)
     })
   })
 })

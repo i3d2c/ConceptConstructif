@@ -208,19 +208,18 @@ function fmtQty(n: number): string {
     <div v-else-if="tab === 'devis'" class="scroll-body" data-testid="devis-panel">
       <table>
         <thead>
-          <tr><th>Ouvrage</th><th>Description</th><th class="num">Total</th></tr>
+          <tr><th>Ouvrage</th><th>Description</th></tr>
         </thead>
         <tbody>
           <tr v-for="ouvrage in usedOuvrages" :key="ouvrage.id">
             <td>{{ ouvrage.name }}</td>
             <td>{{ ouvrage.description }}</td>
-            <td class="num">{{ fmt(ouvrageAdjustedTotal(ouvrage.id)) }} €</td>
           </tr>
         </tbody>
         <tfoot>
           <tr>
-            <td colspan="2" class="right grand">Total général</td>
-            <td class="num grand">{{ fmt(recapOuvrageTotal) }} €</td>
+            <td class="right grand">Total</td>
+            <td class="num grand">{{ fmt(recapConstituentTotal) }} €</td>
           </tr>
         </tfoot>
       </table>
