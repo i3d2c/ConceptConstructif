@@ -44,4 +44,21 @@ describe('ConstituentForm', () => {
       expect((wrapper.vm as unknown as { isDirty: boolean }).isDirty).toBe(false)
     })
   })
+
+  describe('saveConstituent', () => {
+    it('Should save formuleTypique when filled', async () => {
+      const wrapper = mountForm(existingConstituent)
+      await wrapper.find('input[placeholder="ex: L*H/(0.22*0.05)"]').setValue('L*H/(0.22*0.05)')
+      await wrapper.find('.form-actions button').trigger('click')
+      const saved = wrapper.emitted('save')![0][0] as Constituent
+      expect(saved.formuleTypique).toBe('L*H/(0.22*0.05)')
+    })
+
+    it('Should omit formuleTypique when left empty', async () => {
+      const wrapper = mountForm(existingConstituent)
+      await wrapper.find('.form-actions button').trigger('click')
+      const saved = wrapper.emitted('save')![0][0] as Constituent
+      expect(saved.formuleTypique).toBeUndefined()
+    })
+  })
 })
