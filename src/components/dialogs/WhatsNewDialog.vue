@@ -9,10 +9,17 @@ const emit = defineEmits<{
     <div class="dialog">
       <h3>Nouveautés</h3>
       <ul>
-        <li>Réordonnancement des constituants d'un ouvrage, avec sécurisation des formules en cascade.</li>
-        <li>Récap des constituants recentré sur les ouvrages réellement dessinés dans la zone.</li>
-        <li>Duplication d'un ouvrage pour en créer un nouveau à partir de celui-ci.</li>
-        <li>Alerte avant de perdre un brouillon non enregistré (ouvrage/constituant).</li>
+        <li>Le panneau d'info d'un tracé est maintenant à droite (au lieu d'une fenêtre), réductible, avec les dimensions et le chiffrage qui se mettent à jour en direct pendant un redimensionnement — et un tutoriel de démarrage guidé quand rien n'est sélectionné.</li>
+        <li>La sidebar gauche suit désormais l'ordre réel du workflow (plan → échelle → ouvrages/constituants → couleurs → tracer → options), avec un vrai bouton pour importer un plan.</li>
+        <li>La vue 3D se centre automatiquement sur le plan dessiné, avec une vue en légère plongée.</li>
+        <li>Un tracé peut être dupliqué en un clic ; le bouton Supprimer est remonté en haut du panneau.</li>
+        <li>Le choix d'un constituant se fait maintenant par recherche, avec un filtre par catégorie.</li>
+        <li>Nouvel onglet "Devis" (liste des ouvrages et tarifs, sans le détail des constituants), utilisable aussi à l'impression avec des raccourcis Total/Chiffrage/Devis ; la sélection d'impression est mémorisée par zone.</li>
+        <li>Un champ "Infos techniques" sur l'ouvrage permet d'ajouter des notes internes non visibles du client.</li>
+        <li>Une "Formule typique" sur un constituant préremplit automatiquement la formule de calcul quand on l'ajoute à un ouvrage.</li>
+        <li>L'aide sur les variables de formule s'affiche désormais au survol du champ, sans avoir à cliquer.</li>
+        <li>Le fond de plan garde sa position d'origine au lieu de se recentrer à chaque chargement.</li>
+        <li>La ligne d'échelle peut être déplacée et ses extrémités ajustées directement à la souris.</li>
       </ul>
       <div class="dialog-actions">
         <button @click="emit('close')">Fermer</button>

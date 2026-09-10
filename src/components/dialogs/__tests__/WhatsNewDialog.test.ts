@@ -4,10 +4,10 @@ import WhatsNewDialog from '../WhatsNewDialog.vue'
 
 describe('WhatsNewDialog', () => {
   describe('rendering', () => {
-    it('Should render the four announcement items', () => {
+    it('Should render the eleven announcement items', () => {
       const wrapper = mount(WhatsNewDialog)
       const items = wrapper.findAll('li')
-      expect(items).toHaveLength(4)
+      expect(items).toHaveLength(11)
     })
   })
 
