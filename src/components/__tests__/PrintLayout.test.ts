@@ -17,11 +17,11 @@ const unusedConstituent: Constituent = {
 }
 
 const usedOuvrage: Ouvrage = {
-  id: 'o-used', name: 'Mur brique', description: '', category: 'Maçonnerie',
+  id: 'o-used', name: 'Mur brique', description: 'Mur en brique pleine porteuse', category: 'Maçonnerie',
   constituents: [{ id: 'oc-used', constituentId: usedConstituent.id, position: 1, formula: 'L' }],
 }
 const unusedOuvrage: Ouvrage = {
-  id: 'o-unused', name: 'Peinture murale', description: '', category: 'Finition',
+  id: 'o-unused', name: 'Peinture murale', description: 'Peinture murale deux couches', category: 'Finition',
   constituents: [{ id: 'oc-unused', constituentId: unusedConstituent.id, position: 1, formula: 'L' }],
 }
 
@@ -64,6 +64,30 @@ describe('PrintLayout', () => {
       const wrapper = mountWithUsedAndUnusedOuvrages()
 
       expect(wrapper.text()).toContain(usedConstituent.name)
+    })
+  })
+
+  describe('Récap. Tarifs section', () => {
+    it('Should list an ouvrage that has a trace in the active zone, with its description and total price', () => {
+      const wrapper = mountWithUsedAndUnusedOuvrages()
+      const section = wrapper.find('[data-testid="recap-tarifs"]')
+
+      expect(section.text()).toContain(usedOuvrage.name)
+      expect(section.text()).toContain(usedOuvrage.description)
+    })
+
+    it('Should not list an ouvrage that has no trace in the active zone', () => {
+      const wrapper = mountWithUsedAndUnusedOuvrages()
+      const section = wrapper.find('[data-testid="recap-tarifs"]')
+
+      expect(section.text()).not.toContain(unusedOuvrage.name)
+    })
+
+    it('Should not show constituent detail rows in the Récap. Tarifs section', () => {
+      const wrapper = mountWithUsedAndUnusedOuvrages()
+      const section = wrapper.find('[data-testid="recap-tarifs"]')
+
+      expect(section.text()).not.toContain(usedConstituent.name)
     })
   })
 })
