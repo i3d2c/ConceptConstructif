@@ -14,6 +14,7 @@ export interface Ouvrage {
   id: string
   name: string
   description: string
+  infosTechniques?: string
   defaultEpaisseur?: number
   defaultHauteur?: number
   defaultLargeur?: number
