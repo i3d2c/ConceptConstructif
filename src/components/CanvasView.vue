@@ -552,6 +552,7 @@ onMounted(() => {
       cm.layers.numbers.visible(val)
       cm.layers.numbers.batchDraw()
     },
+    { immediate: true },
   )
 
   // Changement de zone active ou de son image de fond : recharger l'image (repositionnée)
