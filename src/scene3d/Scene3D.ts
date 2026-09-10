@@ -3,6 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import type { Zone } from '../domain/models/Zone'
 import type { Scale } from '../domain/models/Scale'
 import { tiltScale, applyTilt } from './tiltGeometry'
+import { computeFramingCamera } from './cameraFraming'
 
 interface StoreRef {
   activeZone: Zone | undefined
@@ -16,8 +17,10 @@ export class Scene3D {
   private scene: THREE.Scene
   private camera: THREE.PerspectiveCamera
   private controls: OrbitControls
+  private grid: THREE.GridHelper
   private store: StoreRef
   private animId = 0
+  private framed = false
 
   constructor(container: HTMLElement, store: StoreRef) {
     this.store = store
@@ -41,7 +44,8 @@ export class Scene3D {
     dir.position.set(10, 20, 10)
     this.scene.add(dir)
 
-    this.scene.add(new THREE.GridHelper(50, 50, 0x2a2a4a, 0x1a1a2e))
+    this.grid = new THREE.GridHelper(50, 50, 0x2a2a4a, 0x1a1a2e)
+    this.scene.add(this.grid)
 
     this.animate()
   }
@@ -68,6 +72,17 @@ export class Scene3D {
     if (!zone?.scale) return
 
     const scale: Scale = zone.scale
+
+    if (!this.framed) {
+      const framing = computeFramingCamera(zone, scale, this.camera.fov)
+      if (framing) {
+        this.camera.position.set(framing.position.x, framing.position.y, framing.position.z)
+        this.controls.target.set(framing.target.x, framing.target.y, framing.target.z)
+        this.controls.update()
+        this.grid.position.set(framing.target.x, 0, framing.target.z)
+        this.framed = true
+      }
+    }
 
     for (const trace of zone.traces) {
       const ca = zone.colorAssignments.find(c => c.id === trace.colorAssignmentId)
