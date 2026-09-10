@@ -9,18 +9,18 @@ import type { ColorAssignment } from '../../domain/models/Zone'
 import type { LineTrace } from '../../domain/models/Trace'
 
 const usedConstituent: Constituent = {
-  id: 'c-used', name: 'Brique pleine', unit: 'unité', unitPrice: 0.92, category: 'Maçonnerie',
+  id: 'c-used', name: 'Brique pleine', unit: 'unité', unitPrice: 0.92, category: 'Maçonnerie', formulaRecap: 'ceil(X)',
 }
 const unusedConstituent: Constituent = {
   id: 'c-unused', name: 'Peinture', unit: 'litre', unitPrice: 12, category: 'Finition',
 }
 
 const usedOuvrage: Ouvrage = {
-  id: 'o-used', name: 'Mur brique', description: '', category: 'Maçonnerie',
-  constituents: [{ id: 'oc-used', constituentId: usedConstituent.id, position: 1, formula: 'L' }],
+  id: 'o-used', name: 'Mur brique', description: 'Mur en brique pleine porteuse', category: 'Maçonnerie',
+  constituents: [{ id: 'oc-used', constituentId: usedConstituent.id, position: 1, formula: 'L/3' }],
 }
 const unusedOuvrage: Ouvrage = {
-  id: 'o-unused', name: 'Peinture murale', description: '', category: 'Finition',
+  id: 'o-unused', name: 'Peinture murale', description: 'Peinture murale deux couches', category: 'Finition',
   constituents: [{ id: 'oc-unused', constituentId: unusedConstituent.id, position: 1, formula: 'L' }],
 }
 
@@ -44,10 +44,22 @@ function setupZoneWithUsedAndUnusedOuvrages() {
   return store
 }
 
+async function clickTab(wrapper: ReturnType<typeof mount>, label: string) {
+  const button = wrapper.findAll('button').find(b => b.text() === label)
+  await button!.trigger('click')
+}
+
 async function mountOnConstituentTab() {
   setupZoneWithUsedAndUnusedOuvrages()
   const wrapper = mount(ChiffrageFloat)
-  await wrapper.findAll('button')[2].trigger('click')
+  await clickTab(wrapper, 'Récap/Constituant')
+  return wrapper
+}
+
+async function mountOnDevisTab() {
+  setupZoneWithUsedAndUnusedOuvrages()
+  const wrapper = mount(ChiffrageFloat)
+  await clickTab(wrapper, 'Devis')
   return wrapper
 }
 
@@ -67,6 +79,50 @@ describe('ChiffrageFloat', () => {
       const wrapper = await mountOnConstituentTab()
 
       expect(wrapper.text()).toContain(usedConstituent.name)
+    })
+  })
+
+  describe('Devis tab', () => {
+    it('Should list an ouvrage that has a trace in the active zone, with its description but no per-ouvrage price', async () => {
+      const wrapper = await mountOnDevisTab()
+      const panel = wrapper.find('[data-testid="devis-panel"]')
+      const row = panel.findAll('tbody tr').find(r => r.text().includes(usedOuvrage.name))
+
+      expect(row).toBeTruthy()
+      expect(row!.text()).toContain(usedOuvrage.description)
+      expect(row!.text()).not.toContain('€')
+    })
+
+    it('Should not list an ouvrage that has no trace in the active zone', async () => {
+      const wrapper = await mountOnDevisTab()
+      const panel = wrapper.find('[data-testid="devis-panel"]')
+
+      expect(panel.text()).not.toContain(unusedOuvrage.name)
+    })
+
+    it('Should not show constituent detail rows in the Devis tab', async () => {
+      const wrapper = await mountOnDevisTab()
+      const panel = wrapper.find('[data-testid="devis-panel"]')
+
+      expect(panel.text()).not.toContain(usedConstituent.name)
+    })
+
+    it('Should label the overall total "Total" instead of "Total général"', async () => {
+      const wrapper = await mountOnDevisTab()
+      const panel = wrapper.find('[data-testid="devis-panel"]')
+
+      expect(panel.text()).toContain('Total')
+      expect(panel.text()).not.toContain('Total général')
+    })
+
+    it('Should use the récap par constituant total, including formulaRecap rounding, as the overall total', async () => {
+      const wrapper = await mountOnDevisTab()
+      const panel = wrapper.find('[data-testid="devis-panel"]')
+      const roundedQty = Math.ceil(5 / 3)
+      const expectedTotal = new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        .format(roundedQty * usedConstituent.unitPrice)
+
+      expect(panel.text()).toContain(`${expectedTotal} €`)
     })
   })
 })

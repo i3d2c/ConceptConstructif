@@ -63,6 +63,10 @@ function onKeydown(e: KeyboardEvent) {
 async function onPrint(config: PrintConfig) {
   showPrintDialog.value = false
 
+  if (store.activeZone) {
+    store.updateZone(store.activeZone.id, { printConfig: config })
+  }
+
   // Capture 2D avant d'afficher PrintLayout (canvas Konva composite)
   if (config.show2D && canvasViewRef.value) {
     canvas2DSnapshot.value = await canvasViewRef.value.getStageDataURL()
@@ -149,7 +153,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
     </div>
 
     <OuvrageLibraryModal v-if="showOuvrageModal" @close="showOuvrageModal = false" />
-    <PrintDialog v-if="showPrintDialog" @print="onPrint" @cancel="showPrintDialog = false" />
+    <PrintDialog v-if="showPrintDialog" :initial-config="store.activeZone?.printConfig" @print="onPrint" @cancel="showPrintDialog = false" />
     <ProjectListDialog v-if="showProjectDialog" @close="showProjectDialog = false" />
     <WhatsNewDialog v-if="showWhatsNew" @close="whatsNewStore.markSeen(); showWhatsNew = false" />
     <TourOverlay v-if="tourStore.isActive" />

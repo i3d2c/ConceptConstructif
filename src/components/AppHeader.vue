@@ -5,6 +5,7 @@ import { useThemeStore } from '../stores/themeStore'
 import { useOnboardingTourStore } from '../stores/onboardingTourStore'
 import { importProject, downloadProject } from '../storage/JsonExporter'
 import { duplicateZone } from '../domain/services/ZoneDuplicator'
+import { defaultPrintConfig } from '../print/PrintConfig'
 
 const store = useProjectStore()
 const themeStore = useThemeStore()
@@ -38,6 +39,7 @@ function addZone() {
     backgroundImage: null,
     colorAssignments: [],
     traces: [],
+    printConfig: defaultPrintConfig(),
   })
   showZoneMenu.value = false
 }

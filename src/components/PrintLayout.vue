@@ -37,10 +37,12 @@ function ouvrageAdjustedTotal(ouvrageId: string): number {
   }, 0)
 }
 
+const usedOuvrages = computed(() =>
+  store.project.ouvrages.filter(o => traceResults.value.some(t => t.ouvrageId === o.id)),
+)
+
 const recapOuvrageTotal = computed(() =>
-  store.project.ouvrages
-    .filter(o => traceResults.value.some(t => t.ouvrageId === o.id))
-    .reduce((s, o) => s + ouvrageAdjustedTotal(o.id), 0),
+  usedOuvrages.value.reduce((s, o) => s + ouvrageAdjustedTotal(o.id), 0),
 )
 
 const grandTotal = computed(() => traceResults.value.reduce((s, t) => s + t.subtotal, 0))
@@ -163,6 +165,28 @@ function fmtQty(n: number) {
           <tr style="font-weight:bold">
             <td colspan="5" style="text-align:right">Total général</td>
             <td style="text-align:right">{{ fmt(recapOuvrageTotal) }} €</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <!-- Devis -->
+    <div v-if="config.showDevis" class="print-section" data-testid="devis-section">
+      <h3>Devis</h3>
+      <table class="print-table">
+        <thead>
+          <tr><th>Ouvrage</th><th>Description</th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="o in usedOuvrages" :key="o.id">
+            <td>{{ o.name }}</td>
+            <td>{{ o.description }}</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr style="font-weight:bold">
+            <td style="text-align:right">Total</td>
+            <td style="text-align:right">{{ fmt(recapConstituentTotal) }} €</td>
           </tr>
         </tfoot>
       </table>
