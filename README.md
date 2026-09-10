@@ -147,8 +147,7 @@ src/
     ├── App.vue                   # Layout racine, Ctrl+Z/Y, flux impression
     ├── AppHeader.vue             # Zone selector, undo/redo, save/import/export/print
     ├── SidebarLeft.vue
-    │   ├── ToolsSection.vue      # Modes : Échelle / Trait / Surface / Sélection
-    │   ├── ColorSection.vue      # ColorAssignments de la zone active
+    │   ├── ToolsSection.vue      # Modes de tracé + ColorAssignments de la zone active
     │   └── ZoneSection.vue       # Zones : créer / dupliquer / supprimer
     ├── CanvasView.vue            # Orchestration Konva, drag-drop image
     ├── FloatingPanel.vue         # Overlay draggable + resizable (générique)

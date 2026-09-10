@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import AdBlock from './AdBlock.vue'
-import ColorSection from './ColorSection.vue'
 import ZoneSection from './ZoneSection.vue'
 import WorkflowSteps from './WorkflowSteps.vue'
 import ToolsSection from './ToolsSection.vue'
@@ -24,8 +23,6 @@ const emit = defineEmits<{
     <ZoneSection />
     <hr class="divider" />
     <WorkflowSteps @import-plan="emit('importPlan')" @open-ouvrages="emit('openOuvrages')" />
-    <hr class="divider" />
-    <ColorSection />
     <hr class="divider" />
     <ToolsSection />
     <hr class="divider" />
