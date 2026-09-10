@@ -34,4 +34,20 @@ describe('OuvrageConstituentRow', () => {
       expect(oc.formula).toBe('L*H')
     })
   })
+
+  describe('formula input focus', () => {
+    it('Should emit formulaFocus when the formula input is focused', async () => {
+      const oc: OuvrageConstituent = { id: 'oc-1', constituentId: brique.id, position: 1, formula: '' }
+      const wrapper = mountRow(oc)
+      await wrapper.find('.oc-formulas input').trigger('focus')
+      expect(wrapper.emitted('formulaFocus')).toHaveLength(1)
+    })
+
+    it('Should emit formulaBlur when the formula input loses focus', async () => {
+      const oc: OuvrageConstituent = { id: 'oc-1', constituentId: brique.id, position: 1, formula: '' }
+      const wrapper = mountRow(oc)
+      await wrapper.find('.oc-formulas input').trigger('blur')
+      expect(wrapper.emitted('formulaBlur')).toHaveLength(1)
+    })
+  })
 })

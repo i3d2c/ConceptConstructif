@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import type { Constituent } from '../../domain/models/Constituent'
 import CategoryInput from './CategoryInput.vue'
+import FormulaVariablesTooltip from './FormulaVariablesTooltip.vue'
 import type { Scope } from './scope'
 
 const props = defineProps<{
@@ -26,9 +27,21 @@ const cSupplier = ref(props.editingConstituent?.supplier ?? '')
 const cUrl = ref(props.editingConstituent?.url ?? '')
 const cFormulaRecap = ref(props.editingConstituent?.formulaRecap ?? '')
 const cFormuleTypique = ref(props.editingConstituent?.formuleTypique ?? '')
-const showRecapHelp = ref(false)
 const cSaveMsg = ref('')
 let cSaveMsgTimer: ReturnType<typeof setTimeout> | null = null
+
+const recapTooltipVisible = ref(false)
+const recapTooltipPos = ref({ top: 0, left: 0 })
+
+function onRecapFormulaFocus(e: FocusEvent) {
+  const rect = (e.target as HTMLElement).getBoundingClientRect()
+  recapTooltipPos.value = { top: rect.bottom + 4, left: rect.left }
+  recapTooltipVisible.value = true
+}
+
+function onRecapFormulaBlur() {
+  recapTooltipVisible.value = false
+}
 
 function currentSnapshot(): string {
   return JSON.stringify({
@@ -113,18 +126,21 @@ defineExpose({ isDirty })
     <input v-model="cUrl" placeholder="https://..." />
 
     <div class="recap-section">
-      <div class="recap-header">
-        <label>Formule récapitulatif (opt.)</label>
-        <button class="help-btn" @click="showRecapHelp = !showRecapHelp">? Variables</button>
-      </div>
-      <input v-model="cFormulaRecap" placeholder="ex: ceil(X)" title="Appliquée au total agrégé dans le récap/constituant. X = somme brute de toutes les quantités." />
-      <div v-if="showRecapHelp" class="formula-help">
+      <label>Formule récapitulatif (opt.)</label>
+      <input
+        v-model="cFormulaRecap"
+        placeholder="ex: ceil(X)"
+        title="Appliquée au total agrégé dans le récap/constituant. X = somme brute de toutes les quantités."
+        @focus="onRecapFormulaFocus"
+        @blur="onRecapFormulaBlur"
+      />
+      <FormulaVariablesTooltip :visible="recapTooltipVisible" :position="recapTooltipPos">
         <div class="help-grid">
           <span class="hk">X</span><span>Total brut agrégé de ce constituant sur tous les tracés</span>
         </div>
         <div class="help-fns">Fonctions : <code>ceil(X)</code> <code>floor(X)</code> <code>round(X)</code></div>
         <div class="help-fns">Exemple : <code>ceil(X)</code> → arrondit au supérieur pour commander des quantités entières</div>
-      </div>
+      </FormulaVariablesTooltip>
     </div>
 
     <label>Formule typique</label>
@@ -148,29 +164,7 @@ defineExpose({ isDirty })
 .field-row { display: flex; gap: 10px; }
 .field-row > div { flex: 1; display: flex; flex-direction: column; gap: 4px; }
 .help-btn { font-size: 10px; padding: 2px 7px; }
-.formula-help {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 8px 10px;
-  font-size: 11px;
-  display: flex; flex-direction: column; gap: 6px;
-}
-.help-grid {
-  display: grid;
-  grid-template-columns: 28px 1fr;
-  gap: 2px 8px;
-}
-.hk {
-  font-family: monospace;
-  font-weight: bold;
-  color: var(--accent);
-  font-size: 12px;
-}
-.help-fns { color: var(--text-muted); }
-.help-fns code { color: var(--accent); font-family: monospace; }
 .form-actions { display: flex; gap: 8px; justify-content: flex-end; align-items: center; margin-top: 8px; }
 .save-msg { font-size: 11px; color: #4ade80; margin-right: auto; }
 .recap-section { display: flex; flex-direction: column; gap: 4px; }
-.recap-header { display: flex; justify-content: space-between; align-items: center; }
 </style>

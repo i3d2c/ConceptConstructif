@@ -6,6 +6,7 @@ import { findUnpublishedConstituents } from '../../domain/services/LibraryImport
 import { reorderOuvrageConstituents } from '../../domain/services/OuvrageReorderService'
 import OuvrageConstituentRow from './OuvrageConstituentRow.vue'
 import CategoryInput from './CategoryInput.vue'
+import FormulaVariablesTooltip from './FormulaVariablesTooltip.vue'
 import type { Scope } from './scope'
 
 const props = defineProps<{
@@ -22,7 +23,18 @@ const emit = defineEmits<{
   duplicate: []
 }>()
 
-const showFormulaHelp = ref(false)
+const formulaTooltipVisible = ref(false)
+const formulaTooltipPos = ref({ top: 0, left: 0 })
+
+function onFormulaFocus(e: FocusEvent) {
+  const rect = (e.target as HTMLElement).getBoundingClientRect()
+  formulaTooltipPos.value = { top: rect.bottom + 4, left: rect.left }
+  formulaTooltipVisible.value = true
+}
+
+function onFormulaBlur() {
+  formulaTooltipVisible.value = false
+}
 const oSaveMsg = ref('')
 const oSaveError = ref('')
 let oSaveMsgTimer: ReturnType<typeof setTimeout> | null = null
@@ -192,13 +204,9 @@ defineExpose({ isDirty })
     <div class="oc-section">
       <div class="oc-header">
         <span>Constituants</span>
-        <div style="display:flex;gap:6px">
-          <button class="help-btn" @click="showFormulaHelp = !showFormulaHelp">? Variables</button>
-        </div>
       </div>
 
-      <!-- Aide formules -->
-      <div v-if="showFormulaHelp" class="formula-help">
+      <FormulaVariablesTooltip :visible="formulaTooltipVisible" :position="formulaTooltipPos">
         <div class="help-grid">
           <span class="hk">L</span><span>Longueur (m) — trait : Σ segments ; surface : étendue X bounding box</span>
           <span class="hk">H</span><span>Hauteur (m) — trait : valeur CA ; surface : étendue Y bounding box</span>
@@ -209,7 +217,7 @@ defineExpose({ isDirty })
         </div>
         <div class="help-fns">Fonctions : <code>floor() ceil() round() sqrt() abs() min() max() pow()</code></div>
         <div class="help-fns">Conditionnel : <code>if(condition; valeur_si_vrai; valeur_si_faux)</code> — ex : <code>if(L > 3; L * 2; L)</code></div>
-      </div>
+      </FormulaVariablesTooltip>
 
       <TransitionGroup tag="div" name="oc-list" class="oc-list">
         <OuvrageConstituentRow
@@ -223,6 +231,8 @@ defineExpose({ isDirty })
           @dragstart="draggedId = oc.id"
           @dragover="onDragOverRow(idx, $event)"
           @dragend="draggedId = null"
+          @formula-focus="onFormulaFocus"
+          @formula-blur="onFormulaBlur"
         />
       </TransitionGroup>
       <div v-if="oConstituents.length === 0" class="oc-empty">
@@ -289,27 +299,6 @@ defineExpose({ isDirty })
 .oc-empty { color: var(--text-muted); font-size: 11px; }
 .oc-footer { display: flex; justify-content: flex-start; margin-top: 6px; }
 .help-btn { font-size: 10px; padding: 2px 7px; }
-.formula-help {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 8px 10px;
-  font-size: 11px;
-  display: flex; flex-direction: column; gap: 6px;
-}
-.help-grid {
-  display: grid;
-  grid-template-columns: 28px 1fr;
-  gap: 2px 8px;
-}
-.hk {
-  font-family: monospace;
-  font-weight: bold;
-  color: var(--accent);
-  font-size: 12px;
-}
-.help-fns { color: var(--text-muted); }
-.help-fns code { color: var(--accent); font-family: monospace; }
 .form-actions { display: flex; gap: 8px; justify-content: flex-end; align-items: center; margin-top: 20px; }
 .save-msg { font-size: 11px; color: #4ade80; margin-right: auto; }
 .save-error { font-size: 11px; color: #f87171; }
