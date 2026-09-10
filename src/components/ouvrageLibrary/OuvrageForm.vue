@@ -4,7 +4,6 @@ import type { Ouvrage, OuvrageConstituent } from '../../domain/models/Ouvrage'
 import type { Constituent } from '../../domain/models/Constituent'
 import { findUnpublishedConstituents } from '../../domain/services/LibraryImportService'
 import { reorderOuvrageConstituents } from '../../domain/services/OuvrageReorderService'
-import { prefillFormula } from '../../domain/services/ConstituentFormulaPrefill'
 import OuvrageConstituentRow from './OuvrageConstituentRow.vue'
 import CategoryInput from './CategoryInput.vue'
 import type { Scope } from './scope'
@@ -12,7 +11,6 @@ import type { Scope } from './scope'
 const props = defineProps<{
   editingOuvrage: Ouvrage | null
   constituentOptions: Constituent[]
-  defaultConstituentId: string
   categorySuggestions: string[]
   publishedConstituentIds: Set<string>
   isLinkedToLibrary: boolean
@@ -87,12 +85,11 @@ const ocRowRefs = ref<InstanceType<typeof OuvrageConstituentRow>[]>([])
 
 async function addOC() {
   const pos = oConstituents.value.length + 1
-  const defaultConstituent = props.constituentOptions.find(c => c.id === props.defaultConstituentId)
   oConstituents.value.push({
     id: crypto.randomUUID(),
-    constituentId: props.defaultConstituentId,
+    constituentId: '',
     position: pos,
-    formula: prefillFormula('', defaultConstituent),
+    formula: '',
     disabled: false,
     hideIfZero: false,
     hideIfPriceZero: false,

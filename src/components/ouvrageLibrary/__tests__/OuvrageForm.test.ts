@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import OuvrageForm from '../OuvrageForm.vue'
+import ConstituentCombobox from '../ConstituentCombobox.vue'
 import type { Ouvrage } from '../../../domain/models/Ouvrage'
 import type { Constituent } from '../../../domain/models/Constituent'
 
@@ -19,7 +20,6 @@ function mountForm(editingOuvrage: Ouvrage | null = null) {
     props: {
       editingOuvrage,
       constituentOptions: [constituent],
-      defaultConstituentId: constituent.id,
       categorySuggestions: [],
       publishedConstituentIds: new Set<string>(),
       isLinkedToLibrary: false,
@@ -66,9 +66,20 @@ describe('OuvrageForm', () => {
   })
 
   describe('addOC', () => {
-    it("Should prefill the new line's formula with the default constituent's formuleTypique", async () => {
+    it('Should add a new line with no constituent selected and an empty formula', async () => {
       const wrapper = mountForm(existingOuvrage)
       await wrapper.find('.oc-add-btn').trigger('click')
+      const comboboxes = wrapper.findAllComponents(ConstituentCombobox)
+      const formulaInputs = wrapper.findAll('.oc-formulas input')
+      expect(comboboxes[comboboxes.length - 1].props('modelValue')).toBe('')
+      expect((formulaInputs[formulaInputs.length - 1].element as HTMLInputElement).value).toBe('')
+    })
+
+    it('Should prefill the formula once a constituent is chosen for a freshly added line', async () => {
+      const wrapper = mountForm(existingOuvrage)
+      await wrapper.find('.oc-add-btn').trigger('click')
+      const comboboxes = wrapper.findAllComponents(ConstituentCombobox)
+      await comboboxes[comboboxes.length - 1].vm.$emit('update:modelValue', constituent.id)
       const formulaInputs = wrapper.findAll('.oc-formulas input')
       const lastFormulaInput = formulaInputs[formulaInputs.length - 1].element as HTMLInputElement
       expect(lastFormulaInput.value).toBe('L*H/(0.22*0.05)')
@@ -88,7 +99,6 @@ describe('OuvrageForm', () => {
         props: {
           editingOuvrage: existingOuvrage,
           constituentOptions: [constituent],
-          defaultConstituentId: constituent.id,
           categorySuggestions: [],
           publishedConstituentIds: new Set<string>(),
           isLinkedToLibrary: false,

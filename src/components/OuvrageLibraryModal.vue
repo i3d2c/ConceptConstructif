@@ -74,8 +74,6 @@ const constituentListItems = computed(() =>
   }))
 )
 
-const defaultConstituentId = computed(() => store.project.constituents[0]?.id ?? '')
-
 // Suggestions autocomplete
 const existingUnits = computed(() =>
   [...new Set(store.project.constituents.map(c => c.unit).filter(Boolean))]
@@ -273,7 +271,6 @@ function reloadDefaultLibrary() {
             :key="oFormKey"
             :editing-ouvrage="editingOuvrage"
             :constituent-options="sortedConstituents"
-            :default-constituent-id="defaultConstituentId"
             :category-suggestions="ouvrageCategorySuggestions"
             :published-constituent-ids="library.constituentIds"
             :is-linked-to-library="editingOuvrageIsLinked"
