@@ -23,6 +23,7 @@ function newProject(): Project {
       name: 'Zone 1',
       scale: null,
       backgroundImage: null,
+      backgroundImageLayout: null,
       colorAssignments: [],
       traces: [],
       printConfig: defaultPrintConfig(),
@@ -253,7 +254,10 @@ export const useProjectStore = defineStore('project', () => {
   async function load(id: string) {
     const p = await loadProject(id)
     if (p) {
-      p.zones.forEach(z => { z.printConfig ??= defaultPrintConfig() })
+      p.zones.forEach(z => {
+        z.printConfig ??= defaultPrintConfig()
+        z.backgroundImageLayout ??= null
+      })
       project.value = p
     }
   }

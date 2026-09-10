@@ -1,6 +1,7 @@
 import Konva from 'konva'
 import type { CanvasManager } from './CanvasManager'
 import { useProjectStore } from '../stores/projectStore'
+import { computeCenteredImageLayout, type ImageLayout } from '../domain/services/ImageLayoutCalculator'
 
 export class ImageLoader {
   private canvas: CanvasManager
@@ -10,27 +11,19 @@ export class ImageLoader {
     this.canvas = canvas
   }
 
-  load(dataUrl: string): Promise<void> {
+  load(dataUrl: string, persistedLayout: ImageLayout | null = null): Promise<ImageLayout> {
     return new Promise((resolve, reject) => {
       const img = new Image()
       img.onload = () => {
-        const stageW = this.canvas.stage.width()
-        const stageH = this.canvas.stage.height()
-
-        const maxW = stageW * 0.9
-        const maxH = stageH * 0.9
-        const scale = Math.min(maxW / img.width, maxH / img.height)
-        const w = img.width * scale
-        const h = img.height * scale
+        const layout = persistedLayout ?? computeCenteredImageLayout(
+          this.canvas.stage.width(), this.canvas.stage.height(), img.width, img.height,
+        )
 
         if (this.imageNode) this.imageNode.destroy()
 
-        const x = (stageW - w) / 2
-        const y = (stageH - h) / 2
-
         this.imageNode = new Konva.Image({
           image: img,
-          x, y, width: w, height: h,
+          x: layout.x, y: layout.y, width: layout.w, height: layout.h,
           listening: false,
         })
 
@@ -38,8 +31,8 @@ export class ImageLoader {
         this.canvas.layers.background.add(this.imageNode)
         this.canvas.layers.background.batchDraw()
 
-        useProjectStore().setBackgroundImageLayout({ x, y, w, h })
-        resolve()
+        useProjectStore().setBackgroundImageLayout(layout)
+        resolve(layout)
       }
       img.onerror = reject
       img.src = dataUrl

@@ -58,7 +58,7 @@ describe('AppHeader', () => {
 
     it('Should remove the active zone when "Supprimer la zone active" is confirmed', async () => {
       const store = useProjectStore()
-      store.addZone({ id: 'z-2', name: 'Zone 2', scale: null, backgroundImage: null, colorAssignments: [], traces: [], printConfig: defaultPrintConfig() })
+      store.addZone({ id: 'z-2', name: 'Zone 2', scale: null, backgroundImage: null, backgroundImageLayout: null, colorAssignments: [], traces: [], printConfig: defaultPrintConfig() })
       const idToRemove = store.project.activeZoneId
       vi.spyOn(window, 'confirm').mockReturnValue(true)
       const wrapper = mount(AppHeader)

@@ -13,7 +13,7 @@ function surfaceTrace(points: [number, number][], colorAssignmentId = 'ca1', up 
 }
 
 function zoneWith(traces: Trace[], colorAssignments = COLOR_ASSIGNMENTS): Zone {
-  return { id: 'z1', name: 'Zone', scale: SCALE, backgroundImage: null, colorAssignments, traces, printConfig: defaultPrintConfig() }
+  return { id: 'z1', name: 'Zone', scale: SCALE, backgroundImage: null, backgroundImageLayout: null, colorAssignments, traces, printConfig: defaultPrintConfig() }
 }
 
 describe('computeFramingCamera', () => {

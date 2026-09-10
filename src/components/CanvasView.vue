@@ -11,6 +11,7 @@ import { ScaleRenderer } from '../canvas/renderers/ScaleRenderer'
 import { TraceRenderer } from '../canvas/renderers/TraceRenderer'
 import { NumberRenderer } from '../canvas/renderers/NumberRenderer'
 import { buildScale } from '../domain/services/ScaleCalculator'
+import type { ImageLayout } from '../domain/services/ImageLayoutCalculator'
 import { computeTraceVariables } from '../domain/services/ChiffrageCalculator'
 import type { LineTrace, SurfaceTrace } from '../domain/models/Trace'
 import ScaleDialog from './dialogs/ScaleDialog.vue'
@@ -436,12 +437,18 @@ function onPolygonDone(points: [number, number][]) {
 }
 
 // ── Image drag & drop / paste ────────────────────────────────────────────────
+function loadBackgroundImage(zoneId: string, dataUrl: string, persistedLayout: ImageLayout | null) {
+  imageLoader?.load(dataUrl, persistedLayout).then((layout) => {
+    if (!persistedLayout) store.updateZone(zoneId, { backgroundImageLayout: layout })
+  })
+}
+
 function loadImageFile(file: File) {
   const reader = new FileReader()
   reader.onload = async (ev) => {
     const dataUrl = ev.target?.result as string
-    await imageLoader?.load(dataUrl)
-    store.updateZone(store.activeZone!.id, { backgroundImage: dataUrl })
+    const layout = await imageLoader?.load(dataUrl)
+    store.updateZone(store.activeZone!.id, { backgroundImage: dataUrl, backgroundImageLayout: layout ?? null })
   }
   reader.readAsDataURL(file)
 }
@@ -540,7 +547,7 @@ onMounted(() => {
   }, { passive: false })
 
   const zone = store.activeZone
-  if (zone?.backgroundImage) imageLoader.load(zone.backgroundImage)
+  if (zone?.backgroundImage) loadBackgroundImage(zone.id, zone.backgroundImage, zone.backgroundImageLayout)
   rerenderAll()
 
   const resizeObs = new ResizeObserver(() => {
@@ -566,11 +573,11 @@ onMounted(() => {
     { immediate: true },
   )
 
-  // Changement de zone active ou de son image de fond : recharger l'image (repositionnée)
+  // Changement de zone active ou de son image de fond : recharger l'image
   watch(
     () => [store.project.activeZoneId, store.activeZone?.backgroundImage] as const,
-    ([, img]) => {
-      if (img) imageLoader?.load(img)
+    ([zoneId, img]) => {
+      if (img && zoneId) loadBackgroundImage(zoneId, img, store.activeZone?.backgroundImageLayout ?? null)
       else imageLoader?.clear()
       rerenderAll()
       activateTool(store.drawMode)
