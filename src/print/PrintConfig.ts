@@ -3,7 +3,7 @@ export interface PrintConfig {
   show2D: boolean
   show3D: boolean
   showRecapOuvrage: boolean
-  showRecapTarifs: boolean
+  showDevis: boolean
   showRecapConstituent: boolean
   showList: boolean
 }
@@ -14,7 +14,7 @@ export function defaultPrintConfig(): PrintConfig {
     show2D: true,
     show3D: false,
     showRecapOuvrage: true,
-    showRecapTarifs: true,
+    showDevis: true,
     showRecapConstituent: true,
     showList: true,
   }

@@ -67,10 +67,10 @@ describe('PrintLayout', () => {
     })
   })
 
-  describe('Récap. Tarifs section', () => {
+  describe('Devis section', () => {
     it('Should list an ouvrage that has a trace in the active zone, with its description and total price', () => {
       const wrapper = mountWithUsedAndUnusedOuvrages()
-      const section = wrapper.find('[data-testid="recap-tarifs"]')
+      const section = wrapper.find('[data-testid="devis-section"]')
 
       expect(section.text()).toContain(usedOuvrage.name)
       expect(section.text()).toContain(usedOuvrage.description)
@@ -78,14 +78,14 @@ describe('PrintLayout', () => {
 
     it('Should not list an ouvrage that has no trace in the active zone', () => {
       const wrapper = mountWithUsedAndUnusedOuvrages()
-      const section = wrapper.find('[data-testid="recap-tarifs"]')
+      const section = wrapper.find('[data-testid="devis-section"]')
 
       expect(section.text()).not.toContain(unusedOuvrage.name)
     })
 
-    it('Should not show constituent detail rows in the Récap. Tarifs section', () => {
+    it('Should not show constituent detail rows in the Devis section', () => {
       const wrapper = mountWithUsedAndUnusedOuvrages()
-      const section = wrapper.find('[data-testid="recap-tarifs"]')
+      const section = wrapper.find('[data-testid="devis-section"]')
 
       expect(section.text()).not.toContain(usedConstituent.name)
     })

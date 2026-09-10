@@ -56,10 +56,10 @@ async function mountOnConstituentTab() {
   return wrapper
 }
 
-async function mountOnTarifsTab() {
+async function mountOnDevisTab() {
   setupZoneWithUsedAndUnusedOuvrages()
   const wrapper = mount(ChiffrageFloat)
-  await clickTab(wrapper, 'Récap. Tarifs')
+  await clickTab(wrapper, 'Devis')
   return wrapper
 }
 
@@ -82,25 +82,25 @@ describe('ChiffrageFloat', () => {
     })
   })
 
-  describe('Récap. Tarifs tab', () => {
+  describe('Devis tab', () => {
     it('Should list an ouvrage that has a trace in the active zone, with its description and total price', async () => {
-      const wrapper = await mountOnTarifsTab()
-      const panel = wrapper.find('[data-testid="tarifs-panel"]')
+      const wrapper = await mountOnDevisTab()
+      const panel = wrapper.find('[data-testid="devis-panel"]')
 
       expect(panel.text()).toContain(usedOuvrage.name)
       expect(panel.text()).toContain(usedOuvrage.description)
     })
 
     it('Should not list an ouvrage that has no trace in the active zone', async () => {
-      const wrapper = await mountOnTarifsTab()
-      const panel = wrapper.find('[data-testid="tarifs-panel"]')
+      const wrapper = await mountOnDevisTab()
+      const panel = wrapper.find('[data-testid="devis-panel"]')
 
       expect(panel.text()).not.toContain(unusedOuvrage.name)
     })
 
-    it('Should not show constituent detail rows in the Récap. Tarifs tab', async () => {
-      const wrapper = await mountOnTarifsTab()
-      const panel = wrapper.find('[data-testid="tarifs-panel"]')
+    it('Should not show constituent detail rows in the Devis tab', async () => {
+      const wrapper = await mountOnDevisTab()
+      const panel = wrapper.find('[data-testid="devis-panel"]')
 
       expect(panel.text()).not.toContain(usedConstituent.name)
     })

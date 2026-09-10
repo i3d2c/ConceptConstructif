@@ -7,7 +7,7 @@ import type { OuvrageConstituent } from '../domain/models/Ouvrage'
 import { evaluateRecap } from '../domain/services/FormulaEvaluator'
 
 const store = useProjectStore()
-const tab = ref<'list' | 'ouvrage' | 'tarifs' | 'constituent'>('list')
+const tab = ref<'list' | 'ouvrage' | 'devis' | 'constituent'>('list')
 
 const traceResults = computed<TraceChiffrage[]>(() => {
   const zone = store.activeZone
@@ -115,7 +115,7 @@ function fmtQty(n: number): string {
     <div class="tabs">
       <button :class="{ active: tab === 'list' }" @click="tab = 'list'">Liste détaillée</button>
       <button :class="{ active: tab === 'ouvrage' }" @click="tab = 'ouvrage'">Récap/Ouvrage</button>
-      <button :class="{ active: tab === 'tarifs' }" @click="tab = 'tarifs'">Récap. Tarifs</button>
+      <button :class="{ active: tab === 'devis' }" @click="tab = 'devis'">Devis</button>
       <button :class="{ active: tab === 'constituent' }" @click="tab = 'constituent'">Récap/Constituant</button>
     </div>
 
@@ -204,8 +204,8 @@ function fmtQty(n: number): string {
       </table>
     </div>
 
-    <!-- Onglet 3 : récap tarifs -->
-    <div v-else-if="tab === 'tarifs'" class="scroll-body" data-testid="tarifs-panel">
+    <!-- Onglet 3 : devis -->
+    <div v-else-if="tab === 'devis'" class="scroll-body" data-testid="devis-panel">
       <table>
         <thead>
           <tr><th>Ouvrage</th><th>Description</th><th class="num">Total</th></tr>

@@ -15,17 +15,17 @@ type PresetName = 'total' | 'chiffrage' | 'devis'
 const presets: Record<PresetName, PrintConfig> = {
   total: {
     title: true, show2D: true, show3D: true,
-    showRecapOuvrage: true, showRecapTarifs: true,
+    showRecapOuvrage: true, showDevis: true,
     showRecapConstituent: true, showList: true,
   },
   chiffrage: {
     title: true, show2D: true, show3D: false,
-    showRecapOuvrage: false, showRecapTarifs: false,
+    showRecapOuvrage: false, showDevis: false,
     showRecapConstituent: true, showList: true,
   },
   devis: {
     title: true, show2D: true, show3D: true,
-    showRecapOuvrage: false, showRecapTarifs: true,
+    showRecapOuvrage: false, showDevis: true,
     showRecapConstituent: false, showList: false,
   },
 }
@@ -70,8 +70,8 @@ function doPrint() {
           Récapitulatif par ouvrage
         </label>
         <label class="checkbox-row">
-          <input type="checkbox" v-model="config.showRecapTarifs" />
-          Récap. Tarifs
+          <input type="checkbox" v-model="config.showDevis" />
+          Devis
         </label>
         <label class="checkbox-row">
           <input type="checkbox" v-model="config.showRecapConstituent" />

@@ -170,9 +170,9 @@ function fmtQty(n: number) {
       </table>
     </div>
 
-    <!-- Récap. Tarifs -->
-    <div v-if="config.showRecapTarifs" class="print-section" data-testid="recap-tarifs">
-      <h3>Récap. Tarifs</h3>
+    <!-- Devis -->
+    <div v-if="config.showDevis" class="print-section" data-testid="devis-section">
+      <h3>Devis</h3>
       <table class="print-table">
         <thead>
           <tr><th>Ouvrage</th><th>Description</th><th>Total</th></tr>

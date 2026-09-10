@@ -12,19 +12,19 @@ function allChecked(wrapper: ReturnType<typeof mount>) {
 }
 
 describe('PrintDialog', () => {
-  describe('Récap. Tarifs checkbox', () => {
+  describe('Devis checkbox', () => {
     it('Should be checked by default', () => {
       const wrapper = mount(PrintDialog)
 
-      expect((findCheckbox(wrapper, 'Récap. Tarifs').element as HTMLInputElement).checked).toBe(true)
+      expect((findCheckbox(wrapper, 'Devis').element as HTMLInputElement).checked).toBe(true)
     })
 
-    it('Should include showRecapTarifs in the emitted config when unchecked and printing', async () => {
+    it('Should include showDevis in the emitted config when unchecked and printing', async () => {
       const wrapper = mount(PrintDialog)
-      await findCheckbox(wrapper, 'Récap. Tarifs').setValue(false)
+      await findCheckbox(wrapper, 'Devis').setValue(false)
       await wrapper.find('.dialog-actions .active').trigger('click')
 
-      expect(wrapper.emitted('print')![0][0]).toMatchObject({ showRecapTarifs: false })
+      expect(wrapper.emitted('print')![0][0]).toMatchObject({ showDevis: false })
     })
   })
 
@@ -48,14 +48,14 @@ describe('PrintDialog', () => {
 
       expect(wrapper.emitted('print')![0][0]).toEqual({
         title: true, show2D: true, show3D: false,
-        showRecapOuvrage: false, showRecapTarifs: false,
+        showRecapOuvrage: false, showDevis: false,
         showRecapConstituent: true, showList: true,
       })
     })
   })
 
   describe('Devis preset button', () => {
-    it('Should check only Titre, Vue 2D, Vue 3D and Récap. Tarifs', async () => {
+    it('Should check only Titre, Vue 2D, Vue 3D and Devis', async () => {
       const wrapper = mount(PrintDialog)
 
       await wrapper.find('[data-testid="preset-devis"]').trigger('click')
@@ -63,7 +63,7 @@ describe('PrintDialog', () => {
 
       expect(wrapper.emitted('print')![0][0]).toEqual({
         title: true, show2D: true, show3D: true,
-        showRecapOuvrage: false, showRecapTarifs: true,
+        showRecapOuvrage: false, showDevis: true,
         showRecapConstituent: false, showList: false,
       })
     })
