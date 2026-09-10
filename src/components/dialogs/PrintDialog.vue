@@ -40,6 +40,10 @@ function doPrint() {
           Récapitulatif par ouvrage
         </label>
         <label class="checkbox-row">
+          <input type="checkbox" v-model="config.showRecapTarifs" />
+          Récap. Tarifs
+        </label>
+        <label class="checkbox-row">
           <input type="checkbox" v-model="config.showRecapConstituent" />
           Récapitulatif par constituant
         </label>
