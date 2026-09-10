@@ -17,7 +17,6 @@ export class Scene3D {
   private scene: THREE.Scene
   private camera: THREE.PerspectiveCamera
   private controls: OrbitControls
-  private grid: THREE.GridHelper
   private store: StoreRef
   private animId = 0
   private framed = false
@@ -43,9 +42,6 @@ export class Scene3D {
     const dir = new THREE.DirectionalLight(0xffffff, 0.8)
     dir.position.set(10, 20, 10)
     this.scene.add(dir)
-
-    this.grid = new THREE.GridHelper(50, 50, 0x2a2a4a, 0x1a1a2e)
-    this.scene.add(this.grid)
 
     this.animate()
   }
@@ -79,7 +75,6 @@ export class Scene3D {
         this.camera.position.set(framing.position.x, framing.position.y, framing.position.z)
         this.controls.target.set(framing.target.x, framing.target.y, framing.target.z)
         this.controls.update()
-        this.grid.position.set(framing.target.x, 0, framing.target.z)
         this.framed = true
       }
     }
