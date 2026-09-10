@@ -112,6 +112,29 @@ describe('OuvrageForm', () => {
     })
   })
 
+  describe('variables tooltip', () => {
+    it('Should not render a standalone Variables help button', () => {
+      const wrapper = mountForm(existingOuvrage)
+      const buttons = wrapper.findAll('button').map(b => b.text())
+      expect(buttons).not.toContain('? Variables')
+    })
+
+    it('Should show the variables tooltip when a row emits formulaFocus', async () => {
+      const wrapper = mountForm(existingOuvrage)
+      const row = wrapper.findComponent({ name: 'OuvrageConstituentRow' })
+      await row.find('.oc-formulas input').trigger('focus')
+      expect(wrapper.findComponent({ name: 'FormulaVariablesTooltip' }).props('visible')).toBe(true)
+    })
+
+    it('Should hide the variables tooltip when the row emits formulaBlur', async () => {
+      const wrapper = mountForm(existingOuvrage)
+      const row = wrapper.findComponent({ name: 'OuvrageConstituentRow' })
+      await row.find('.oc-formulas input').trigger('focus')
+      await row.find('.oc-formulas input').trigger('blur')
+      expect(wrapper.findComponent({ name: 'FormulaVariablesTooltip' }).props('visible')).toBe(false)
+    })
+  })
+
   describe('saveOuvrage', () => {
     it('Should include infosTechniques in the saved ouvrage when filled', async () => {
       const wrapper = mountForm(existingOuvrage)

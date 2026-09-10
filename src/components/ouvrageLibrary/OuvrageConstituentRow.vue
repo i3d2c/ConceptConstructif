@@ -18,6 +18,8 @@ const emit = defineEmits<{
   dragstart: []
   dragover: [pointerRatio: number]
   dragend: []
+  formulaFocus: [event: FocusEvent]
+  formulaBlur: []
 }>()
 
 const flagsCount = computed(() =>
@@ -70,7 +72,13 @@ function onDragOver(e: DragEvent) {
     <span class="oc-pos">C{{ oc.position }}</span>
     <ConstituentCombobox ref="comboboxRef" v-model="oc.constituentId" :constituent-options="constituentOptions" />
     <div class="oc-formulas">
-      <input v-model="oc.formula" placeholder="ex: L*H/(0.22*0.05)" title="Formule par tracé" />
+      <input
+        v-model="oc.formula"
+        placeholder="ex: L*H/(0.22*0.05)"
+        title="Formule par tracé"
+        @focus="emit('formulaFocus', $event)"
+        @blur="emit('formulaBlur')"
+      />
       <span v-if="forwardReferences.length > 0" class="oc-formula-warning">
         ⚠ référence en avant invalide : {{ forwardReferences.map(n => `C${n}`).join(', ') }}
       </span>

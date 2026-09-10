@@ -45,6 +45,27 @@ describe('ConstituentForm', () => {
     })
   })
 
+  describe('variables tooltip', () => {
+    it('Should not render a standalone Variables help button', () => {
+      const wrapper = mountForm(existingConstituent)
+      const buttons = wrapper.findAll('button').map(b => b.text())
+      expect(buttons).not.toContain('? Variables')
+    })
+
+    it('Should show the variables tooltip when the formulaRecap input is focused', async () => {
+      const wrapper = mountForm(existingConstituent)
+      await wrapper.find('input[placeholder="ex: ceil(X)"]').trigger('focus')
+      expect(wrapper.findComponent({ name: 'FormulaVariablesTooltip' }).props('visible')).toBe(true)
+    })
+
+    it('Should hide the variables tooltip when the formulaRecap input loses focus', async () => {
+      const wrapper = mountForm(existingConstituent)
+      await wrapper.find('input[placeholder="ex: ceil(X)"]').trigger('focus')
+      await wrapper.find('input[placeholder="ex: ceil(X)"]').trigger('blur')
+      expect(wrapper.findComponent({ name: 'FormulaVariablesTooltip' }).props('visible')).toBe(false)
+    })
+  })
+
   describe('saveConstituent', () => {
     it('Should save formuleTypique when filled', async () => {
       const wrapper = mountForm(existingConstituent)
