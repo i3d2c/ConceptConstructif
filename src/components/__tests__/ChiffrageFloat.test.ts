@@ -44,10 +44,15 @@ function setupZoneWithUsedAndUnusedOuvrages() {
   return store
 }
 
+async function clickTab(wrapper: ReturnType<typeof mount>, label: string) {
+  const button = wrapper.findAll('button').find(b => b.text() === label)
+  await button!.trigger('click')
+}
+
 async function mountOnConstituentTab() {
   setupZoneWithUsedAndUnusedOuvrages()
   const wrapper = mount(ChiffrageFloat)
-  await wrapper.findAll('button')[2].trigger('click')
+  await clickTab(wrapper, 'Récap/Constituant')
   return wrapper
 }
 
