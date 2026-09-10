@@ -11,6 +11,7 @@ import { ScaleRenderer } from '../canvas/renderers/ScaleRenderer'
 import { TraceRenderer } from '../canvas/renderers/TraceRenderer'
 import { NumberRenderer } from '../canvas/renderers/NumberRenderer'
 import { buildScale } from '../domain/services/ScaleCalculator'
+import { moveScalePoint, moveScaleLine } from '../domain/services/ScaleDragCalculator'
 import type { ImageLayout } from '../domain/services/ImageLayoutCalculator'
 import { computeTraceVariables } from '../domain/services/ChiffrageCalculator'
 import type { LineTrace, SurfaceTrace } from '../domain/models/Trace'
@@ -37,6 +38,8 @@ const pendingScalePoints = ref<[[number, number], [number, number]] | null>(null
 const hoverTraceId = ref<string | null>(null)
 const hoverPos = ref({ x: 0, y: 0 })
 
+const scaleSelected = ref(false)
+
 // Curseur "pas de couleur sélectionnée"
 const pointerPos = ref({ x: 0, y: 0 })
 const noColorSelected = computed(() =>
@@ -61,9 +64,9 @@ const hoverInfo = computed(() => {
 
 // ── Select mode drag state ─────────────────────────────────────────────────
 type DragState = {
-  type: 'vertex' | 'trace'
+  type: 'vertex' | 'trace' | 'scale-point' | 'scale'
   traceId: string
-  vertexIdx: number   // -1 for trace drag
+  vertexIdx: number   // -1 for trace/scale drag
   startMouseX: number
   startMouseY: number
   startPoints: [number, number][]
@@ -86,6 +89,19 @@ function parseHandleId(id: string): { traceId: string; idx: number } | null {
 function getHandle(traceId: string, idx: number): Konva.Circle | undefined {
   return cm?.layers.tool.getChildren()
     .find(n => n.id() === makeHandleId(traceId, idx)) as Konva.Circle | undefined
+}
+
+// Scale handle IDs: "sh_${idx}" (0 or 1)
+const SCALE_LINE_ID = 'scale-line'
+function makeScaleHandleId(idx: number) { return `sh_${idx}` }
+function parseScaleHandleId(id: string): number | null {
+  if (!id.startsWith('sh_')) return null
+  return parseInt(id.slice(3))
+}
+
+function getScaleHandle(idx: number): Konva.Circle | undefined {
+  return cm?.layers.tool.getChildren()
+    .find(n => n.id() === makeScaleHandleId(idx)) as Konva.Circle | undefined
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -150,6 +166,38 @@ function renderSelectHandles() {
       cm.layers.tool.add(handle)
     }
   }
+
+  if (zone.scale) {
+    const [[x1, y1], [x2, y2]] = zone.scale.tracePoints
+    const hitLine = new Konva.Line({
+      id: SCALE_LINE_ID,
+      points: [x1, y1, x2, y2],
+      stroke: '#facc15',
+      strokeWidth: 12,
+      opacity: 0,
+      listening: true,
+    })
+    hitLine.on('mouseover', () => { if (!isDragging) cm!.stage.container().style.cursor = 'grab' })
+    hitLine.on('mouseout', () => { if (!isDragging) cm!.stage.container().style.cursor = 'default' })
+    cm.layers.tool.add(hitLine)
+
+    if (scaleSelected.value) {
+      for (const [idx, [px, py]] of [[0, [x1, y1]], [1, [x2, y2]]] as [number, [number, number]][]) {
+        const handle = new Konva.Circle({
+          id: makeScaleHandleId(idx),
+          x: px, y: py,
+          radius: 5,
+          fill: '#ffffff',
+          stroke: '#facc15',
+          strokeWidth: 2,
+          listening: true,
+        })
+        handle.on('mouseover', () => { if (!isDragging) cm!.stage.container().style.cursor = 'grab' })
+        handle.on('mouseout', () => { if (!isDragging) cm!.stage.container().style.cursor = 'default' })
+        cm.layers.tool.add(handle)
+      }
+    }
+  }
   cm.layers.tool.batchDraw()
 }
 
@@ -158,11 +206,19 @@ function renderSelectHandles() {
 // dans la même frame — utilisé dès le mousedown pour que le drag d'un tracé non pré-sélectionné
 // bascule le panneau et affiche les poignées sans attendre le drop.
 function selectTrace(id: string | null) {
+  if (id !== null) scaleSelected.value = false
   const prev = store.selectedTraceId
   if (prev === id) return
   if (prev) traceRenderer?.highlight(prev, false)
   if (id) traceRenderer?.highlight(id, true)
   store.selectedTraceId = id
+  if (store.drawMode === 'select') renderSelectHandles()
+}
+
+function selectScale(selected: boolean) {
+  if (scaleSelected.value === selected) return
+  scaleSelected.value = selected
+  if (selected) selectTrace(null)
   if (store.drawMode === 'select') renderSelectHandles()
 }
 
@@ -267,9 +323,25 @@ function activateTool(mode: string) {
           startPoints: trace.points.map(p => [p[0], p[1]] as [number, number]),
         }
         cm!.stage.container().style.cursor = e.evt.ctrlKey ? 'copy' : 'grabbing'
+      } else if (id === SCALE_LINE_ID && store.activeZone.scale) {
+        selectScale(true)
+        dragState = {
+          type: 'scale', traceId: '', vertexIdx: -1,
+          startMouseX: pos.x, startMouseY: pos.y,
+          startPoints: store.activeZone.scale.tracePoints.map(p => [p[0], p[1]] as [number, number]),
+        }
+        cm!.stage.container().style.cursor = 'grabbing'
+      } else if (parseScaleHandleId(id) !== null && store.activeZone.scale) {
+        dragState = {
+          type: 'scale-point', traceId: '', vertexIdx: parseScaleHandleId(id)!,
+          startMouseX: pos.x, startMouseY: pos.y,
+          startPoints: store.activeZone.scale.tracePoints.map(p => [p[0], p[1]] as [number, number]),
+        }
+        cm!.stage.container().style.cursor = 'grabbing'
       } else if (!id) {
         // Clic sur le fond du canvas : désélection
         selectTrace(null)
+        selectScale(false)
       }
     })
 
@@ -300,7 +372,7 @@ function activateTool(mode: string) {
         handle?.position({ x: vPos.x, y: vPos.y })
         cm!.layers.tool.batchDraw()
         store.liveTracePoints = newPts
-      } else {
+      } else if (dragState.type === 'trace') {
         const liveCtrl = e.evt.ctrlKey
         const newPts = dragState.startPoints.map(p => [p[0] + dx, p[1] + dy] as [number, number])
         const lineNode = cm!.layers.traces.findOne<Konva.Line>('#' + dragState.traceId)
@@ -330,6 +402,16 @@ function activateTool(mode: string) {
         cm!.layers.traces.batchDraw()
         cm!.layers.tool.batchDraw()
         cm!.stage.container().style.cursor = liveCtrl ? 'copy' : 'grabbing'
+      } else if (store.activeZone?.scale) {
+        const activeScale = store.activeZone.scale
+        const startTracePoints = dragState.startPoints as [[number, number], [number, number]]
+        const newTracePoints = dragState.type === 'scale-point'
+          ? moveScalePoint(startTracePoints, dragState.vertexIdx as 0 | 1, dx, dy)
+          : moveScaleLine(startTracePoints, dx, dy)
+        scaleRenderer?.render(buildScale(newTracePoints, activeScale.realLength))
+        getScaleHandle(0)?.position({ x: newTracePoints[0][0], y: newTracePoints[0][1] })
+        getScaleHandle(1)?.position({ x: newTracePoints[1][0], y: newTracePoints[1][1] })
+        cm!.layers.tool.batchDraw()
       }
     })
 
@@ -352,7 +434,7 @@ function activateTool(mode: string) {
       const moved = wasDrag && Math.hypot(dx, dy) > 4
       const zone = store.activeZone
 
-      if (moved) {
+      if (moved && (ds.type === 'vertex' || ds.type === 'trace')) {
         let newPts: [number, number][]
         if (ds.type === 'vertex') {
           const rawPos = { x: ds.startPoints[ds.vertexIdx][0] + dx, y: ds.startPoints[ds.vertexIdx][1] + dy }
@@ -376,6 +458,12 @@ function activateTool(mode: string) {
         } else {
           store.updateTrace(zone.id, ds.traceId, { points: newPts })
         }
+      } else if (moved && zone.scale) {
+        const startTracePoints = ds.startPoints as [[number, number], [number, number]]
+        const newTracePoints = ds.type === 'scale-point'
+          ? moveScalePoint(startTracePoints, ds.vertexIdx as 0 | 1, dx, dy)
+          : moveScaleLine(startTracePoints, dx, dy)
+        store.updateZone(zone.id, { scale: buildScale(newTracePoints, zone.scale.realLength) })
       }
       // Simple clic ou drag d'un tracé : déjà sélectionné dès le mousedown
 
@@ -576,7 +664,8 @@ onMounted(() => {
   // Changement de zone active ou de son image de fond : recharger l'image
   watch(
     () => [store.project.activeZoneId, store.activeZone?.backgroundImage] as const,
-    ([zoneId, img]) => {
+    ([zoneId, img], prev) => {
+      if (!prev || zoneId !== prev[0]) scaleSelected.value = false
       if (img && zoneId) loadBackgroundImage(zoneId, img, store.activeZone?.backgroundImageLayout ?? null)
       else imageLoader?.clear()
       rerenderAll()
