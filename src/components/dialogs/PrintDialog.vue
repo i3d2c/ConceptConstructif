@@ -10,6 +10,30 @@ const emit = defineEmits<{
 
 const config = ref<PrintConfig>(defaultPrintConfig())
 
+type PresetName = 'total' | 'chiffrage' | 'devis'
+
+const presets: Record<PresetName, PrintConfig> = {
+  total: {
+    title: true, show2D: true, show3D: true,
+    showRecapOuvrage: true, showRecapTarifs: true,
+    showRecapConstituent: true, showList: true,
+  },
+  chiffrage: {
+    title: true, show2D: true, show3D: false,
+    showRecapOuvrage: false, showRecapTarifs: false,
+    showRecapConstituent: true, showList: true,
+  },
+  devis: {
+    title: true, show2D: true, show3D: true,
+    showRecapOuvrage: false, showRecapTarifs: true,
+    showRecapConstituent: false, showList: false,
+  },
+}
+
+function applyPreset(name: PresetName) {
+  config.value = { ...presets[name] }
+}
+
 function doPrint() {
   emit('print', { ...config.value })
 }
@@ -20,6 +44,12 @@ function doPrint() {
     <div class="dialog">
       <h3>Configuration d'impression</h3>
       <p class="hint">Sélectionnez les éléments à inclure dans le PDF</p>
+
+      <div class="presets">
+        <button type="button" data-testid="preset-total" @click="applyPreset('total')">Total</button>
+        <button type="button" data-testid="preset-chiffrage" @click="applyPreset('chiffrage')">Chiffrage</button>
+        <button type="button" data-testid="preset-devis" @click="applyPreset('devis')">Devis</button>
+      </div>
 
       <div class="options">
         <label class="checkbox-row">
@@ -79,6 +109,8 @@ function doPrint() {
 }
 h3 { font-size: 14px; }
 .hint { color: var(--text-muted); font-size: 11px; }
+.presets { display: flex; gap: 8px; }
+.presets button { flex: 1; }
 .options { display: flex; flex-direction: column; gap: 8px; }
 .checkbox-row {
   display: flex; align-items: center; gap: 8px;
