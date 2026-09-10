@@ -35,6 +35,20 @@ const canvas3DSnapshot = ref<string | null>(null)
 const canvasViewRef = ref<InstanceType<typeof CanvasView> | null>(null)
 const scene3DRef = ref<InstanceType<typeof Scene3DFloat> | null>(null)
 
+function onImportPlan() {
+  if (store.activeZone?.backgroundImage) {
+    if (!confirm('Remplacer le plan actuel par une nouvelle image ?')) return
+  }
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = 'image/*'
+  input.onchange = () => {
+    const file = input.files?.[0]
+    if (file) canvasViewRef.value?.loadImageFile(file)
+  }
+  input.click()
+}
+
 function onKeydown(e: KeyboardEvent) {
   if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
     e.preventDefault()
@@ -111,6 +125,9 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
     <div class="app-body">
       <SidebarLeft
+        :show3d="show3D"
+        :show-chiffrage="showChiffrage"
+        @import-plan="onImportPlan"
         @open-ouvrages="showOuvrageModal = true"
         @toggle3d="show3D = !show3D"
         @toggle-chiffrage="showChiffrage = !showChiffrage"

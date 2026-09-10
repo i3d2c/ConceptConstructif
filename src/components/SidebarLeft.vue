@@ -1,10 +1,17 @@
 <script setup lang="ts">
 import AdBlock from './AdBlock.vue'
-import ColorSection from './ColorSection.vue'
 import ZoneSection from './ZoneSection.vue'
+import WorkflowSteps from './WorkflowSteps.vue'
 import ToolsSection from './ToolsSection.vue'
+import OptionsSection from './OptionsSection.vue'
+
+defineProps<{
+  show3d: boolean
+  showChiffrage: boolean
+}>()
 
 const emit = defineEmits<{
+  importPlan: []
   openOuvrages: []
   toggle3d: []
   toggleChiffrage: []
@@ -15,15 +22,16 @@ const emit = defineEmits<{
   <aside class="sidebar no-print">
     <ZoneSection />
     <hr class="divider" />
+    <WorkflowSteps @import-plan="emit('importPlan')" @open-ouvrages="emit('openOuvrages')" />
+    <hr class="divider" />
     <ToolsSection />
     <hr class="divider" />
-    <button data-tour="tour-ouvrages" class="full-btn" @click="emit('openOuvrages')">Ouvrages &amp; Constituants</button>
-    <div class="bottom-actions">
-      <button data-tour="tour-chiffrage" @click="emit('toggleChiffrage')">Chiffrage</button>
-      <button data-tour="tour-3d" @click="emit('toggle3d')">3D</button>
-    </div>
-    <hr class="divider" />
-    <ColorSection />
+    <OptionsSection
+      :show3d="show3d"
+      :show-chiffrage="showChiffrage"
+      @toggle3d="emit('toggle3d')"
+      @toggle-chiffrage="emit('toggleChiffrage')"
+    />
     <div class="ad-slot no-print">
       <AdBlock />
     </div>
@@ -42,8 +50,5 @@ const emit = defineEmits<{
   gap: 0;
   padding: 8px;
 }
-.full-btn { width: 100%; }
-.bottom-actions { display: flex; gap: 6px; margin-top: 6px; }
-.bottom-actions button { flex: 1; }
 .ad-slot { flex-shrink: 0; margin-top: 8px; }
 </style>

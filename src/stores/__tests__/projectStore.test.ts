@@ -193,4 +193,59 @@ describe('projectStore — trace selection', () => {
       expect(store.selectedTraceId).toBeNull()
     })
   })
+
+  describe('showNumbers', () => {
+    it('Should be hidden by default', () => {
+      const store = useProjectStore()
+
+      expect(store.showNumbers).toBe(false)
+    })
+  })
+
+  describe('setSelectedCaId', () => {
+    it('Should switch the draw mode to "line" when selecting a color while in "select" mode', () => {
+      const store = useProjectStore()
+      store.setDrawMode('select')
+
+      store.setSelectedCaId(ca.id)
+
+      expect(store.drawMode).toBe('line')
+    })
+
+    it('Should switch the draw mode to "line" when selecting a color while in "scale" mode', () => {
+      const store = useProjectStore()
+      store.setDrawMode('scale')
+
+      store.setSelectedCaId(ca.id)
+
+      expect(store.drawMode).toBe('line')
+    })
+
+    it('Should keep the draw mode as "surface" when selecting a color while already tracing a surface', () => {
+      const store = useProjectStore()
+      store.setDrawMode('surface')
+
+      store.setSelectedCaId(ca.id)
+
+      expect(store.drawMode).toBe('surface')
+    })
+
+    it('Should keep the draw mode as "line" when selecting a color while already tracing a line', () => {
+      const store = useProjectStore()
+      store.setDrawMode('line')
+
+      store.setSelectedCaId(ca.id)
+
+      expect(store.drawMode).toBe('line')
+    })
+
+    it('Should not change the draw mode when clearing the selection', () => {
+      const store = useProjectStore()
+      store.setDrawMode('select')
+
+      store.setSelectedCaId(null)
+
+      expect(store.drawMode).toBe('select')
+    })
+  })
 })

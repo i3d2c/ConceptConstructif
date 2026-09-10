@@ -1,49 +1,117 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useProjectStore } from '../stores/projectStore'
+import ColorAssignDialog from './dialogs/ColorAssignDialog.vue'
+import type { ColorAssignment } from '../domain/models/Zone'
 
 const store = useProjectStore()
+const editingCa = ref<ColorAssignment | null>(null)
+const showDialog = ref(false)
+
+function selectCa(ca: ColorAssignment) {
+  store.setSelectedCaId(ca.id)
+}
+
+function openEdit(ca: ColorAssignment, e: MouseEvent) {
+  e.stopPropagation()
+  editingCa.value = ca
+  showDialog.value = true
+}
+
+function openNew() {
+  editingCa.value = null
+  showDialog.value = true
+}
+
+function onSave(ca: ColorAssignment) {
+  const zone = store.activeZone
+  if (!zone) return
+  if (editingCa.value) {
+    store.updateColorAssignment(zone.id, ca.id, ca)
+  } else {
+    store.addColorAssignment(zone.id, ca)
+    store.setSelectedCaId(ca.id)
+  }
+  showDialog.value = false
+}
+
+function removeCa(ca: ColorAssignment, e: MouseEvent) {
+  e.stopPropagation()
+  const zone = store.activeZone
+  if (!zone) return
+  const traceCount = zone.traces.filter(t => t.colorAssignmentId === ca.id).length
+  const msg = traceCount > 0
+    ? `Supprimer cette couleur et les ${traceCount} tracé(s) associé(s) ? Cette action peut être annulée avec Ctrl+Z.`
+    : 'Supprimer cette couleur ? Cette action peut être annulée avec Ctrl+Z.'
+  if (!confirm(msg)) return
+  store.removeColorAssignment(zone.id, ca.id)
+  if (store.selectedCaId === ca.id) store.setSelectedCaId(null)
+}
 </script>
 
 <template>
   <div class="tools-section">
-    <div class="section-label">Outils</div>
+    <div class="section-label">Tracer</div>
     <div class="tool-btns">
-      <button data-tour="tour-scale" :class="{ active: store.drawMode === 'scale' }" title="Tracer l'échelle" @click="store.setDrawMode('scale')">Echelle</button>
       <button data-tour="tour-trace" :class="{ active: store.drawMode === 'line' }" title="Tracer un trait (mur)" @click="store.setDrawMode('line')">Trait</button>
       <button data-tour="tour-trace" :class="{ active: store.drawMode === 'surface' }" title="Tracer une surface" @click="store.setDrawMode('surface')">Surface</button>
       <button :class="{ active: store.drawMode === 'select' }" title="Sélectionner" @click="store.setDrawMode('select')">Select.</button>
     </div>
-    <label class="switch-row" :title="store.showNumbers ? 'Masquer les numéros' : 'Afficher les numéros'">
-      <span class="switch-label">Numéros</span>
-      <button
-        type="button"
-        role="switch"
-        :aria-checked="store.showNumbers"
-        class="switch"
-        :class="{ on: store.showNumbers }"
-        @click="store.showNumbers = !store.showNumbers"
+
+    <button data-tour="tour-add-color" class="add-btn" @click="openNew">+ Couleur</button>
+
+    <div class="color-list">
+      <div
+        v-for="ca in store.activeZone?.colorAssignments ?? []"
+        :key="ca.id"
+        class="color-entry"
+        :class="{ selected: store.selectedCaId === ca.id }"
+        @click="selectCa(ca)"
       >
-        <span class="switch-knob" />
-      </button>
-    </label>
+        <span class="swatch" :style="{ background: ca.color }" />
+        <div class="entry-info">
+          <div class="entry-ouvrage">
+            {{ store.project.ouvrages.find(o => o.id === ca.ouvrageId)?.name ?? '—' }}
+          </div>
+          <div class="entry-dim">E={{ ca.epaisseur }}m · H={{ ca.hauteur }}m</div>
+        </div>
+        <button class="edit-btn" title="Modifier" @click="openEdit(ca, $event)">✎</button>
+        <button class="delete-btn" title="Supprimer" @click="removeCa(ca, $event)">✕</button>
+      </div>
+    </div>
+
+    <ColorAssignDialog
+      v-if="showDialog"
+      :initial="editingCa"
+      :ouvrages="store.project.ouvrages"
+      @save="onSave"
+      @cancel="showDialog = false"
+    />
   </div>
 </template>
 
 <style scoped>
+.tools-section { display: flex; flex-direction: column; flex: 1; min-height: 0; }
 .section-label { color: var(--text-muted); font-size: 10px; text-transform: uppercase; margin-bottom: 6px; }
-.tool-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.tool-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin-bottom: 6px; }
 .tool-btns button { padding: 6px 4px; }
-.switch-row { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; font-size: 11px; }
-.switch-label { color: var(--text); }
-.switch {
-  position: relative; width: 30px; height: 16px; border-radius: 8px;
-  background: var(--surface2); border: 1px solid var(--border);
-  padding: 0; cursor: pointer; flex-shrink: 0; transition: background 0.15s;
+.color-list { flex: 1; min-height: 0; overflow-y: auto; }
+.color-entry {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 6px; border-radius: 4px; cursor: pointer; margin-bottom: 3px;
+  border: 1px solid var(--border);
 }
-.switch.on { background: var(--accent); border-color: var(--accent); }
-.switch-knob {
-  position: absolute; top: 1px; left: 1px; width: 12px; height: 12px;
-  border-radius: 50%; background: #fff; transition: left 0.15s;
+.color-entry:hover { background: var(--surface2); }
+.color-entry.selected { border-color: var(--accent); background: var(--surface2); }
+.swatch { width: 18px; height: 18px; border-radius: 3px; flex-shrink: 0; }
+.entry-info { flex: 1; overflow: hidden; }
+.entry-ouvrage { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.entry-dim { font-size: 10px; color: var(--text-muted); }
+.edit-btn, .delete-btn {
+  padding: 2px 5px; font-size: 12px; opacity: 0.5;
+  background: none; border: none; cursor: pointer; color: var(--text);
 }
-.switch.on .switch-knob { left: 15px; }
+.edit-btn:hover { opacity: 1; }
+.delete-btn:hover { opacity: 1; color: var(--accent); }
+.add-btn { width: 100%; margin-bottom: 6px; flex-shrink: 0; }
 </style>

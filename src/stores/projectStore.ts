@@ -43,7 +43,7 @@ export const useProjectStore = defineStore('project', () => {
   const selectedTraceId = ref<string | null>(null)
   // Aperçu (non persisté) des points du tracé sélectionné pendant un drag en cours sur le canvas
   const liveTracePoints = ref<[number, number][] | null>(null)
-  const showNumbers = ref(true)
+  const showNumbers = ref(false)
   const bgLayout = ref<{ x: number; y: number; w: number; h: number } | null>(null)
 
   function setBackgroundImageLayout(layout: { x: number; y: number; w: number; h: number } | null) {
@@ -81,6 +81,9 @@ export const useProjectStore = defineStore('project', () => {
 
   function setSelectedCaId(id: string | null) {
     selectedCaId.value = id
+    if (id && drawMode.value !== 'line' && drawMode.value !== 'surface') {
+      drawMode.value = 'line'
+    }
   }
 
   // ── Zones ──────────────────────────────────────────────────────────────
