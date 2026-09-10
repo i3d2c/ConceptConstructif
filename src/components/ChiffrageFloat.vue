@@ -7,7 +7,7 @@ import type { OuvrageConstituent } from '../domain/models/Ouvrage'
 import { evaluateRecap } from '../domain/services/FormulaEvaluator'
 
 const store = useProjectStore()
-const tab = ref<'list' | 'ouvrage' | 'constituent'>('list')
+const tab = ref<'list' | 'ouvrage' | 'tarifs' | 'constituent'>('list')
 
 const traceResults = computed<TraceChiffrage[]>(() => {
   const zone = store.activeZone
@@ -35,10 +35,12 @@ function ouvrageAdjustedTotal(ouvrageId: string): number {
   }, 0)
 }
 
+const usedOuvrages = computed(() =>
+  store.project.ouvrages.filter(o => traceResults.value.some(t => t.ouvrageId === o.id)),
+)
+
 const recapOuvrageTotal = computed(() =>
-  store.project.ouvrages
-    .filter(o => traceResults.value.some(t => t.ouvrageId === o.id))
-    .reduce((s, o) => s + ouvrageAdjustedTotal(o.id), 0),
+  usedOuvrages.value.reduce((s, o) => s + ouvrageAdjustedTotal(o.id), 0),
 )
 
 const grandTotal = computed(() => traceResults.value.reduce((s, t) => s + t.subtotal, 0))
@@ -113,6 +115,7 @@ function fmtQty(n: number): string {
     <div class="tabs">
       <button :class="{ active: tab === 'list' }" @click="tab = 'list'">Liste détaillée</button>
       <button :class="{ active: tab === 'ouvrage' }" @click="tab = 'ouvrage'">Récap/Ouvrage</button>
+      <button :class="{ active: tab === 'tarifs' }" @click="tab = 'tarifs'">Récap. Tarifs</button>
       <button :class="{ active: tab === 'constituent' }" @click="tab = 'constituent'">Récap/Constituant</button>
     </div>
 
@@ -201,7 +204,29 @@ function fmtQty(n: number): string {
       </table>
     </div>
 
-    <!-- Onglet 3 : récap par constituant -->
+    <!-- Onglet 3 : récap tarifs -->
+    <div v-else-if="tab === 'tarifs'" class="scroll-body" data-testid="tarifs-panel">
+      <table>
+        <thead>
+          <tr><th>Ouvrage</th><th>Description</th><th class="num">Total</th></tr>
+        </thead>
+        <tbody>
+          <tr v-for="ouvrage in usedOuvrages" :key="ouvrage.id">
+            <td>{{ ouvrage.name }}</td>
+            <td>{{ ouvrage.description }}</td>
+            <td class="num">{{ fmt(ouvrageAdjustedTotal(ouvrage.id)) }} €</td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2" class="right grand">Total général</td>
+            <td class="num grand">{{ fmt(recapOuvrageTotal) }} €</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <!-- Onglet 4 : récap par constituant -->
     <div v-else-if="tab === 'constituent'" class="scroll-body">
       <table>
         <thead>

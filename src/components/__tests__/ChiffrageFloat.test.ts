@@ -16,11 +16,11 @@ const unusedConstituent: Constituent = {
 }
 
 const usedOuvrage: Ouvrage = {
-  id: 'o-used', name: 'Mur brique', description: '', category: 'Maçonnerie',
+  id: 'o-used', name: 'Mur brique', description: 'Mur en brique pleine porteuse', category: 'Maçonnerie',
   constituents: [{ id: 'oc-used', constituentId: usedConstituent.id, position: 1, formula: 'L' }],
 }
 const unusedOuvrage: Ouvrage = {
-  id: 'o-unused', name: 'Peinture murale', description: '', category: 'Finition',
+  id: 'o-unused', name: 'Peinture murale', description: 'Peinture murale deux couches', category: 'Finition',
   constituents: [{ id: 'oc-unused', constituentId: unusedConstituent.id, position: 1, formula: 'L' }],
 }
 
@@ -56,6 +56,13 @@ async function mountOnConstituentTab() {
   return wrapper
 }
 
+async function mountOnTarifsTab() {
+  setupZoneWithUsedAndUnusedOuvrages()
+  const wrapper = mount(ChiffrageFloat)
+  await clickTab(wrapper, 'Récap. Tarifs')
+  return wrapper
+}
+
 describe('ChiffrageFloat', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
@@ -72,6 +79,30 @@ describe('ChiffrageFloat', () => {
       const wrapper = await mountOnConstituentTab()
 
       expect(wrapper.text()).toContain(usedConstituent.name)
+    })
+  })
+
+  describe('Récap. Tarifs tab', () => {
+    it('Should list an ouvrage that has a trace in the active zone, with its description and total price', async () => {
+      const wrapper = await mountOnTarifsTab()
+      const panel = wrapper.find('[data-testid="tarifs-panel"]')
+
+      expect(panel.text()).toContain(usedOuvrage.name)
+      expect(panel.text()).toContain(usedOuvrage.description)
+    })
+
+    it('Should not list an ouvrage that has no trace in the active zone', async () => {
+      const wrapper = await mountOnTarifsTab()
+      const panel = wrapper.find('[data-testid="tarifs-panel"]')
+
+      expect(panel.text()).not.toContain(unusedOuvrage.name)
+    })
+
+    it('Should not show constituent detail rows in the Récap. Tarifs tab', async () => {
+      const wrapper = await mountOnTarifsTab()
+      const panel = wrapper.find('[data-testid="tarifs-panel"]')
+
+      expect(panel.text()).not.toContain(usedConstituent.name)
     })
   })
 })
