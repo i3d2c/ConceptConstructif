@@ -35,6 +35,12 @@ const pendingScalePoints = ref<[[number, number], [number, number]] | null>(null
 // Hover tooltip
 const hoverTraceId = ref<string | null>(null)
 const hoverPos = ref({ x: 0, y: 0 })
+
+// Curseur "pas de couleur sélectionnée"
+const pointerPos = ref({ x: 0, y: 0 })
+const noColorSelected = computed(() =>
+  (store.drawMode === 'line' || store.drawMode === 'surface') && !store.selectedCaId,
+)
 const hoverInfo = computed(() => {
   if (!hoverTraceId.value || !store.activeZone) return null
   const trace = store.activeZone.traces.find(t => t.id === hoverTraceId.value)
@@ -483,6 +489,11 @@ onMounted(() => {
   traceRenderer = new TraceRenderer(cm)
   numberRenderer = new NumberRenderer(cm)
 
+  cm.stage.on('mousemove.pointerTrack', () => {
+    const pos = cm!.stage.getPointerPosition()
+    if (pos) pointerPos.value = pos
+  })
+
   // Pan avec le bouton central (molette enfoncée)
   let panStart: { x: number; y: number; stageX: number; stageY: number } | null = null
   cm.stage.container().addEventListener('mousedown', (e: MouseEvent) => {
@@ -614,6 +625,15 @@ onUnmounted(() => {
       {{ hoverInfo }}
     </div>
 
+    <!-- Tooltip "pas de couleur sélectionnée" à côté du curseur (mode Trait/Surface) -->
+    <div
+      v-if="noColorSelected"
+      class="trace-tooltip no-color-tooltip"
+      :style="{ left: (pointerPos.x + 14) + 'px', top: (pointerPos.y - 10) + 'px' }"
+    >
+      Sélectionnez une couleur pour tracer
+    </div>
+
     <ScaleDialog
       v-if="showScaleDialog"
       @confirm="onScaleConfirm"
@@ -644,6 +664,10 @@ onUnmounted(() => {
   pointer-events: none;
   white-space: nowrap;
   z-index: 10;
+}
+.no-color-tooltip {
+  background: rgba(0,0,0,0.8);
+  color: #f59e0b;
 }
 .hint {
   position: absolute;
