@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import type { OuvrageConstituent } from '../../domain/models/Ouvrage'
 import type { Constituent } from '../../domain/models/Constituent'
 import { findForwardReferences } from '../../domain/services/FormulaEvaluator'
+import ConstituentCombobox from './ConstituentCombobox.vue'
 
 const props = defineProps<{
   oc: OuvrageConstituent
@@ -58,9 +59,7 @@ function onDragOver(e: DragEvent) {
       @dragend="emit('dragend')"
     >⠿</span>
     <span class="oc-pos">C{{ oc.position }}</span>
-    <select v-model="oc.constituentId" style="flex:1">
-      <option v-for="c in constituentOptions" :key="c.id" :value="c.id">{{ c.name }}</option>
-    </select>
+    <ConstituentCombobox v-model="oc.constituentId" :constituent-options="constituentOptions" />
     <div class="oc-formulas">
       <input v-model="oc.formula" placeholder="ex: L*H/(0.22*0.05)" title="Formule par tracé" />
       <span v-if="forwardReferences.length > 0" class="oc-formula-warning">
