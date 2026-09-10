@@ -11,7 +11,7 @@ function makeProject(id: string, name: string): Project {
     name,
     ouvrages: [],
     constituents: [],
-    zones: [{ id: zoneId, name: 'Zone 1', scale: null, backgroundImage: null, colorAssignments: [], traces: [], printConfig: defaultPrintConfig() }],
+    zones: [{ id: zoneId, name: 'Zone 1', scale: null, backgroundImage: null, backgroundImageLayout: null, colorAssignments: [], traces: [], printConfig: defaultPrintConfig() }],
     activeZoneId: zoneId,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),

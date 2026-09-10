@@ -37,6 +37,7 @@ function addZone() {
     name: `Zone ${store.project.zones.length + 1}`,
     scale: null,
     backgroundImage: null,
+    backgroundImageLayout: null,
     colorAssignments: [],
     traces: [],
     printConfig: defaultPrintConfig(),

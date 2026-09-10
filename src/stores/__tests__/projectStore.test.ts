@@ -150,7 +150,7 @@ describe('projectStore — trace selection', () => {
       store.addTrace(store.activeZone!.id, lineTrace)
       store.selectedTraceId = lineTrace.id
       const zoneId = store.activeZone!.id
-      store.addZone({ id: 'zone-2', name: 'Zone 2', scale: null, backgroundImage: null, colorAssignments: [], traces: [], printConfig: defaultPrintConfig() })
+      store.addZone({ id: 'zone-2', name: 'Zone 2', scale: null, backgroundImage: null, backgroundImageLayout: null, colorAssignments: [], traces: [], printConfig: defaultPrintConfig() })
 
       store.setActiveZone(zoneId)
 
@@ -323,6 +323,33 @@ describe('projectStore — print config persistence', () => {
       await store.load('p-legacy')
 
       expect(store.activeZone!.printConfig).toEqual(defaultPrintConfig())
+    })
+  })
+})
+
+describe('projectStore — background image layout persistence', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  describe('load', () => {
+    it('Should backfill backgroundImageLayout to null for legacy zones', async () => {
+      const legacyProject = {
+        id: 'p-legacy',
+        name: 'Ancien projet',
+        ouvrages: [],
+        constituents: [],
+        zones: [{ id: 'z-1', name: 'Zone 1', scale: null, backgroundImage: null, colorAssignments: [], traces: [], printConfig: defaultPrintConfig() }],
+        activeZoneId: 'z-1',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      } as unknown as Project
+      vi.mocked(loadProject).mockResolvedValue(legacyProject)
+      const store = useProjectStore()
+
+      await store.load('p-legacy')
+
+      expect(store.activeZone!.backgroundImageLayout).toBeNull()
     })
   })
 })

@@ -15,6 +15,7 @@ export interface Zone {
   name: string
   scale: Scale | null
   backgroundImage: string | null
+  backgroundImageLayout: { x: number; y: number; w: number; h: number } | null
   colorAssignments: ColorAssignment[]
   traces: Trace[]
   printConfig: PrintConfig

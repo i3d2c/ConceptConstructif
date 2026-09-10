@@ -13,6 +13,7 @@ const baseZone: Zone = {
     tracePoints: [[10, 20], [110, 20]],
   },
   backgroundImage: null,
+  backgroundImageLayout: null,
   colorAssignments: [
     { id: 'ca-1', color: '#ff0000', ouvrageId: 'o-1', epaisseur: 0.105, hauteur: 2.5 },
   ],
