@@ -108,13 +108,26 @@ function onInputClick() {
   if (!isOpen.value) open()
 }
 
+function isInsideComboboxOrDropdown(el: EventTarget | null): boolean {
+  return el instanceof HTMLElement && (el.closest('.cc-combobox') !== null || el.closest('.cc-dropdown') !== null)
+}
+
+function onFocusOut(e: FocusEvent) {
+  if (!isOpen.value) return
+  if (!isInsideComboboxOrDropdown(e.target)) return
+  if (isInsideComboboxOrDropdown(e.relatedTarget)) return
+  close()
+}
+
 onMounted(() => {
   window.addEventListener('click', onWindowClick)
   window.addEventListener('scroll', onAnyScroll, true)
+  document.addEventListener('focusout', onFocusOut)
 })
 onUnmounted(() => {
   window.removeEventListener('click', onWindowClick)
   window.removeEventListener('scroll', onAnyScroll, true)
+  document.removeEventListener('focusout', onFocusOut)
 })
 </script>
 
@@ -145,6 +158,7 @@ onUnmounted(() => {
         <li
           v-for="(c, i) in filteredOptions" :key="c.id"
           :class="{ 'cc-highlighted': i === highlightedIndex }"
+          @mousedown.prevent
           @click="selectOption(c)"
         >{{ c.name }}</li>
       </ul>

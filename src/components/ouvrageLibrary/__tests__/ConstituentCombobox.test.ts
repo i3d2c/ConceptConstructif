@@ -201,4 +201,29 @@ describe('ConstituentCombobox', () => {
       expect(wrapper.findAll('li').length).toBeGreaterThan(0)
     })
   })
+
+  describe('leaving the field via Tab', () => {
+    it('Should close the dropdown when focus moves away to an unrelated element', async () => {
+      const wrapper = mountCombobox()
+      const input = wrapper.find('input')
+      await input.trigger('focus')
+      const unrelated = document.createElement('input')
+      document.body.appendChild(unrelated)
+      input.element.dispatchEvent(new FocusEvent('focusout', { relatedTarget: unrelated, bubbles: true }))
+      await wrapper.vm.$nextTick()
+      expect(wrapper.findAll('li').length).toBe(0)
+      expect(wrapper.emitted('update:modelValue')).toBeUndefined()
+      unrelated.remove()
+    })
+
+    it('Should stay open when focus moves from the input into the category filter select', async () => {
+      const wrapper = mountCombobox()
+      const input = wrapper.find('input')
+      await input.trigger('focus')
+      const categorySelect = wrapper.find('.cc-category-filter').element
+      input.element.dispatchEvent(new FocusEvent('focusout', { relatedTarget: categorySelect, bubbles: true }))
+      await wrapper.vm.$nextTick()
+      expect(wrapper.findAll('li').length).toBeGreaterThan(0)
+    })
+  })
 })
