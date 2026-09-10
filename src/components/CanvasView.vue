@@ -38,6 +38,8 @@ const pendingScalePoints = ref<[[number, number], [number, number]] | null>(null
 const hoverTraceId = ref<string | null>(null)
 const hoverPos = ref({ x: 0, y: 0 })
 
+const scaleSelected = ref(false)
+
 // Curseur "pas de couleur sélectionnée"
 const pointerPos = ref({ x: 0, y: 0 })
 const noColorSelected = computed(() =>
@@ -179,19 +181,21 @@ function renderSelectHandles() {
     hitLine.on('mouseout', () => { if (!isDragging) cm!.stage.container().style.cursor = 'default' })
     cm.layers.tool.add(hitLine)
 
-    for (const [idx, [px, py]] of [[0, [x1, y1]], [1, [x2, y2]]] as [number, [number, number]][]) {
-      const handle = new Konva.Circle({
-        id: makeScaleHandleId(idx),
-        x: px, y: py,
-        radius: 5,
-        fill: '#ffffff',
-        stroke: '#facc15',
-        strokeWidth: 2,
-        listening: true,
-      })
-      handle.on('mouseover', () => { if (!isDragging) cm!.stage.container().style.cursor = 'grab' })
-      handle.on('mouseout', () => { if (!isDragging) cm!.stage.container().style.cursor = 'default' })
-      cm.layers.tool.add(handle)
+    if (scaleSelected.value) {
+      for (const [idx, [px, py]] of [[0, [x1, y1]], [1, [x2, y2]]] as [number, [number, number]][]) {
+        const handle = new Konva.Circle({
+          id: makeScaleHandleId(idx),
+          x: px, y: py,
+          radius: 5,
+          fill: '#ffffff',
+          stroke: '#facc15',
+          strokeWidth: 2,
+          listening: true,
+        })
+        handle.on('mouseover', () => { if (!isDragging) cm!.stage.container().style.cursor = 'grab' })
+        handle.on('mouseout', () => { if (!isDragging) cm!.stage.container().style.cursor = 'default' })
+        cm.layers.tool.add(handle)
+      }
     }
   }
   cm.layers.tool.batchDraw()
@@ -202,11 +206,19 @@ function renderSelectHandles() {
 // dans la même frame — utilisé dès le mousedown pour que le drag d'un tracé non pré-sélectionné
 // bascule le panneau et affiche les poignées sans attendre le drop.
 function selectTrace(id: string | null) {
+  if (id !== null) scaleSelected.value = false
   const prev = store.selectedTraceId
   if (prev === id) return
   if (prev) traceRenderer?.highlight(prev, false)
   if (id) traceRenderer?.highlight(id, true)
   store.selectedTraceId = id
+  if (store.drawMode === 'select') renderSelectHandles()
+}
+
+function selectScale(selected: boolean) {
+  if (scaleSelected.value === selected) return
+  scaleSelected.value = selected
+  if (selected) selectTrace(null)
   if (store.drawMode === 'select') renderSelectHandles()
 }
 
@@ -312,6 +324,7 @@ function activateTool(mode: string) {
         }
         cm!.stage.container().style.cursor = e.evt.ctrlKey ? 'copy' : 'grabbing'
       } else if (id === SCALE_LINE_ID && store.activeZone.scale) {
+        selectScale(true)
         dragState = {
           type: 'scale', traceId: '', vertexIdx: -1,
           startMouseX: pos.x, startMouseY: pos.y,
@@ -328,6 +341,7 @@ function activateTool(mode: string) {
       } else if (!id) {
         // Clic sur le fond du canvas : désélection
         selectTrace(null)
+        selectScale(false)
       }
     })
 
@@ -650,7 +664,8 @@ onMounted(() => {
   // Changement de zone active ou de son image de fond : recharger l'image
   watch(
     () => [store.project.activeZoneId, store.activeZone?.backgroundImage] as const,
-    ([zoneId, img]) => {
+    ([zoneId, img], prev) => {
+      if (!prev || zoneId !== prev[0]) scaleSelected.value = false
       if (img && zoneId) loadBackgroundImage(zoneId, img, store.activeZone?.backgroundImageLayout ?? null)
       else imageLoader?.clear()
       rerenderAll()
