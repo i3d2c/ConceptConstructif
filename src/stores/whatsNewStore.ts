@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
-export const CURRENT_ANNOUNCEMENT_ID = 'whats-new-2026-09'
+export const CURRENT_ANNOUNCEMENT_ID = 'whats-new-2026-09-10'
 export const STORAGE_KEY = 'cc_whatsnew_seen'
 
 export const useWhatsNewStore = defineStore('whatsNew', () => {
