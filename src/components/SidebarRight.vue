@@ -154,6 +154,11 @@ function deleteTrace() {
   store.removeTrace(zone.value.id, trace.value.id)
 }
 
+function duplicateTrace() {
+  if (!zone.value || !trace.value) return
+  store.duplicateTrace(zone.value.id, trace.value.id)
+}
+
 // ── Formatage ──────────────────────────────────────────────────────────────
 function fmt(n: number) {
   return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)
@@ -177,6 +182,11 @@ function fmtQty(n: number) {
       <template v-if="trace">
         <div class="panel-header">
           Tracé n°{{ trace.number }} — {{ trace.type === 'line' ? 'Trait' : 'Surface' }}
+        </div>
+
+        <div class="panel-actions">
+          <button class="duplicate" @click="duplicateTrace">Dupliquer</button>
+          <button class="danger" @click="deleteTrace">Supprimer</button>
         </div>
 
         <!-- Assignation couleur -->
@@ -286,10 +296,6 @@ function fmtQty(n: number) {
             </tfoot>
           </table>
         </div>
-
-        <div class="panel-actions">
-          <button class="danger" @click="deleteTrace">Supprimer</button>
-        </div>
       </template>
 
       <template v-else>
@@ -380,7 +386,7 @@ function fmtQty(n: number) {
 .mini-table th { background: var(--surface2); padding: 3px 6px; text-align: left; border-bottom: 1px solid var(--border); }
 .mini-table td { padding: 2px 6px; }
 .mini-table tfoot td { border-top: 1px solid var(--border); }
-.panel-actions { padding: 10px 14px; }
+.panel-actions { padding: 10px 14px; display: flex; gap: 8px; }
 button.danger { background: #7f1d1d; color: #fca5a5; border-color: #991b1b; }
 button.danger:hover { background: #991b1b; }
 .error-cell { color: #f87171; font-style: italic; }

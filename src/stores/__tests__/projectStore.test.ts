@@ -180,6 +180,45 @@ describe('projectStore — trace selection', () => {
     })
   })
 
+  describe('duplicateTrace', () => {
+    it('Should push a new trace with a fresh id, an incremented number and offset points', () => {
+      const store = useProjectStore()
+      const zoneId = store.activeZone!.id
+      store.addTrace(zoneId, lineTrace)
+      store.addTrace(zoneId, otherTrace)
+
+      store.duplicateTrace(zoneId, lineTrace.id)
+
+      expect(store.activeZone!.traces).toHaveLength(3)
+      const duplicate = store.activeZone!.traces[2]
+      expect(duplicate.id).not.toBe(lineTrace.id)
+      expect(duplicate.number).toBe(3)
+      expect(duplicate.points).toEqual([[20, 20], [21, 21]])
+    })
+
+    it('Should select the newly duplicated trace', () => {
+      const store = useProjectStore()
+      const zoneId = store.activeZone!.id
+      store.addTrace(zoneId, lineTrace)
+      store.selectedTraceId = lineTrace.id
+
+      store.duplicateTrace(zoneId, lineTrace.id)
+
+      const duplicate = store.activeZone!.traces[1]
+      expect(store.selectedTraceId).toBe(duplicate.id)
+    })
+
+    it("Should not mutate the original trace's points", () => {
+      const store = useProjectStore()
+      const zoneId = store.activeZone!.id
+      store.addTrace(zoneId, lineTrace)
+
+      store.duplicateTrace(zoneId, lineTrace.id)
+
+      expect(store.activeZone!.traces[0].points).toEqual([[0, 0], [1, 1]])
+    })
+  })
+
   describe('removeColorAssignment', () => {
     it('Should clear the selection when the color assignment cascade-removes the selected trace', () => {
       const store = useProjectStore()

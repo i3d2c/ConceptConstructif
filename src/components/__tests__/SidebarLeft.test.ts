@@ -9,21 +9,21 @@ describe('SidebarLeft', () => {
   })
 
   describe('workflow ordering', () => {
-    it('Should render the zone title before the numbered workflow steps, and the steps before the color palette', () => {
+    it('Should render the zone title before the numbered workflow steps, the steps before the trace tools, and the trace tools before the color palette', () => {
       const wrapper = mount(SidebarLeft, { props: { show3d: false, showChiffrage: false } })
 
       const html = wrapper.html()
       const zoneIdx = html.indexOf('zone-name-input')
       const stepIdx = html.indexOf('tour-import-plan')
-      const colorIdx = html.indexOf('Couleurs')
       const tracerIdx = html.indexOf('Tracer')
+      const colorIdx = html.indexOf('+ Couleur')
       const optionsIdx = html.indexOf('Options')
 
       expect(zoneIdx).toBeGreaterThanOrEqual(0)
       expect(zoneIdx).toBeLessThan(stepIdx)
-      expect(stepIdx).toBeLessThan(colorIdx)
-      expect(colorIdx).toBeLessThan(tracerIdx)
-      expect(tracerIdx).toBeLessThan(optionsIdx)
+      expect(stepIdx).toBeLessThan(tracerIdx)
+      expect(tracerIdx).toBeLessThan(colorIdx)
+      expect(colorIdx).toBeLessThan(optionsIdx)
     })
   })
 

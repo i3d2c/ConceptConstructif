@@ -109,6 +109,17 @@ describe('SidebarRight', () => {
       expect(store.selectedTraceId).toBeNull()
     })
 
+    it('Should duplicate the trace and select the new one when clicking "Dupliquer"', async () => {
+      const store = setupSelectedTrace()
+      const wrapper = mount(SidebarRight)
+
+      await wrapper.find('button.duplicate').trigger('click')
+
+      expect(store.activeZone!.traces).toHaveLength(2)
+      expect(store.selectedTraceId).not.toBe(trace.id)
+      expect(store.selectedTraceId).toBe(store.activeZone!.traces[1].id)
+    })
+
     describe('live drag preview', () => {
       it('Should use store.liveTracePoints instead of the committed trace points while a drag is in progress', async () => {
         setupSelectedTrace()

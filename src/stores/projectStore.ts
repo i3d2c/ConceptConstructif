@@ -136,6 +136,23 @@ export const useProjectStore = defineStore('project', () => {
     if (selectedTraceId.value === traceId) selectedTraceId.value = null
   }
 
+  const DUPLICATE_OFFSET = 20
+
+  function duplicateTrace(zoneId: string, traceId: string) {
+    const z = project.value.zones.find(z => z.id === zoneId)
+    const orig = z?.traces.find(t => t.id === traceId)
+    if (!z || !orig) return
+    snapshot()
+    const duplicate: Trace = {
+      ...JSON.parse(JSON.stringify(orig)),
+      id: crypto.randomUUID(),
+      number: z.traces.reduce((m, t) => Math.max(m, t.number), 0) + 1,
+      points: orig.points.map(([x, y]) => [x + DUPLICATE_OFFSET, y + DUPLICATE_OFFSET]),
+    }
+    z.traces.push(duplicate)
+    selectedTraceId.value = duplicate.id
+  }
+
   // ── ColorAssignments ───────────────────────────────────────────────────
   function addColorAssignment(zoneId: string, ca: ColorAssignment) {
     snapshot()
@@ -269,6 +286,7 @@ export const useProjectStore = defineStore('project', () => {
     addTrace,
     updateTrace,
     removeTrace,
+    duplicateTrace,
     addColorAssignment,
     updateColorAssignment,
     removeColorAssignment,
