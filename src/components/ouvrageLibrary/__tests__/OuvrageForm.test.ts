@@ -56,5 +56,28 @@ describe('OuvrageForm', () => {
       await wrapper.find('.form-actions button').trigger('click')
       expect((wrapper.vm as unknown as { isDirty: boolean }).isDirty).toBe(false)
     })
+
+    it('Should become dirty after infosTechniques is edited', async () => {
+      const wrapper = mountForm(existingOuvrage)
+      await wrapper.find('textarea[placeholder]').setValue('Notes internes')
+      expect((wrapper.vm as unknown as { isDirty: boolean }).isDirty).toBe(true)
+    })
+  })
+
+  describe('saveOuvrage', () => {
+    it('Should include infosTechniques in the saved ouvrage when filled', async () => {
+      const wrapper = mountForm(existingOuvrage)
+      await wrapper.find('textarea[placeholder]').setValue('Détails techniques internes')
+      await wrapper.find('.form-actions button').trigger('click')
+      const saved = wrapper.emitted('save')![0][0] as Ouvrage
+      expect(saved.infosTechniques).toBe('Détails techniques internes')
+    })
+
+    it('Should omit infosTechniques when left empty', async () => {
+      const wrapper = mountForm(existingOuvrage)
+      await wrapper.find('.form-actions button').trigger('click')
+      const saved = wrapper.emitted('save')![0][0] as Ouvrage
+      expect(saved.infosTechniques).toBeUndefined()
+    })
   })
 })

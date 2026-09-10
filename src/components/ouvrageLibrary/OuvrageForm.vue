@@ -31,6 +31,7 @@ let oSaveMsgTimer: ReturnType<typeof setTimeout> | null = null
 const oName = ref(props.editingOuvrage?.name ?? '')
 const oCategory = ref(props.editingOuvrage?.category ?? 'À catégoriser')
 const oDesc = ref(props.editingOuvrage?.description ?? '')
+const oInfosTechniques = ref(props.editingOuvrage?.infosTechniques ?? '')
 const oEp = ref<number | ''>(props.editingOuvrage?.defaultEpaisseur ?? '')
 const oH = ref<number | ''>(props.editingOuvrage?.defaultHauteur ?? '')
 const oConstituents = ref<OuvrageConstituent[]>(
@@ -42,6 +43,7 @@ function currentSnapshot(): string {
     name: oName.value,
     category: oCategory.value,
     description: oDesc.value,
+    infosTechniques: oInfosTechniques.value,
     defaultEpaisseur: oEp.value,
     defaultHauteur: oH.value,
     constituents: oConstituents.value,
@@ -57,6 +59,7 @@ function saveOuvrage(scope: Scope) {
     id,
     name: oName.value,
     description: oDesc.value,
+    infosTechniques: oInfosTechniques.value || undefined,
     defaultEpaisseur: oEp.value !== '' ? Number(oEp.value) : undefined,
     defaultHauteur: oH.value !== '' ? Number(oH.value) : undefined,
     constituents: oConstituents.value,
@@ -168,6 +171,9 @@ defineExpose({ isDirty })
 
     <label>Description</label>
     <textarea v-model="oDesc" rows="2" />
+
+    <label>Infos techniques</label>
+    <textarea v-model="oInfosTechniques" rows="2" placeholder="Notes internes non visibles par le client" />
 
     <div class="field-row">
       <div>
