@@ -146,7 +146,7 @@ export class Scene3D {
       const planeW = layout.w * scale.ratio
       const planeH = layout.h * scale.ratio
       const geom = new THREE.PlaneGeometry(planeW, planeH)
-      const mat = new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: 0.4, side: THREE.DoubleSide })
+      const mat = new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: 0.8, side: THREE.DoubleSide })
       const mesh = new THREE.Mesh(geom, mat)
       mesh.rotation.x = -Math.PI / 2
       mesh.position.set(
