@@ -62,10 +62,10 @@ describe('SidebarLeft', () => {
   })
 
   describe('reflecting the 3D/chiffrage panel state', () => {
-    it('Should pass the show3d prop down to the options section switch', () => {
+    it('Should pass the show3d prop down to the options section button', () => {
       const wrapper = mount(SidebarLeft, { props: { show3d: true, showChiffrage: false } })
 
-      expect(wrapper.find('[data-tour="tour-3d"]').classes()).toContain('on')
+      expect(wrapper.find('[data-tour="tour-3d"]').classes()).toContain('active')
     })
   })
 })
