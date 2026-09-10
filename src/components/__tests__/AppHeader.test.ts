@@ -4,6 +4,7 @@ import { mount } from '@vue/test-utils'
 import AppHeader from '../AppHeader.vue'
 import { useOnboardingTourStore } from '../../stores/onboardingTourStore'
 import { useProjectStore } from '../../stores/projectStore'
+import { defaultPrintConfig } from '../../print/PrintConfig'
 
 describe('AppHeader', () => {
   beforeEach(() => {
@@ -40,6 +41,7 @@ describe('AppHeader', () => {
 
       expect(store.project.zones).toHaveLength(2)
       expect(store.project.activeZoneId).toBe(store.project.zones[1].id)
+      expect(store.project.zones[1].printConfig).toEqual(defaultPrintConfig())
     })
 
     it('Should duplicate the active zone when "Dupliquer la zone active" is clicked', async () => {
@@ -56,7 +58,7 @@ describe('AppHeader', () => {
 
     it('Should remove the active zone when "Supprimer la zone active" is confirmed', async () => {
       const store = useProjectStore()
-      store.addZone({ id: 'z-2', name: 'Zone 2', scale: null, backgroundImage: null, colorAssignments: [], traces: [] })
+      store.addZone({ id: 'z-2', name: 'Zone 2', scale: null, backgroundImage: null, colorAssignments: [], traces: [], printConfig: defaultPrintConfig() })
       const idToRemove = store.project.activeZoneId
       vi.spyOn(window, 'confirm').mockReturnValue(true)
       const wrapper = mount(AppHeader)

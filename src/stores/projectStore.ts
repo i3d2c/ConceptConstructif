@@ -9,6 +9,7 @@ import type { ColorAssignment } from '../domain/models/Zone'
 import { HistoryManager } from '../domain/services/HistoryManager'
 import { planImportOuvrage, planImportConstituent } from '../domain/services/LibraryImportService'
 import { saveProject, loadProject } from '../storage/ProjectStore'
+import { defaultPrintConfig } from '../print/PrintConfig'
 
 function newProject(): Project {
   const zoneId = crypto.randomUUID()
@@ -24,6 +25,7 @@ function newProject(): Project {
       backgroundImage: null,
       colorAssignments: [],
       traces: [],
+      printConfig: defaultPrintConfig(),
     }],
     activeZoneId: zoneId,
     createdAt: new Date().toISOString(),
@@ -250,7 +252,10 @@ export const useProjectStore = defineStore('project', () => {
 
   async function load(id: string) {
     const p = await loadProject(id)
-    if (p) project.value = p
+    if (p) {
+      p.zones.forEach(z => { z.printConfig ??= defaultPrintConfig() })
+      project.value = p
+    }
   }
 
   // Auto-save debounced (1 s après la dernière mutation)

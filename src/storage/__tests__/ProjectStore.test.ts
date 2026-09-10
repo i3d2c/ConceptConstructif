@@ -1,6 +1,7 @@
 import 'fake-indexeddb/auto'
 import { describe, it, expect } from 'vitest'
 import { saveProject, loadProject, listProjects, deleteProject } from '../ProjectStore'
+import { defaultPrintConfig } from '../../print/PrintConfig'
 import type { Project } from '../../domain/models/Project'
 
 function makeProject(id: string, name: string): Project {
@@ -10,7 +11,7 @@ function makeProject(id: string, name: string): Project {
     name,
     ouvrages: [],
     constituents: [],
-    zones: [{ id: zoneId, name: 'Zone 1', scale: null, backgroundImage: null, colorAssignments: [], traces: [] }],
+    zones: [{ id: zoneId, name: 'Zone 1', scale: null, backgroundImage: null, colorAssignments: [], traces: [], printConfig: defaultPrintConfig() }],
     activeZoneId: zoneId,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),

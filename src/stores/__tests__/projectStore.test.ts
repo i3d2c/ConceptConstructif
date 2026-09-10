@@ -1,10 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useProjectStore } from '../projectStore'
+import { loadProject } from '../../storage/ProjectStore'
+import { defaultPrintConfig } from '../../print/PrintConfig'
 import type { Ouvrage } from '../../domain/models/Ouvrage'
 import type { Constituent } from '../../domain/models/Constituent'
 import type { Trace } from '../../domain/models/Trace'
 import type { ColorAssignment } from '../../domain/models/Zone'
+import type { Project } from '../../domain/models/Project'
 
 vi.mock('../../storage/ProjectStore')
 
@@ -147,7 +150,7 @@ describe('projectStore — trace selection', () => {
       store.addTrace(store.activeZone!.id, lineTrace)
       store.selectedTraceId = lineTrace.id
       const zoneId = store.activeZone!.id
-      store.addZone({ id: 'zone-2', name: 'Zone 2', scale: null, backgroundImage: null, colorAssignments: [], traces: [] })
+      store.addZone({ id: 'zone-2', name: 'Zone 2', scale: null, backgroundImage: null, colorAssignments: [], traces: [], printConfig: defaultPrintConfig() })
 
       store.setActiveZone(zoneId)
 
@@ -285,6 +288,41 @@ describe('projectStore — trace selection', () => {
       store.setSelectedCaId(null)
 
       expect(store.drawMode).toBe('select')
+    })
+  })
+})
+
+describe('projectStore — print config persistence', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  describe('a freshly created project', () => {
+    it('Should give the initial zone a default printConfig', () => {
+      const store = useProjectStore()
+
+      expect(store.activeZone!.printConfig).toEqual(defaultPrintConfig())
+    })
+  })
+
+  describe('load', () => {
+    it('Should default a zone printConfig to defaultPrintConfig() when loading a project saved before that field existed', async () => {
+      const legacyProject = {
+        id: 'p-legacy',
+        name: 'Ancien projet',
+        ouvrages: [],
+        constituents: [],
+        zones: [{ id: 'z-1', name: 'Zone 1', scale: null, backgroundImage: null, colorAssignments: [], traces: [] }],
+        activeZoneId: 'z-1',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      } as unknown as Project
+      vi.mocked(loadProject).mockResolvedValue(legacyProject)
+      const store = useProjectStore()
+
+      await store.load('p-legacy')
+
+      expect(store.activeZone!.printConfig).toEqual(defaultPrintConfig())
     })
   })
 })

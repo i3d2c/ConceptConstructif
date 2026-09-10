@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { computeFramingCamera } from '../cameraFraming'
+import { defaultPrintConfig } from '../../print/PrintConfig'
 import type { Zone, ColorAssignment } from '../../domain/models/Zone'
 import type { Scale } from '../../domain/models/Scale'
 import type { Trace } from '../../domain/models/Trace'
@@ -12,7 +13,7 @@ function surfaceTrace(points: [number, number][], colorAssignmentId = 'ca1', up 
 }
 
 function zoneWith(traces: Trace[], colorAssignments = COLOR_ASSIGNMENTS): Zone {
-  return { id: 'z1', name: 'Zone', scale: SCALE, backgroundImage: null, colorAssignments, traces }
+  return { id: 'z1', name: 'Zone', scale: SCALE, backgroundImage: null, colorAssignments, traces, printConfig: defaultPrintConfig() }
 }
 
 describe('computeFramingCamera', () => {

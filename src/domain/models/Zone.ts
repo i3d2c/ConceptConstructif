@@ -1,5 +1,6 @@
 import type { Scale } from './Scale'
 import type { Trace } from './Trace'
+import type { PrintConfig } from '../../print/PrintConfig'
 
 export interface ColorAssignment {
   id: string
@@ -16,4 +17,5 @@ export interface Zone {
   backgroundImage: string | null
   colorAssignments: ColorAssignment[]
   traces: Trace[]
+  printConfig: PrintConfig
 }

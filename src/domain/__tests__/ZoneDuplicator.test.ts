@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { duplicateZone } from '../services/ZoneDuplicator'
+import { defaultPrintConfig } from '../../print/PrintConfig'
 import type { Zone } from '../models/Zone'
 
 const baseZone: Zone = {
@@ -18,6 +19,7 @@ const baseZone: Zone = {
   traces: [
     { id: 't-1', type: 'line', number: 1, colorAssignmentId: 'ca-1', up: 0, points: [[0, 0], [60, 0]] },
   ],
+  printConfig: defaultPrintConfig(),
 }
 
 describe('ZoneDuplicator', () => {
@@ -38,6 +40,12 @@ describe('ZoneDuplicator', () => {
     expect(copy.scale).not.toBeNull()
     expect(copy.scale!.tracePoints).toEqual([[10, 20], [110, 20]])
     expect(copy.scale!.ratio).toBe(0.05)
+  })
+
+  it('duplique le printConfig', () => {
+    const copy = duplicateZone(baseZone, 'z-copy')
+    expect(copy.printConfig).toEqual(baseZone.printConfig)
+    expect(copy.printConfig).not.toBe(baseZone.printConfig)
   })
 
   it('utilise le nom fourni ou génère un nom par défaut', () => {
