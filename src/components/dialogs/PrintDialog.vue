@@ -3,12 +3,18 @@ import { ref } from 'vue'
 import { defaultPrintConfig } from '../../print/PrintConfig'
 import type { PrintConfig } from '../../print/PrintConfig'
 
+const props = withDefaults(defineProps<{
+  initialConfig?: PrintConfig
+}>(), {
+  initialConfig: () => defaultPrintConfig(),
+})
+
 const emit = defineEmits<{
   print: [config: PrintConfig]
   cancel: []
 }>()
 
-const config = ref<PrintConfig>(defaultPrintConfig())
+const config = ref<PrintConfig>({ ...props.initialConfig })
 
 type PresetName = 'total' | 'chiffrage' | 'devis'
 

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { mount } from '@vue/test-utils'
 import PrintDialog from '../PrintDialog.vue'
+import { defaultPrintConfig } from '../../../print/PrintConfig'
 
 function findCheckbox(wrapper: ReturnType<typeof mount>, label: string) {
   const row = wrapper.findAll('.checkbox-row').find(r => r.text().includes(label))
@@ -25,6 +26,18 @@ describe('PrintDialog', () => {
       await wrapper.find('.dialog-actions .active').trigger('click')
 
       expect(wrapper.emitted('print')![0][0]).toMatchObject({ showDevis: false })
+    })
+  })
+
+  describe('initialConfig prop', () => {
+    it('Should start from the given initialConfig instead of the default', () => {
+      const wrapper = mount(PrintDialog, {
+        props: { initialConfig: { ...defaultPrintConfig(), showDevis: false, showList: false } },
+      })
+
+      expect((findCheckbox(wrapper, 'Devis').element as HTMLInputElement).checked).toBe(false)
+      expect((findCheckbox(wrapper, 'Liste détaillée par tracé').element as HTMLInputElement).checked).toBe(false)
+      expect((findCheckbox(wrapper, 'Titre du projet et de la zone').element as HTMLInputElement).checked).toBe(true)
     })
   })
 
