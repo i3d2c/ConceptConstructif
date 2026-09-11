@@ -31,6 +31,13 @@ export const TOUR_STEPS: TourStep[] = [
     placement: 'right',
   },
   {
+    id: 'ouvrages',
+    target: '[data-tour="tour-ouvrages"]',
+    title: 'Bibliothèque d\'ouvrages',
+    body: 'Gérez ici vos ouvrages et constituants : les éléments chiffrés que vous associez ensuite aux couleurs.',
+    placement: 'right',
+  },
+  {
     id: 'color',
     target: '[data-tour="tour-add-color"]',
     title: 'Ajoutez une couleur',
@@ -42,13 +49,6 @@ export const TOUR_STEPS: TourStep[] = [
     target: '[data-tour="tour-trace"]',
     title: 'Tracez',
     body: 'Utilisez "Trait" pour les murs et "Surface" pour les surfaces. Sélectionnez d\'abord une couleur, puis dessinez sur le plan.',
-    placement: 'right',
-  },
-  {
-    id: 'ouvrages',
-    target: '[data-tour="tour-ouvrages"]',
-    title: 'Bibliothèque d\'ouvrages',
-    body: 'Gérez ici vos ouvrages et constituants : les éléments chiffrés que vous associez ensuite aux couleurs.',
     placement: 'right',
   },
   {
