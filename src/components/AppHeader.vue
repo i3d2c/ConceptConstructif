@@ -16,6 +16,7 @@ const emit = defineEmits<{
   toggleChiffrage: []
   print: []
   openProjects: []
+  openSettings: []
 }>()
 
 function openProjectList() {
@@ -168,6 +169,7 @@ function handleExport() {
         @click="themeStore.toggle()"
       >{{ themeStore.theme === 'dark' ? '☀️' : '🌙' }}</button>
       <button class="icon" title="Imprimer / PDF" @click="$emit('print')">🖨</button>
+      <button class="icon" title="Mon entreprise" @click="$emit('openSettings')">⚙</button>
       <button class="icon" title="Revoir la visite guidée" @click="tourStore.start()">?</button>
     </div>
   </header>

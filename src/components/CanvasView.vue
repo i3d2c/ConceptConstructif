@@ -15,6 +15,7 @@ import { moveScalePoint, moveScaleLine } from '../domain/services/ScaleDragCalcu
 import type { ImageLayout } from '../domain/services/ImageLayoutCalculator'
 import { computeTraceVariables } from '../domain/services/ChiffrageCalculator'
 import type { LineTrace, SurfaceTrace } from '../domain/models/Trace'
+import { fileToDataURL } from '../utils/fileToDataURL'
 import ScaleDialog from './dialogs/ScaleDialog.vue'
 
 const store = useProjectStore()
@@ -532,13 +533,10 @@ function loadBackgroundImage(zoneId: string, dataUrl: string, persistedLayout: I
 }
 
 function loadImageFile(file: File) {
-  const reader = new FileReader()
-  reader.onload = async (ev) => {
-    const dataUrl = ev.target?.result as string
+  fileToDataURL(file).then(async (dataUrl) => {
     const layout = await imageLoader?.load(dataUrl)
     store.updateZone(store.activeZone!.id, { backgroundImage: dataUrl, backgroundImageLayout: layout ?? null })
-  }
-  reader.readAsDataURL(file)
+  })
 }
 
 function handleImageDrop(e: DragEvent) {
