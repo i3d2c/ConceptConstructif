@@ -37,6 +37,9 @@ function onKeydown(e: KeyboardEvent) {
 </template>
 
 <style scoped>
+.zone-section {
+  flex-shrink: 0;
+}
 .zone-name-input {
   font-size: 13px;
   font-weight: 500;

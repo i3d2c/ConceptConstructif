@@ -23,6 +23,6 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
-.workflow-steps { display: flex; flex-direction: column; gap: 4px; }
+.workflow-steps { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
 .workflow-steps button { width: 100%; text-align: left; }
 </style>

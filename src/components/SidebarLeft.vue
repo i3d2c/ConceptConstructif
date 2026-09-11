@@ -44,11 +44,12 @@ const emit = defineEmits<{
   flex-shrink: 0;
   background: var(--surface);
   border-right: 1px solid var(--border);
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   gap: 0;
   padding: 8px;
 }
-.ad-slot { flex-shrink: 0; margin-top: 8px; }
+.ad-slot { flex-shrink: 0; margin-top: 8px; max-height: 100px; overflow: hidden; }
 </style>

@@ -91,11 +91,11 @@ function removeCa(ca: ColorAssignment, e: MouseEvent) {
 </template>
 
 <style scoped>
-.tools-section { display: flex; flex-direction: column; flex: 1; min-height: 0; }
-.section-label { color: var(--text-muted); font-size: 10px; text-transform: uppercase; margin-bottom: 6px; }
-.tool-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin-bottom: 6px; }
+.tools-section { display: flex; flex-direction: column; flex: 1; min-height: 190px; }
+.section-label { color: var(--text-muted); font-size: 10px; text-transform: uppercase; margin-bottom: 6px; flex-shrink: 0; }
+.tool-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; margin-bottom: 6px; flex-shrink: 0; }
 .tool-btns button { padding: 6px 4px; }
-.color-list { flex: 1; min-height: 0; overflow-y: auto; }
+.color-list { flex: 1; min-height: 100px; overflow-y: auto; }
 .color-entry {
   display: flex; align-items: center; gap: 8px;
   padding: 5px 6px; border-radius: 4px; cursor: pointer; margin-bottom: 3px;
