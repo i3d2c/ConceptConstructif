@@ -188,13 +188,13 @@ function fmtQty(n: number) {
               {{ o.name }}
               <div v-if="o.description" class="ouvrage-description">{{ o.description }}</div>
             </td>
-            <td style="text-align:right">{{ fmt(devisOuvragePrice(o.id)) }} €</td>
+            <td style="text-align:right; white-space:nowrap">{{ fmt(devisOuvragePrice(o.id)) }} €</td>
           </tr>
         </tbody>
         <tfoot>
           <tr style="font-weight:bold">
             <td style="text-align:right">Total</td>
-            <td style="text-align:right">{{ fmt(recapConstituentTotal) }} €</td>
+            <td style="text-align:right; white-space:nowrap">{{ fmt(recapConstituentTotal) }} €</td>
           </tr>
         </tfoot>
       </table>
@@ -290,5 +290,5 @@ function fmtQty(n: number) {
 .trace-row td { background: #f0f4ff; font-style: italic; }
 .error-cell { color: #b91c1c; font-style: italic; }
 .error-icon { color: #b45309; margin-left: 4px; }
-.ouvrage-description { margin-left: 12px; color: #555; font-size: 9pt; }
+.ouvrage-description { margin-left: 12px; color: #555; font-size: 9pt; white-space: pre-line; }
 </style>

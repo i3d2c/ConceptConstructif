@@ -277,7 +277,7 @@ function fmtQty(n: number): string {
 table { width: 100%; border-collapse: collapse; font-size: 11px; }
 th { background: var(--surface2); padding: 4px 6px; text-align: left; position: sticky; top: 0; }
 td { padding: 3px 6px; border-bottom: 1px solid var(--border); }
-.num { text-align: right; }
+.num { text-align: right; white-space: nowrap; }
 .right { text-align: right; }
 .trace-header td { background: rgba(255,255,255,0.04); color: var(--text-muted); font-style: italic; padding: 4px 6px; }
 .ouvrage-header td { background: rgba(255,255,255,0.06); font-weight: 600; }
@@ -286,5 +286,5 @@ td { padding: 3px 6px; border-bottom: 1px solid var(--border); }
 a { color: #60a5fa; }
 .error-cell { color: #f87171; font-style: italic; }
 .error-icon { color: #f59e0b; margin-left: 4px; cursor: help; }
-.ouvrage-description { margin-left: 12px; color: var(--text-muted); font-size: 10px; }
+.ouvrage-description { margin-left: 12px; color: var(--text-muted); font-size: 10px; white-space: pre-line; }
 </style>
