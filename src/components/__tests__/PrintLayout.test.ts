@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { mount } from '@vue/test-utils'
 import { useProjectStore } from '../../stores/projectStore'
+import { useSettingsStore } from '../../stores/settingsStore'
 import PrintLayout from '../PrintLayout.vue'
 import { defaultPrintConfig } from '../../print/PrintConfig'
 import type { Ouvrage } from '../../domain/models/Ouvrage'
@@ -74,6 +75,79 @@ describe('PrintLayout', () => {
 
       expect(section.text()).toContain('Total')
       expect(section.text()).not.toContain('Total général')
+    })
+  })
+
+  describe('company header', () => {
+    it('Should show the company name, contact, phone and email when config.title is true', () => {
+      const settingsStore = useSettingsStore()
+      settingsStore.companyProfile.companyName = 'Concept Constructif'
+      settingsStore.companyProfile.contactName = 'Guillaume Dubus'
+      settingsStore.companyProfile.phone = '06 00 00 00 00'
+      settingsStore.companyProfile.email = 'contact@example.com'
+
+      const wrapper = mountWithUsedOuvrage()
+      const header = wrapper.find('[data-testid="print-header"]')
+
+      expect(header.text()).toContain('Concept Constructif')
+      expect(header.text()).toContain('Guillaume Dubus')
+      expect(header.text()).toContain('06 00 00 00 00')
+      expect(header.text()).toContain('contact@example.com')
+    })
+
+    it('Should not render the header at all when config.title is false', () => {
+      const store = useProjectStore()
+      store.project.ouvrages.push(usedOuvrage)
+      store.project.constituents.push(usedConstituent)
+
+      const wrapper = mount(PrintLayout, {
+        props: { config: { ...defaultPrintConfig(), title: false }, canvas2DImage: null, canvas3DImage: null },
+      })
+
+      expect(wrapper.find('[data-testid="print-header"]').exists()).toBe(false)
+    })
+  })
+
+  describe('plan visuals legend', () => {
+    function setUpZoneWithTrace() {
+      const store = useProjectStore()
+      store.project.ouvrages.push(usedOuvrage)
+      store.project.constituents.push(usedConstituent)
+      const zone = store.project.zones[0]
+      zone.scale = { pixelLength: 100, realLength: 5, ratio: 0.05, tracePoints: [[0, 0], [100, 0]] }
+      zone.colorAssignments.push(colorAssignment)
+      zone.traces.push(drawnTrace)
+    }
+
+    it('Should show a legend row with the color and ouvrage name when a 2D image is provided', () => {
+      setUpZoneWithTrace()
+
+      const wrapper = mount(PrintLayout, {
+        props: { config: defaultPrintConfig(), canvas2DImage: 'data:image/png;base64,abc', canvas3DImage: null },
+      })
+
+      const legend = wrapper.find('[data-testid="print-legend"]')
+      expect(legend.text()).toContain(usedOuvrage.name)
+      const dot = legend.find('.legend-dot')
+      // jsdom normalizes inline hex colors to rgb()
+      expect((dot.element as HTMLElement).style.background).toBe('rgb(255, 0, 0)')
+    })
+
+    it('Should show a legend row alongside the 3D view when only a 3D image is provided', () => {
+      setUpZoneWithTrace()
+
+      const wrapper = mount(PrintLayout, {
+        props: { config: { ...defaultPrintConfig(), show3D: true }, canvas2DImage: null, canvas3DImage: 'data:image/png;base64,xyz' },
+      })
+
+      expect(wrapper.find('[data-testid="print-legend"]').text()).toContain(usedOuvrage.name)
+    })
+
+    it('Should not show a legend when neither the 2D nor the 3D image is shown', () => {
+      setUpZoneWithTrace()
+      const wrapper = mountWithUsedOuvrage()
+
+      expect(wrapper.find('[data-testid="print-legend"]').exists()).toBe(false)
     })
   })
 })

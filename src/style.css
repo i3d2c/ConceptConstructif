@@ -73,6 +73,11 @@ label { color: var(--text-muted); font-size: 11px; display: block; margin-bottom
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
+@page {
+  size: A4;
+  margin: 15mm;
+}
+
 @media print {
   .no-print { display: none !important; }
   .print-only { display: block !important; }
