@@ -43,6 +43,11 @@ const recapOuvrageTotal = computed(() =>
   usedOuvrages.value.reduce((s, o) => s + ouvrageAdjustedTotal(o.id), 0),
 )
 
+function devisOuvragePrice(ouvrageId: string): number {
+  const raw = ouvrageAdjustedTotal(ouvrageId)
+  return recapOuvrageTotal.value !== 0 ? raw * (recapConstituentTotal.value / recapOuvrageTotal.value) : raw
+}
+
 const grandTotal = computed(() => traceResults.value.reduce((s, t) => s + t.subtotal, 0))
 
 const recapConstituentTotal = computed(() =>
@@ -208,12 +213,15 @@ function fmtQty(n: number): string {
     <div v-else-if="tab === 'devis'" class="scroll-body" data-testid="devis-panel">
       <table>
         <thead>
-          <tr><th>Ouvrage</th><th>Description</th></tr>
+          <tr><th>Ouvrage</th><th class="num">Prix</th></tr>
         </thead>
         <tbody>
           <tr v-for="ouvrage in usedOuvrages" :key="ouvrage.id">
-            <td>{{ ouvrage.name }}</td>
-            <td>{{ ouvrage.description }}</td>
+            <td>
+              {{ ouvrage.name }}
+              <div v-if="ouvrage.description" class="ouvrage-description">{{ ouvrage.description }}</div>
+            </td>
+            <td class="num">{{ fmt(devisOuvragePrice(ouvrage.id)) }} €</td>
           </tr>
         </tbody>
         <tfoot>
@@ -278,4 +286,5 @@ td { padding: 3px 6px; border-bottom: 1px solid var(--border); }
 a { color: #60a5fa; }
 .error-cell { color: #f87171; font-style: italic; }
 .error-icon { color: #f59e0b; margin-left: 4px; cursor: help; }
+.ouvrage-description { margin-left: 12px; color: var(--text-muted); font-size: 10px; }
 </style>

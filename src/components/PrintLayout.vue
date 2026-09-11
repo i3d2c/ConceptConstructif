@@ -45,6 +45,11 @@ const recapOuvrageTotal = computed(() =>
   usedOuvrages.value.reduce((s, o) => s + ouvrageAdjustedTotal(o.id), 0),
 )
 
+function devisOuvragePrice(ouvrageId: string): number {
+  const raw = ouvrageAdjustedTotal(ouvrageId)
+  return recapOuvrageTotal.value !== 0 ? raw * (recapConstituentTotal.value / recapOuvrageTotal.value) : raw
+}
+
 const grandTotal = computed(() => traceResults.value.reduce((s, t) => s + t.subtotal, 0))
 
 const recapConstituentTotal = computed(() =>
@@ -175,12 +180,15 @@ function fmtQty(n: number) {
       <h3>Devis</h3>
       <table class="print-table">
         <thead>
-          <tr><th>Ouvrage</th><th>Description</th></tr>
+          <tr><th>Ouvrage</th><th style="text-align:right">Prix</th></tr>
         </thead>
         <tbody>
           <tr v-for="o in usedOuvrages" :key="o.id">
-            <td>{{ o.name }}</td>
-            <td>{{ o.description }}</td>
+            <td>
+              {{ o.name }}
+              <div v-if="o.description" class="ouvrage-description">{{ o.description }}</div>
+            </td>
+            <td style="text-align:right">{{ fmt(devisOuvragePrice(o.id)) }} €</td>
           </tr>
         </tbody>
         <tfoot>
@@ -282,4 +290,5 @@ function fmtQty(n: number) {
 .trace-row td { background: #f0f4ff; font-style: italic; }
 .error-cell { color: #b91c1c; font-style: italic; }
 .error-icon { color: #b45309; margin-left: 4px; }
+.ouvrage-description { margin-left: 12px; color: #555; font-size: 9pt; }
 </style>
