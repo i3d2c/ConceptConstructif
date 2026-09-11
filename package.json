@@ -8,7 +8,8 @@
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "deploy": "npm run build && cp -r dist/* ../suipotryot.github.io/concept-constructif"
   },
   "dependencies": {
     "@types/three": "^0.185.0",
