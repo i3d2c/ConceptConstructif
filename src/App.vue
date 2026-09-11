@@ -12,21 +12,25 @@ import PrintDialog from './components/dialogs/PrintDialog.vue'
 import PrintLayout from './components/PrintLayout.vue'
 import ProjectListDialog from './components/dialogs/ProjectListDialog.vue'
 import WhatsNewDialog from './components/dialogs/WhatsNewDialog.vue'
+import CompanySettingsDialog from './components/dialogs/CompanySettingsDialog.vue'
 import TourOverlay from './components/onboarding/TourOverlay.vue'
 import { useProjectStore } from './stores/projectStore'
 import { useWhatsNewStore } from './stores/whatsNewStore'
 import { useOnboardingTourStore } from './stores/onboardingTourStore'
+import { useSettingsStore } from './stores/settingsStore'
 import type { PrintConfig } from './print/PrintConfig'
 
 const store = useProjectStore()
 const whatsNewStore = useWhatsNewStore()
 const tourStore = useOnboardingTourStore()
+const settingsStore = useSettingsStore()
 const show3D = ref(false)
 const showChiffrage = ref(false)
 const showOuvrageModal = ref(false)
 const showPrintDialog = ref(false)
 const showProjectDialog = ref(false)
 const showWhatsNew = ref(false)
+const showSettingsDialog = ref(false)
 const printConfig = ref<PrintConfig | null>(null)
 const canvas2DSnapshot = ref<string | null>(null)
 const canvas3DSnapshot = ref<string | null>(null)
@@ -105,6 +109,8 @@ onMounted(async () => {
   const lastId = localStorage.getItem('cc_last_project')
   if (lastId) await store.load(lastId)
 
+  await settingsStore.init()
+
   tourStore.init()
   if (tourStore.shouldShow) {
     tourStore.start()
@@ -125,6 +131,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
       @toggle-chiffrage="showChiffrage = !showChiffrage"
       @print="showPrintDialog = true"
       @open-projects="showProjectDialog = true"
+      @open-settings="showSettingsDialog = true"
     />
 
     <div class="app-body">
@@ -156,6 +163,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
     <PrintDialog v-if="showPrintDialog" :initial-config="store.activeZone?.printConfig" @print="onPrint" @cancel="showPrintDialog = false" />
     <ProjectListDialog v-if="showProjectDialog" @close="showProjectDialog = false" />
     <WhatsNewDialog v-if="showWhatsNew" @close="whatsNewStore.markSeen(); showWhatsNew = false" />
+    <CompanySettingsDialog v-if="showSettingsDialog" @close="showSettingsDialog = false" />
     <TourOverlay v-if="tourStore.isActive" />
   </div>
 
