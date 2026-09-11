@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useOnboardingTourStore } from '../../stores/onboardingTourStore'
+import { computeCardPosition, CARD_WIDTH, type Rect } from '../../domain/services/TourCardPositioner'
 
 const store = useOnboardingTourStore()
 
-type Rect = { x: number; y: number; width: number; height: number }
-
 const rect = ref<Rect | null>(null)
-const CARD_MARGIN = 16
-const CARD_WIDTH = 320
+const cardRef = ref<HTMLDivElement | null>(null)
+const cardHeight = ref(0)
 
 function recompute() {
   const target = store.currentStep?.target ?? null
@@ -29,30 +28,36 @@ function recompute() {
   rect.value = { x, y, width: right - x, height: bottom - y }
 }
 
+function measureCard() {
+  cardHeight.value = cardRef.value?.getBoundingClientRect().height ?? 0
+}
+
 const cardStyle = computed(() => {
   if (!rect.value) {
     return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }
   }
   const placement = store.currentStep?.placement ?? 'right'
-  const r = rect.value
-  if (placement === 'right') {
-    const left = Math.min(r.x + r.width + CARD_MARGIN, window.innerWidth - CARD_WIDTH - CARD_MARGIN)
-    return { top: `${Math.max(CARD_MARGIN, r.y)}px`, left: `${Math.max(CARD_MARGIN, left)}px` }
-  }
-  return { top: `${r.y + r.height + CARD_MARGIN}px`, left: `${r.x}px` }
+  const viewport = { width: window.innerWidth, height: window.innerHeight }
+  const position = computeCardPosition(rect.value, { width: CARD_WIDTH, height: cardHeight.value }, viewport, placement)
+  return { top: `${position.top}px`, left: `${position.left}px` }
 })
 
 watch(() => store.stepIndex, async () => {
   await nextTick()
   recompute()
+  await nextTick()
+  measureCard()
 })
 
 function onResize() {
   recompute()
+  measureCard()
 }
 
-onMounted(() => {
+onMounted(async () => {
   recompute()
+  await nextTick()
+  measureCard()
   window.addEventListener('resize', onResize)
 })
 onUnmounted(() => window.removeEventListener('resize', onResize))
@@ -80,7 +85,7 @@ onUnmounted(() => window.removeEventListener('resize', onResize))
         />
       </svg>
 
-      <div class="tour-card" :style="cardStyle" v-if="store.currentStep">
+      <div class="tour-card" ref="cardRef" :style="cardStyle" v-if="store.currentStep">
         <h3>{{ store.currentStep.title }}</h3>
         <p>{{ store.currentStep.body }}</p>
         <div class="tour-actions">
