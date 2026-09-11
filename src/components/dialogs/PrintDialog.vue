@@ -92,7 +92,7 @@ function doPrint() {
 
       <div class="dialog-actions">
         <button @click="emit('cancel')">Annuler</button>
-        <button class="active" @click="doPrint">Imprimer / PDF</button>
+        <button class="active" @click="doPrint">Générer le PDF</button>
       </div>
     </div>
   </div>

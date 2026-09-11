@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, nextTick } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import AppHeader from './components/AppHeader.vue'
 import SidebarLeft from './components/SidebarLeft.vue'
 import SidebarRight from './components/SidebarRight.vue'
@@ -9,7 +9,6 @@ import ChiffrageFloat from './components/ChiffrageFloat.vue'
 import Scene3DFloat from './components/Scene3DFloat.vue'
 import OuvrageLibraryModal from './components/OuvrageLibraryModal.vue'
 import PrintDialog from './components/dialogs/PrintDialog.vue'
-import PrintLayout from './components/PrintLayout.vue'
 import ProjectListDialog from './components/dialogs/ProjectListDialog.vue'
 import WhatsNewDialog from './components/dialogs/WhatsNewDialog.vue'
 import CompanySettingsDialog from './components/dialogs/CompanySettingsDialog.vue'
@@ -19,6 +18,8 @@ import { useWhatsNewStore } from './stores/whatsNewStore'
 import { useOnboardingTourStore } from './stores/onboardingTourStore'
 import { useSettingsStore } from './stores/settingsStore'
 import { capturePrintSnapshot } from './scene3d/capturePrintSnapshot'
+import { buildQuoteDocument } from './print/buildQuoteDocument'
+import { pdfMake } from './print/pdfSetup'
 import type { PrintConfig } from './print/PrintConfig'
 
 const store = useProjectStore()
@@ -32,9 +33,6 @@ const showPrintDialog = ref(false)
 const showProjectDialog = ref(false)
 const showWhatsNew = ref(false)
 const showSettingsDialog = ref(false)
-const printConfig = ref<PrintConfig | null>(null)
-const canvas2DSnapshot = ref<string | null>(null)
-const canvas3DSnapshot = ref<string | null>(null)
 
 // Ref pour la capture d'impression du plan 2D
 const canvasViewRef = ref<InstanceType<typeof CanvasView> | null>(null)
@@ -66,31 +64,25 @@ function onKeydown(e: KeyboardEvent) {
 
 async function onPrint(config: PrintConfig) {
   showPrintDialog.value = false
+  if (!store.activeZone) return
 
-  if (store.activeZone) {
-    store.updateZone(store.activeZone.id, { printConfig: config })
-  }
+  store.updateZone(store.activeZone.id, { printConfig: config })
 
-  // Capture 2D avant d'afficher PrintLayout (canvas Konva composite)
-  if (config.show2D && canvasViewRef.value) {
-    canvas2DSnapshot.value = await canvasViewRef.value.getStageDataURL()
-  } else {
-    canvas2DSnapshot.value = null
-  }
+  const canvas2DImage = config.show2D && canvasViewRef.value
+    ? await canvasViewRef.value.getStageDataURL()
+    : null
+  const canvas3DImage = config.show3D ? await capturePrintSnapshot(store) : null
 
-  // Capture 3D dans une scène hors-écran dédiée, cadrée indépendamment du panneau live
-  canvas3DSnapshot.value = config.show3D ? await capturePrintSnapshot(store) : null
+  const doc = buildQuoteDocument({
+    project: store.project,
+    zone: store.activeZone,
+    config,
+    companyProfile: settingsStore.companyProfile,
+    canvas2DImage,
+    canvas3DImage,
+  })
 
-  // Affiche PrintLayout avec les données capturées
-  printConfig.value = config
-
-  // Attendre le rendu Vue + un tick pour le navigateur
-  await nextTick()
-  await new Promise(r => setTimeout(r, 200))
-
-  // Effacer PrintLayout après la fermeture du dialog d'impression
-  window.addEventListener('afterprint', () => { printConfig.value = null }, { once: true })
-  window.print()
+  pdfMake.createPdf(doc).open()
 }
 
 onMounted(async () => {
@@ -155,14 +147,6 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
     <CompanySettingsDialog v-if="showSettingsDialog" @close="showSettingsDialog = false" />
     <TourOverlay v-if="tourStore.isActive" />
   </div>
-
-  <!-- Layout d'impression (masqué à l'écran) -->
-  <PrintLayout
-    v-if="printConfig"
-    :config="printConfig"
-    :canvas2DImage="canvas2DSnapshot"
-    :canvas3DImage="canvas3DSnapshot"
-  />
 </template>
 
 <style scoped>

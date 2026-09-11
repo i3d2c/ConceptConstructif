@@ -168,7 +168,7 @@ function handleExport() {
         :title="themeStore.theme === 'dark' ? 'Passer en thème clair' : 'Passer en thème sombre'"
         @click="themeStore.toggle()"
       >{{ themeStore.theme === 'dark' ? '☀️' : '🌙' }}</button>
-      <button class="icon" title="Imprimer / PDF" @click="$emit('print')">🖨</button>
+      <button class="icon" title="Générer le PDF" @click="$emit('print')">🖨</button>
       <button class="icon" title="Mon entreprise" @click="$emit('openSettings')">⚙</button>
       <button class="icon" title="Revoir la visite guidée" @click="tourStore.start()">?</button>
     </div>
