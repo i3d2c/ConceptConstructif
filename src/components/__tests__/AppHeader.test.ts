@@ -1,3 +1,4 @@
+import 'fake-indexeddb/auto'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { mount } from '@vue/test-utils'
@@ -20,6 +21,39 @@ describe('AppHeader', () => {
 
       expect(tourStore.isActive).toBe(true)
       expect(tourStore.stepIndex).toBe(0)
+    })
+  })
+
+  describe('project actions menu', () => {
+    it('Should open the project actions menu when the "..." button next to the project name is clicked', async () => {
+      const wrapper = mount(AppHeader)
+
+      await wrapper.find('[title="Actions sur le projet"]').trigger('click')
+
+      expect(wrapper.find('[title="Mes projets"]').exists()).toBe(true)
+      expect(wrapper.find('[title="Nouveau projet"]').exists()).toBe(true)
+    })
+
+    it('Should emit "openProjects" when "Mes projets" is clicked in the project menu', async () => {
+      const wrapper = mount(AppHeader)
+
+      await wrapper.find('[title="Actions sur le projet"]').trigger('click')
+      await wrapper.find('[title="Mes projets"]').trigger('click')
+
+      expect(wrapper.emitted('openProjects')).toHaveLength(1)
+    })
+
+    it('Should start a new project when "Nouveau projet" is clicked in the project menu', async () => {
+      const store = useProjectStore()
+      const previousId = store.project.id
+      const wrapper = mount(AppHeader)
+
+      await wrapper.find('[title="Actions sur le projet"]').trigger('click')
+      await wrapper.find('[title="Nouveau projet"]').trigger('click')
+
+      await vi.waitFor(() => {
+        expect(store.project.id).not.toBe(previousId)
+      })
     })
   })
 

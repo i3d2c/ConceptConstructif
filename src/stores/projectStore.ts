@@ -273,6 +273,12 @@ export const useProjectStore = defineStore('project', () => {
     project.value = newProject()
   }
 
+  async function startNewProject() {
+    await save()
+    reset()
+    localStorage.setItem('cc_last_project', project.value.id)
+  }
+
   return {
     project,
     activeZone,
@@ -313,5 +319,6 @@ export const useProjectStore = defineStore('project', () => {
     save,
     load,
     reset,
+    startNewProject,
   }
 })

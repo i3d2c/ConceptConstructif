@@ -24,9 +24,7 @@ async function openProject(id: string) {
 }
 
 async function newProject() {
-  await store.save()
-  store.reset()
-  localStorage.setItem('cc_last_project', store.project.id)
+  await store.startNewProject()
   emit('close')
 }
 

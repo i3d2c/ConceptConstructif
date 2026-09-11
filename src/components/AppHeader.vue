@@ -11,20 +11,35 @@ const store = useProjectStore()
 const themeStore = useThemeStore()
 const tourStore = useOnboardingTourStore()
 
-defineEmits<{
+const emit = defineEmits<{
   toggle3d: []
   toggleChiffrage: []
   print: []
   openProjects: []
 }>()
 
+function openProjectList() {
+  showProjectMenu.value = false
+  emit('openProjects')
+}
+
+async function startNewProject() {
+  showProjectMenu.value = false
+  await store.startNewProject()
+}
+
 const savedMsg = ref(false)
 const showZoneMenu = ref(false)
 const zoneMenuRef = ref<HTMLDivElement | null>(null)
+const showProjectMenu = ref(false)
+const projectMenuRef = ref<HTMLDivElement | null>(null)
 
 function onClickOutsideZoneMenu(e: MouseEvent) {
   if (zoneMenuRef.value && !zoneMenuRef.value.contains(e.target as Node)) {
     showZoneMenu.value = false
+  }
+  if (projectMenuRef.value && !projectMenuRef.value.contains(e.target as Node)) {
+    showProjectMenu.value = false
   }
 }
 onMounted(() => window.addEventListener('mousedown', onClickOutsideZoneMenu))
@@ -103,6 +118,17 @@ function handleExport() {
       class="project-name"
       title="Nom du projet (cliquez pour renommer)"
     />
+    <div class="project-menu-wrap" ref="projectMenuRef">
+      <button
+        class="icon"
+        title="Actions sur le projet"
+        @click="showProjectMenu = !showProjectMenu"
+      >⋯</button>
+      <div v-if="showProjectMenu" class="project-menu">
+        <button title="Mes projets" @click="openProjectList">Mes projets</button>
+        <button title="Nouveau projet" @click="startNewProject">Nouveau projet</button>
+      </div>
+    </div>
 
     <div class="zone-selector">
       <select
@@ -134,7 +160,6 @@ function handleExport() {
         <span v-if="savedMsg" class="saved-msg">✓ Sauvegardé</span>
         <span v-else>💾</span>
       </button>
-      <button class="icon" title="Mes projets" @click="$emit('openProjects')">📁</button>
       <button class="icon" title="Importer JSON" @click="handleImport">📥</button>
       <button class="icon" title="Exporter JSON" @click="handleExport">📤</button>
       <button
@@ -175,15 +200,15 @@ function handleExport() {
 .project-name:focus { border-color: var(--accent); outline: none; background: var(--surface2); }
 .zone-selector { display: flex; align-items: center; gap: 4px; }
 .zone-selector select { width: 180px; }
-.zone-menu-wrap { position: relative; }
-.zone-menu {
+.zone-menu-wrap, .project-menu-wrap { position: relative; }
+.zone-menu, .project-menu {
   position: absolute; top: calc(100% + 4px); left: 0; z-index: 20;
   background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
   display: flex; flex-direction: column; min-width: 180px; padding: 4px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
-.zone-menu button { text-align: left; border: none; background: none; padding: 6px 8px; }
-.zone-menu button:hover { background: var(--hover); }
+.zone-menu button, .project-menu button { text-align: left; border: none; background: none; padding: 6px 8px; }
+.zone-menu button:hover, .project-menu button:hover { background: var(--hover); }
 .header-actions { margin-left: auto; display: flex; gap: 4px; }
 button:disabled { opacity: 0.4; cursor: not-allowed; }
 .save-btn { min-width: 28px; }
