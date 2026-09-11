@@ -7,7 +7,7 @@ const store = useProjectStore()
 const themeStore = useThemeStore()
 const containerRef = ref<HTMLDivElement | null>(null)
 
-type Scene3DInstance = { destroy(): void; rebuild(): void; getDataURL(): string; refreshBackground(): void }
+type Scene3DInstance = { destroy(): void; rebuild(): void; refreshBackground(): void }
 let scene3d: Scene3DInstance | null = null
 
 onMounted(async () => {
@@ -36,12 +36,6 @@ watch(
   () => themeStore.theme,
   () => scene3d?.refreshBackground(),
 )
-
-function getDataURL(): string | null {
-  return scene3d?.getDataURL() ?? null
-}
-
-defineExpose({ getDataURL })
 </script>
 
 <template>

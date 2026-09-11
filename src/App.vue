@@ -18,6 +18,7 @@ import { useProjectStore } from './stores/projectStore'
 import { useWhatsNewStore } from './stores/whatsNewStore'
 import { useOnboardingTourStore } from './stores/onboardingTourStore'
 import { useSettingsStore } from './stores/settingsStore'
+import { capturePrintSnapshot } from './scene3d/capturePrintSnapshot'
 import type { PrintConfig } from './print/PrintConfig'
 
 const store = useProjectStore()
@@ -35,9 +36,8 @@ const printConfig = ref<PrintConfig | null>(null)
 const canvas2DSnapshot = ref<string | null>(null)
 const canvas3DSnapshot = ref<string | null>(null)
 
-// Refs pour la capture d'impression
+// Ref pour la capture d'impression du plan 2D
 const canvasViewRef = ref<InstanceType<typeof CanvasView> | null>(null)
-const scene3DRef = ref<InstanceType<typeof Scene3DFloat> | null>(null)
 
 function onImportPlan() {
   if (store.activeZone?.backgroundImage) {
@@ -78,19 +78,8 @@ async function onPrint(config: PrintConfig) {
     canvas2DSnapshot.value = null
   }
 
-  // Capture 3D : ouvrir le panneau temporairement si nécessaire
-  const wasShow3D = show3D.value
-  if (config.show3D && !show3D.value) {
-    show3D.value = true
-    await nextTick()
-    await new Promise(r => setTimeout(r, 600)) // Three.js a besoin d'un tick de rendu
-  }
-  if (config.show3D && scene3DRef.value) {
-    canvas3DSnapshot.value = scene3DRef.value.getDataURL()
-  } else {
-    canvas3DSnapshot.value = null
-  }
-  if (!wasShow3D) show3D.value = false
+  // Capture 3D dans une scène hors-écran dédiée, cadrée indépendamment du panneau live
+  canvas3DSnapshot.value = config.show3D ? await capturePrintSnapshot(store) : null
 
   // Affiche PrintLayout avec les données capturées
   printConfig.value = config
@@ -148,7 +137,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
         <CanvasView ref="canvasViewRef" />
 
         <FloatingPanel v-if="show3D" title="Vue 3D" @close="show3D = false">
-          <Scene3DFloat ref="scene3DRef" />
+          <Scene3DFloat />
         </FloatingPanel>
 
         <FloatingPanel v-if="showChiffrage" title="Chiffrage" @close="showChiffrage = false">
