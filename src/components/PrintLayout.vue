@@ -248,7 +248,13 @@ function fmtQty(n: number) {
 .visuals-3d { flex: 1 1 60%; min-width: 0; }
 .visuals-legend { flex: 1 1 40%; min-width: 0; }
 .legend-row { display: flex; align-items: center; gap: 6pt; padding: 2pt 0; font-size: 9pt; }
-.legend-dot { width: 8pt; height: 8pt; border-radius: 50%; flex-shrink: 0; }
+.legend-dot {
+  width: 8pt; height: 8pt; border-radius: 50%; flex-shrink: 0;
+  /* Browsers strip background colors when printing unless "background graphics" is
+     explicitly enabled - force it since the legend's whole point is the color. */
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
 
 /* Tableaux : traits fins, sans fond */
 .print-table { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
