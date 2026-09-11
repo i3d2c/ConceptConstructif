@@ -1,11 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useProjectStore } from '../stores/projectStore'
-import { computeTraceChiffrage } from '../domain/services/ChiffrageCalculator'
+import { buildPrintData } from '../print/buildPrintData'
 import type { PrintConfig } from '../print/PrintConfig'
-import type { TraceChiffrage } from '../domain/services/ChiffrageCalculator'
-import type { OuvrageConstituent } from '../domain/models/Ouvrage'
-import { evaluateRecap } from '../domain/services/FormulaEvaluator'
 
 const props = defineProps<{
   config: PrintConfig
@@ -15,99 +12,7 @@ const props = defineProps<{
 
 const store = useProjectStore()
 
-const traceResults = computed<TraceChiffrage[]>(() => {
-  const zone = store.activeZone
-  if (!zone?.scale) return []
-  const constituentsMap = new Map(store.project.constituents.map(c => [c.id, c]))
-  return zone.traces
-    .map(trace => {
-      const ca = zone.colorAssignments.find(c => c.id === trace.colorAssignmentId)
-      const ouvrage = store.project.ouvrages.find(o => o.id === ca?.ouvrageId)
-      if (!ca || !ouvrage) return null
-      return computeTraceChiffrage(trace, zone.scale!, ca, ouvrage, constituentsMap)
-    })
-    .filter(Boolean) as TraceChiffrage[]
-})
-
-function ouvrageAdjustedTotal(ouvrageId: string): number {
-  const scoped = traceResults.value.filter(t => t.ouvrageId === ouvrageId)
-  return ouvrageVisibleOCs(ouvrageId).reduce((s, oc) => {
-    const unitPrice = store.project.constituents.find(c => c.id === oc.constituentId)?.unitPrice ?? 0
-    return s + ocAggregatedQty(oc, scoped) * unitPrice
-  }, 0)
-}
-
-const usedOuvrages = computed(() =>
-  store.project.ouvrages.filter(o => traceResults.value.some(t => t.ouvrageId === o.id)),
-)
-
-const recapOuvrageTotal = computed(() =>
-  usedOuvrages.value.reduce((s, o) => s + ouvrageAdjustedTotal(o.id), 0),
-)
-
-function devisOuvragePrice(ouvrageId: string): number {
-  const raw = ouvrageAdjustedTotal(ouvrageId)
-  return recapOuvrageTotal.value !== 0 ? raw * (recapConstituentTotal.value / recapOuvrageTotal.value) : raw
-}
-
-const grandTotal = computed(() => traceResults.value.reduce((s, t) => s + t.subtotal, 0))
-
-const recapConstituentTotal = computed(() =>
-  store.project.constituents.reduce((s, c) => {
-    const ocs = constituentApplicableOCs(c.id)
-    if (ocs.length === 0) return s
-    const raw = ocs.reduce((ss, oc) => ss + ocAggregatedQty(oc, traceResults.value), 0)
-    return s + applyRecap(c.formulaRecap, raw) * c.unitPrice
-  }, 0),
-)
-
-function applyRecap(formulaRecap: string | undefined, X: number): number {
-  return formulaRecap ? evaluateRecap(formulaRecap, X) : X
-}
-
-function ocAggregatedQty(oc: OuvrageConstituent, scoped: TraceChiffrage[]): number {
-  return scoped.flatMap(t => t.constituents)
-    .filter(c => c.ouvrageConstituentId === oc.id)
-    .reduce((s, c) => s + c.quantity, 0)
-}
-
-function ocHasError(oc: OuvrageConstituent, scoped: TraceChiffrage[]): boolean {
-  return scoped.flatMap(t => t.constituents).some(c => c.ouvrageConstituentId === oc.id && c.error)
-}
-
-function constituentAdjustedQty(constituentId: string): number {
-  const raw = constituentApplicableOCs(constituentId)
-    .reduce((s, oc) => s + ocAggregatedQty(oc, traceResults.value), 0)
-  const c = store.project.constituents.find(c => c.id === constituentId)
-  return applyRecap(c?.formulaRecap, raw)
-}
-
-function ouvrageVisibleOCs(ouvrageId: string): OuvrageConstituent[] {
-  const ouvrage = store.project.ouvrages.find(o => o.id === ouvrageId)
-  if (!ouvrage) return []
-  const scoped = traceResults.value.filter(t => t.ouvrageId === ouvrageId)
-  return ouvrage.constituents.filter(oc => {
-    const unitPrice = store.project.constituents.find(c => c.id === oc.constituentId)?.unitPrice ?? 0
-    return !oc.disabled
-      && !oc.hideFromRecapOuvrage
-      && !(oc.hideIfZero && ocAggregatedQty(oc, scoped) === 0)
-      && !(oc.hideIfPriceZero && unitPrice === 0)
-  })
-}
-
-function constituentHasError(constituentId: string): boolean {
-  return constituentApplicableOCs(constituentId).some(oc => ocHasError(oc, traceResults.value))
-}
-
-function constituentApplicableOCs(constituentId: string): OuvrageConstituent[] {
-  const unitPrice = store.project.constituents.find(c => c.id === constituentId)?.unitPrice ?? 0
-  return store.project.ouvrages
-    .filter(o => traceResults.value.some(t => t.ouvrageId === o.id))
-    .flatMap(o => o.constituents)
-    .filter(oc => oc.constituentId === constituentId && !oc.disabled && !oc.hideFromRecapConstituent)
-    .filter(oc => !(oc.hideIfZero && ocAggregatedQty(oc, traceResults.value) === 0))
-    .filter(oc => !(oc.hideIfPriceZero && unitPrice === 0))
-}
+const data = computed(() => buildPrintData(store.project, store.activeZone))
 
 function fmt(n: number) {
   return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)
@@ -146,30 +51,28 @@ function fmtQty(n: number) {
           <tr><th>Ouvrage</th><th>Constituant</th><th>Qté tot.</th><th>Unité</th><th>P.U.</th><th>Total</th></tr>
         </thead>
         <tbody>
-          <template v-for="o in store.project.ouvrages" :key="o.id">
-            <template v-if="traceResults.some(t => t.ouvrageId === o.id)">
-              <tr class="ouvrage-row">
-                <td colspan="5" style="font-weight:bold">{{ o.name }}</td>
-                <td style="text-align:right">{{ fmt(ouvrageAdjustedTotal(o.id)) }} €</td>
-              </tr>
-              <tr v-for="oc in ouvrageVisibleOCs(o.id)" :key="oc.id">
-                <td />
-                <td>
-                  {{ store.project.constituents.find(c=>c.id===oc.constituentId)?.name }}
-                  <span v-if="ocHasError(oc, traceResults.filter(t=>t.ouvrageId===o.id))" class="error-icon" title="Formule en erreur sur au moins un tracé">⚠</span>
-                </td>
-                <td style="text-align:right">{{ fmtQty(ocAggregatedQty(oc, traceResults.filter(t=>t.ouvrageId===o.id))) }}</td>
-                <td>{{ store.project.constituents.find(c=>c.id===oc.constituentId)?.unit }}</td>
-                <td style="text-align:right">{{ fmt(store.project.constituents.find(c=>c.id===oc.constituentId)?.unitPrice??0) }} €</td>
-                <td style="text-align:right">{{ fmt(ocAggregatedQty(oc, traceResults.filter(t=>t.ouvrageId===o.id)) * (store.project.constituents.find(c=>c.id===oc.constituentId)?.unitPrice??0)) }} €</td>
-              </tr>
-            </template>
+          <template v-for="o in data.recapOuvrages" :key="o.ouvrageId">
+            <tr class="ouvrage-row">
+              <td colspan="5" style="font-weight:bold">{{ o.ouvrageName }}</td>
+              <td style="text-align:right">{{ fmt(o.total) }} €</td>
+            </tr>
+            <tr v-for="c in o.constituents" :key="c.ouvrageConstituentId">
+              <td />
+              <td>
+                {{ c.name }}
+                <span v-if="c.hasError" class="error-icon" title="Formule en erreur sur au moins un tracé">⚠</span>
+              </td>
+              <td style="text-align:right">{{ fmtQty(c.quantity) }}</td>
+              <td>{{ c.unit }}</td>
+              <td style="text-align:right">{{ fmt(c.unitPrice) }} €</td>
+              <td style="text-align:right">{{ fmt(c.total) }} €</td>
+            </tr>
           </template>
         </tbody>
         <tfoot>
           <tr style="font-weight:bold">
             <td colspan="5" style="text-align:right">Total général</td>
-            <td style="text-align:right">{{ fmt(recapOuvrageTotal) }} €</td>
+            <td style="text-align:right">{{ fmt(data.recapOuvrageTotal) }} €</td>
           </tr>
         </tfoot>
       </table>
@@ -183,18 +86,18 @@ function fmtQty(n: number) {
           <tr><th>Ouvrage</th><th style="text-align:right">Prix</th></tr>
         </thead>
         <tbody>
-          <tr v-for="o in usedOuvrages" :key="o.id">
+          <tr v-for="l in data.devisLines" :key="l.ouvrageId">
             <td>
-              {{ o.name }}
-              <div v-if="o.description" class="ouvrage-description">{{ o.description }}</div>
+              {{ l.ouvrageName }}
+              <div v-if="l.description" class="ouvrage-description">{{ l.description }}</div>
             </td>
-            <td style="text-align:right; white-space:nowrap">{{ fmt(devisOuvragePrice(o.id)) }} €</td>
+            <td style="text-align:right; white-space:nowrap">{{ fmt(l.price) }} €</td>
           </tr>
         </tbody>
         <tfoot>
           <tr style="font-weight:bold">
             <td style="text-align:right">Total</td>
-            <td style="text-align:right; white-space:nowrap">{{ fmt(recapConstituentTotal) }} €</td>
+            <td style="text-align:right; white-space:nowrap">{{ fmt(data.devisTotal) }} €</td>
           </tr>
         </tfoot>
       </table>
@@ -208,24 +111,22 @@ function fmtQty(n: number) {
           <tr><th>Constituant</th><th>Fournisseur</th><th>Qté tot.</th><th>Unité</th><th>P.U.</th><th>Total</th></tr>
         </thead>
         <tbody>
-          <tr v-for="c in store.project.constituents" :key="c.id">
-            <template v-if="constituentApplicableOCs(c.id).length > 0">
-              <td>
-                {{ c.name }}
-                <span v-if="constituentHasError(c.id)" class="error-icon" title="Formule en erreur sur au moins un tracé">⚠</span>
-              </td>
-              <td>{{ c.supplier ?? '—' }}</td>
-              <td style="text-align:right">{{ fmtQty(constituentAdjustedQty(c.id)) }}</td>
-              <td>{{ c.unit }}</td>
-              <td style="text-align:right">{{ fmt(c.unitPrice) }} €</td>
-              <td style="text-align:right">{{ fmt(constituentAdjustedQty(c.id) * c.unitPrice) }} €</td>
-            </template>
+          <tr v-for="c in data.recapConstituents" :key="c.constituentId">
+            <td>
+              {{ c.name }}
+              <span v-if="c.hasError" class="error-icon" title="Formule en erreur sur au moins un tracé">⚠</span>
+            </td>
+            <td>{{ c.supplier ?? '—' }}</td>
+            <td style="text-align:right">{{ fmtQty(c.quantity) }}</td>
+            <td>{{ c.unit }}</td>
+            <td style="text-align:right">{{ fmt(c.unitPrice) }} €</td>
+            <td style="text-align:right">{{ fmt(c.total) }} €</td>
           </tr>
         </tbody>
         <tfoot>
           <tr style="font-weight:bold">
             <td colspan="5" style="text-align:right">Total général</td>
-            <td style="text-align:right">{{ fmt(recapConstituentTotal) }} €</td>
+            <td style="text-align:right">{{ fmt(data.recapConstituentTotal) }} €</td>
           </tr>
         </tfoot>
       </table>
@@ -239,23 +140,21 @@ function fmtQty(n: number) {
           <tr><th>N°</th><th>Constituant</th><th>Qté</th><th>Unité</th><th>P.U.</th><th>Total</th></tr>
         </thead>
         <tbody>
-          <template v-for="t in traceResults" :key="t.traceId">
+          <template v-for="t in data.traces" :key="t.traceId">
             <tr class="trace-row">
               <td colspan="6">▶ Tracé n°{{ t.traceNumber }} — {{ t.ouvrageName }}</td>
             </tr>
-            <template v-for="c in t.constituents" :key="c.ouvrageConstituentId">
-              <tr v-if="!(c.hideIfZero && c.quantity === 0) && !(c.hideIfPriceZero && c.unitPrice === 0)">
-                <td />
-                <td>{{ c.name }}</td>
-                <td style="text-align:right" :title="c.error || undefined">
-                  <span v-if="c.error" class="error-cell">⚠ Erreur</span>
-                  <span v-else>{{ fmtQty(c.quantity) }}</span>
-                </td>
-                <td>{{ c.unit }}</td>
-                <td style="text-align:right">{{ fmt(c.unitPrice) }} €</td>
-                <td style="text-align:right">{{ fmt(c.total) }} €</td>
-              </tr>
-            </template>
+            <tr v-for="c in t.constituents" :key="c.ouvrageConstituentId">
+              <td />
+              <td>{{ c.name }}</td>
+              <td style="text-align:right" :title="c.error || undefined">
+                <span v-if="c.error" class="error-cell">⚠ Erreur</span>
+                <span v-else>{{ fmtQty(c.quantity) }}</span>
+              </td>
+              <td>{{ c.unit }}</td>
+              <td style="text-align:right">{{ fmt(c.unitPrice) }} €</td>
+              <td style="text-align:right">{{ fmt(c.total) }} €</td>
+            </tr>
             <tr>
               <td colspan="5" style="text-align:right;font-style:italic">Sous-total</td>
               <td style="text-align:right">{{ fmt(t.subtotal) }} €</td>
@@ -265,7 +164,7 @@ function fmtQty(n: number) {
         <tfoot>
           <tr>
             <td colspan="5" style="text-align:right;font-weight:bold">Total général</td>
-            <td style="text-align:right;font-weight:bold">{{ fmt(grandTotal) }} €</td>
+            <td style="text-align:right;font-weight:bold">{{ fmt(data.grandTotal) }} €</td>
           </tr>
         </tfoot>
       </table>
