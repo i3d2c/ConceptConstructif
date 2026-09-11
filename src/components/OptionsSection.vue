@@ -40,6 +40,7 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
+.options-section { flex-shrink: 0; }
 .section-label { color: var(--text-muted); font-size: 10px; text-transform: uppercase; margin-bottom: 6px; }
 .option-btns { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
 .option-btns button { padding: 6px 4px; }
