@@ -34,4 +34,10 @@ describe('tourSteps', () => {
       expect(VALID_PLACEMENTS).toContain(step.placement)
     }
   })
+
+  it('Should order the numbered steps (plan, scale, ouvrages) before the color and trace steps', () => {
+    expect(TOUR_STEPS.map(s => s.id)).toEqual([
+      'welcome', 'plan', 'scale', 'ouvrages', 'color', 'trace', 'chiffrage', 'scene3d',
+    ])
+  })
 })
