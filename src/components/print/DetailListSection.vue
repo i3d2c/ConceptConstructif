@@ -10,7 +10,7 @@ defineProps<{
 
 <template>
   <div class="print-section table-section">
-    <h3>Liste détaillée par tracé</h3>
+    <h3>LISTE DÉTAILLÉE PAR TRACÉ</h3>
     <table class="print-table">
       <thead>
         <tr><th>N°</th><th>CONSTITUANT</th><th>QTÉ</th><th>UNITÉ</th><th>P.U.</th><th>TOTAL</th></tr>

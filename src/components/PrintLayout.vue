@@ -100,7 +100,7 @@ const showTrailingContent = computed(() =>
           <img :src="canvas3DImage!" class="print-img" />
         </div>
         <div v-if="showLegend" class="visuals-legend" data-testid="print-legend">
-          <h3>Légende</h3>
+          <h3>LÉGENDE</h3>
           <hr class="header-rule" />
           <div v-for="row in legend" :key="row.color" class="legend-row">
             <span class="legend-dot" :style="{ background: row.color }" />

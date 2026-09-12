@@ -195,21 +195,21 @@ describe('PrintLayout', () => {
       const wrapper = mountWithConfig({ showDevis: false, showRecapOuvrage: true, showRecapConstituent: true, showList: true })
 
       const primary = wrapper.find('[data-testid="primary-content"]')
-      expect(primary.text()).toContain('Récapitulatif par ouvrage')
+      expect(primary.text()).toContain('RÉCAPITULATIF PAR OUVRAGE')
       const trailing = wrapper.find('[data-testid="trailing-content"]')
-      expect(trailing.text()).not.toContain('Récapitulatif par ouvrage')
-      expect(trailing.text()).toContain('Récapitulatif par constituant')
-      expect(trailing.text()).toContain('Liste détaillée par tracé')
+      expect(trailing.text()).not.toContain('RÉCAPITULATIF PAR OUVRAGE')
+      expect(trailing.text()).toContain('RÉCAPITULATIF PAR CONSTITUANT')
+      expect(trailing.text()).toContain('LISTE DÉTAILLÉE PAR TRACÉ')
     })
 
     it('Should use recap constituent as the primary content when Devis and recap ouvrage are unchecked', () => {
       const wrapper = mountWithConfig({ showDevis: false, showRecapOuvrage: false, showRecapConstituent: true, showList: true })
 
       const primary = wrapper.find('[data-testid="primary-content"]')
-      expect(primary.text()).toContain('Récapitulatif par constituant')
+      expect(primary.text()).toContain('RÉCAPITULATIF PAR CONSTITUANT')
       const trailing = wrapper.find('[data-testid="trailing-content"]')
-      expect(trailing.text()).not.toContain('Récapitulatif par constituant')
-      expect(trailing.text()).toContain('Liste détaillée par tracé')
+      expect(trailing.text()).not.toContain('RÉCAPITULATIF PAR CONSTITUANT')
+      expect(trailing.text()).toContain('LISTE DÉTAILLÉE PAR TRACÉ')
     })
 
     it('Should never use the detailed list as the primary content', () => {
@@ -217,7 +217,7 @@ describe('PrintLayout', () => {
 
       expect(wrapper.find('[data-testid="primary-content"]').exists()).toBe(false)
       const trailing = wrapper.find('[data-testid="trailing-content"]')
-      expect(trailing.text()).toContain('Liste détaillée par tracé')
+      expect(trailing.text()).toContain('LISTE DÉTAILLÉE PAR TRACÉ')
     })
 
     it('Should show nothing beyond the header when nothing is checked', () => {
@@ -232,7 +232,7 @@ describe('PrintLayout', () => {
       const wrapper = mountWithConfig({ showDevis: true, showRecapOuvrage: true, showRecapConstituent: false, showList: false })
 
       expect(wrapper.findAll('[data-testid="devis-section"]').length).toBe(1)
-      const recapOuvrageHeadings = wrapper.findAll('h3').filter(h => h.text() === 'Récapitulatif par ouvrage')
+      const recapOuvrageHeadings = wrapper.findAll('h3').filter(h => h.text() === 'RÉCAPITULATIF PAR OUVRAGE')
       expect(recapOuvrageHeadings.length).toBe(1)
     })
 

@@ -10,7 +10,7 @@ defineProps<{
 
 <template>
   <div class="print-section table-section">
-    <h3>Récapitulatif par constituant</h3>
+    <h3>RÉCAPITULATIF PAR CONSTITUANT</h3>
     <table class="print-table">
       <thead>
         <tr><th>CONSTITUANT</th><th>FOURNISSEUR</th><th>QTÉ TOT.</th><th>UNITÉ</th><th>P.U.</th><th>TOTAL</th></tr>
