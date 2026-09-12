@@ -2,6 +2,7 @@
 import { reactive } from 'vue'
 import { useSettingsStore } from '../../stores/settingsStore'
 import { fileToDataURL } from '../../utils/fileToDataURL'
+import { getImageDimensions } from '../../utils/getImageDimensions'
 
 const emit = defineEmits<{ close: [] }>()
 const store = useSettingsStore()
@@ -10,11 +11,19 @@ const profile = reactive({ ...store.companyProfile })
 async function onLogoChange(e: Event) {
   const file = (e.target as HTMLInputElement).files?.[0]
   if (!file) return
-  profile.logo = await fileToDataURL(file)
+  const dataUrl = await fileToDataURL(file)
+  profile.logo = dataUrl
+  try {
+    const { width, height } = await getImageDimensions(dataUrl)
+    profile.logoAspectRatio = width / height
+  } catch {
+    profile.logoAspectRatio = null
+  }
 }
 
 function removeLogo() {
   profile.logo = null
+  profile.logoAspectRatio = null
 }
 
 async function handleSave() {

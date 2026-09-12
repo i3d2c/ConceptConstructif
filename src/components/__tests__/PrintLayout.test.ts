@@ -5,6 +5,7 @@ import { useProjectStore } from '../../stores/projectStore'
 import { useSettingsStore } from '../../stores/settingsStore'
 import PrintLayout from '../PrintLayout.vue'
 import { defaultPrintConfig } from '../../print/PrintConfig'
+import type { PrintConfig } from '../../print/PrintConfig'
 import type { Ouvrage } from '../../domain/models/Ouvrage'
 import type { Constituent } from '../../domain/models/Constituent'
 import type { ColorAssignment } from '../../domain/models/Zone'
@@ -69,12 +70,19 @@ describe('PrintLayout', () => {
       expect(section.text()).not.toContain(usedConstituent.name)
     })
 
-    it('Should label the overall total "Total" instead of "Total général"', () => {
+    it('Should label the overall total "TOTAL" instead of "TOTAL GÉNÉRAL"', () => {
       const wrapper = mountWithUsedOuvrage()
       const section = wrapper.find('[data-testid="devis-section"]')
 
-      expect(section.text()).toContain('Total')
-      expect(section.text()).not.toContain('Total général')
+      expect(section.text()).toContain('TOTAL')
+      expect(section.text()).not.toContain('TOTAL GÉNÉRAL')
+    })
+
+    it('Should show table headers in uppercase', () => {
+      const wrapper = mountWithUsedOuvrage()
+      const section = wrapper.find('[data-testid="devis-section"]')
+
+      expect(section.find('thead').text()).toBe('OUVRAGEPRIX')
     })
   })
 
@@ -105,6 +113,129 @@ describe('PrintLayout', () => {
       })
 
       expect(wrapper.find('[data-testid="print-header"]').exists()).toBe(false)
+    })
+  })
+
+  describe('company logo layout', () => {
+    it('Should apply the side-by-side layout when the logo is at least twice as wide as tall', () => {
+      const settingsStore = useSettingsStore()
+      settingsStore.companyProfile.logo = 'data:image/png;base64,abc'
+      settingsStore.companyProfile.logoAspectRatio = 2.5
+
+      const wrapper = mountWithUsedOuvrage()
+
+      expect(wrapper.find('[data-testid="company-block"]').classes()).toContain('layout-side')
+    })
+
+    it('Should apply the stacked layout when the logo is not wide enough', () => {
+      const settingsStore = useSettingsStore()
+      settingsStore.companyProfile.logo = 'data:image/png;base64,abc'
+      settingsStore.companyProfile.logoAspectRatio = 1.2
+
+      const wrapper = mountWithUsedOuvrage()
+
+      expect(wrapper.find('[data-testid="company-block"]').classes()).toContain('layout-stacked')
+    })
+
+    it('Should apply the stacked layout when there is no logo at all', () => {
+      const wrapper = mountWithUsedOuvrage()
+
+      expect(wrapper.find('[data-testid="company-block"]').classes()).toContain('layout-stacked')
+    })
+  })
+
+  describe('devis number', () => {
+    it('Should show "DEVIS" followed by a number next to the project info', () => {
+      const wrapper = mountWithUsedOuvrage()
+      const header = wrapper.find('[data-testid="print-header"]')
+
+      expect(header.text()).toMatch(/DEVIS \d+/)
+    })
+  })
+
+  describe('page assembly', () => {
+    function mountWithConfig(
+      configOverrides: Partial<PrintConfig>,
+      images: { canvas2DImage?: string | null; canvas3DImage?: string | null } = {},
+    ) {
+      const store = useProjectStore()
+      store.project.ouvrages.push(usedOuvrage)
+      store.project.constituents.push(usedConstituent)
+      const zone = store.project.zones[0]
+      zone.scale = { pixelLength: 100, realLength: 5, ratio: 0.05, tracePoints: [[0, 0], [100, 0]] }
+      zone.colorAssignments.push(colorAssignment)
+      zone.traces.push(drawnTrace)
+
+      return mount(PrintLayout, {
+        props: {
+          config: { ...defaultPrintConfig(), ...configOverrides },
+          canvas2DImage: images.canvas2DImage ?? null,
+          canvas3DImage: images.canvas3DImage ?? null,
+        },
+      })
+    }
+
+    it('Should show the devis table as the primary content when Devis is checked, even if recap tables are also checked', () => {
+      const wrapper = mountWithConfig({ showDevis: true, showRecapOuvrage: true, showRecapConstituent: true, showList: true })
+
+      expect(wrapper.find('[data-testid="primary-content"] [data-testid="devis-section"]').exists()).toBe(true)
+    })
+
+    it('Should show the recap tables as the primary content when Devis is unchecked but a recap is checked', () => {
+      const wrapper = mountWithConfig({ showDevis: false, showRecapOuvrage: true, showRecapConstituent: false, showList: true })
+
+      const primary = wrapper.find('[data-testid="primary-content"]')
+      expect(primary.text()).toContain('Récapitulatif par ouvrage')
+    })
+
+    it('Should show the detailed list as the primary content when neither Devis nor a recap is checked', () => {
+      const wrapper = mountWithConfig({ showDevis: false, showRecapOuvrage: false, showRecapConstituent: false, showList: true })
+
+      const primary = wrapper.find('[data-testid="primary-content"]')
+      expect(primary.text()).toContain('Liste détaillée par tracé')
+    })
+
+    it('Should show nothing beyond the header when nothing is checked', () => {
+      const wrapper = mountWithConfig({
+        showDevis: false, showRecapOuvrage: false, showRecapConstituent: false, showList: false, show2D: false, show3D: false,
+      })
+
+      expect(wrapper.find('[data-testid="primary-content"]').exists()).toBe(false)
+    })
+
+    it('Should not repeat a table used as primary content in the trailing pages', () => {
+      const wrapper = mountWithConfig({ showDevis: true, showRecapOuvrage: true, showRecapConstituent: false, showList: false })
+
+      expect(wrapper.findAll('[data-testid="devis-section"]').length).toBe(1)
+      const recapOuvrageHeadings = wrapper.findAll('h3').filter(h => h.text() === 'Récapitulatif par ouvrage')
+      expect(recapOuvrageHeadings.length).toBe(1)
+    })
+
+    it('Should show the plans page on its own forced page break', () => {
+      const wrapper = mountWithConfig({ showDevis: true }, { canvas2DImage: 'data:image/png;base64,abc' })
+
+      const plansPage = wrapper.find('[data-testid="plans-page"]')
+      expect(plansPage.exists()).toBe(true)
+      expect((plansPage.element as HTMLElement).style.pageBreakBefore).toBe('always')
+    })
+
+    it('Should show the plan titles in uppercase', () => {
+      const wrapper = mountWithConfig(
+        { showDevis: true, show3D: true },
+        { canvas2DImage: 'data:image/png;base64,abc', canvas3DImage: 'data:image/png;base64,xyz' },
+      )
+
+      const plansPage = wrapper.find('[data-testid="plans-page"]')
+      expect(plansPage.text()).toContain('PLAN 2D')
+      expect(plansPage.text()).toContain('VUE 3D')
+    })
+
+    it('Should force a page break before the trailing tables that follow the plans page', () => {
+      const wrapper = mountWithConfig({ showDevis: true, showRecapOuvrage: true })
+
+      const trailing = wrapper.find('[data-testid="trailing-content"]')
+      expect(trailing.exists()).toBe(true)
+      expect((trailing.element as HTMLElement).style.pageBreakBefore).toBe('always')
     })
   })
 

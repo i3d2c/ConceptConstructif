@@ -9,6 +9,7 @@ describe('emptyCompanyProfile', () => {
       phone: '',
       email: '',
       logo: null,
+      logoAspectRatio: null,
     })
   })
 })
