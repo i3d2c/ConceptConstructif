@@ -9,7 +9,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="print-section" data-testid="devis-section">
+  <div class="print-section table-section" data-testid="devis-section">
     <table class="print-table">
       <thead>
         <tr><th>OUVRAGE</th><th class="num">PRIX</th></tr>

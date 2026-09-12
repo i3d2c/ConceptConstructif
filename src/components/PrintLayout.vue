@@ -153,6 +153,10 @@ const showTrailingContent = computed(() =>
   letter-spacing: 0.5pt; margin: 0 0 8pt;
 }
 
+/* Table sections may span several pages - only their own rows must stay whole,
+   otherwise a long table gets pushed entirely to the next page for no reason. */
+.table-section { page-break-inside: auto; }
+
 .plans-page { page-break-inside: avoid; }
 .print-img-full { display: block; width: 100%; max-height: 135mm; object-fit: contain; }
 .print-img { display: block; width: 100%; max-height: 90mm; object-fit: contain; }
@@ -174,6 +178,7 @@ const showTrailingContent = computed(() =>
 <style>
 /* Unscoped: shared by the table subcomponents rendered inside .primary-content / .trailing-content */
 .print-table { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
+.print-table tr { page-break-inside: avoid; break-inside: avoid; }
 .print-table th {
   text-align: left; font-weight: 600; color: var(--ink);
   padding: 4pt 6pt 6pt; border-bottom: 1pt solid var(--rule);

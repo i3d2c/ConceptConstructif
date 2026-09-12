@@ -9,7 +9,7 @@ defineProps<{
 </script>
 
 <template>
-  <div class="print-section">
+  <div class="print-section table-section">
     <h3>Récapitulatif par ouvrage</h3>
     <table class="print-table">
       <thead>
