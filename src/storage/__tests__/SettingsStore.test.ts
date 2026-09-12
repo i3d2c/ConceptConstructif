@@ -9,6 +9,7 @@ const profile: CompanyProfile = {
   phone: '0600000000',
   email: 'contact@example.com',
   logo: 'data:image/png;base64,abc',
+  logoAspectRatio: 2.5,
 }
 
 describe('SettingsStore', () => {

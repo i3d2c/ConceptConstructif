@@ -1,8 +1,15 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useProjectStore } from '../stores/projectStore'
+import { useSettingsStore } from '../stores/settingsStore'
 import { buildPrintData } from '../print/buildPrintData'
+import { buildPrintLegend } from '../print/buildPrintLegend'
+import { buildDevisNumber } from '../print/buildDevisNumber'
 import type { PrintConfig } from '../print/PrintConfig'
+import DevisSection from './print/DevisSection.vue'
+import RecapOuvrageSection from './print/RecapOuvrageSection.vue'
+import RecapConstituentSection from './print/RecapConstituentSection.vue'
+import DetailListSection from './print/DetailListSection.vue'
 
 const props = defineProps<{
   config: PrintConfig
@@ -11,183 +18,178 @@ const props = defineProps<{
 }>()
 
 const store = useProjectStore()
+const settingsStore = useSettingsStore()
 
 const data = computed(() => buildPrintData(store.project, store.activeZone))
+const legend = computed(() => store.activeZone ? buildPrintLegend(store.project, store.activeZone) : [])
+const today = computed(() => new Date().toLocaleDateString('fr-FR'))
+const devisNumber = computed(() => buildDevisNumber(new Date()))
 
-function fmt(n: number) {
-  return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)
-}
-function fmtQty(n: number) {
-  return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 }).format(n)
-}
+const logoLayout = computed<'side' | 'stacked'>(() => {
+  const ratio = settingsStore.companyProfile.logoAspectRatio
+  if (!settingsStore.companyProfile.logo || ratio === null) return 'stacked'
+  return ratio <= 2 ? 'side' : 'stacked'
+})
+
+const show2DBlock = computed(() => props.config.show2D && !!props.canvas2DImage)
+const show3DBlock = computed(() => props.config.show3D && !!props.canvas3DImage)
+const showLegend = computed(() => (show2DBlock.value || show3DBlock.value) && legend.value.length > 0)
+const showVisualsRow = computed(() => show3DBlock.value || showLegend.value)
+const showPlansPage = computed(() => show2DBlock.value || show3DBlock.value)
+
+type PrimaryTable = 'devis' | 'recapOuvrage' | 'recapConstituent' | null
+const primaryTable = computed<PrimaryTable>(() => {
+  if (props.config.showDevis) return 'devis'
+  if (props.config.showRecapOuvrage) return 'recapOuvrage'
+  if (props.config.showRecapConstituent) return 'recapConstituent'
+  return null
+})
+
+const showRecapOuvrageInTrailing = computed(() => primaryTable.value !== 'recapOuvrage' && props.config.showRecapOuvrage)
+const showRecapConstituentInTrailing = computed(() => primaryTable.value !== 'recapConstituent' && props.config.showRecapConstituent)
+const showListInTrailing = computed(() => props.config.showList)
+const showTrailingContent = computed(() =>
+  showRecapOuvrageInTrailing.value || showRecapConstituentInTrailing.value || showListInTrailing.value,
+)
 </script>
 
 <template>
   <div class="print-layout print-only">
 
-    <!-- Titre -->
-    <div v-if="config.title" class="print-title">
-      <h1>{{ store.project.name }}</h1>
-      <h2>{{ store.activeZone?.name }}</h2>
+    <template v-if="config.title">
+      <div class="print-header" data-testid="print-header">
+        <div class="company-block" :class="`layout-${logoLayout}`" data-testid="company-block">
+          <img v-if="settingsStore.companyProfile.logo" :src="settingsStore.companyProfile.logo" class="company-logo" />
+          <div class="company-info">
+            <div v-if="settingsStore.companyProfile.companyName" class="company-name">{{ settingsStore.companyProfile.companyName }}</div>
+            <div v-if="settingsStore.companyProfile.contactName">{{ settingsStore.companyProfile.contactName }}</div>
+            <div v-if="settingsStore.companyProfile.phone">{{ settingsStore.companyProfile.phone }}</div>
+            <div v-if="settingsStore.companyProfile.email">{{ settingsStore.companyProfile.email }}</div>
+          </div>
+        </div>
+        <hr class="header-rule" />
+        <div class="devis-meta">
+          <div class="devis-title">DEVIS {{ devisNumber }}</div>
+          <div class="chantier-info">
+            <div>{{ store.project.name }}</div>
+            <div>{{ store.activeZone?.name }}</div>
+            <div>{{ today }}</div>
+          </div>
+        </div>
+        <hr class="header-rule" />
+      </div>
+    </template>
+
+    <div v-if="primaryTable" class="primary-content" data-testid="primary-content">
+      <DevisSection v-if="primaryTable === 'devis'" :lines="data.devisLines" :total="data.devisTotal" />
+      <RecapOuvrageSection v-if="primaryTable === 'recapOuvrage'" :ouvrages="data.recapOuvrages" :total="data.recapOuvrageTotal" />
+      <RecapConstituentSection v-if="primaryTable === 'recapConstituent'" :constituents="data.recapConstituents" :total="data.recapConstituentTotal" />
     </div>
 
-    <!-- Vue 2D -->
-    <div v-if="config.show2D && canvas2DImage" class="print-section">
-      <h3>Plan 2D</h3>
-      <img :src="canvas2DImage" class="print-img" />
+    <div v-if="showPlansPage" class="plans-page" data-testid="plans-page" style="page-break-before: always">
+      <div v-if="show2DBlock" class="print-section">
+        <h3>PLAN 2D</h3>
+        <hr class="header-rule" />
+        <img :src="canvas2DImage!" class="print-img-full" />
+      </div>
+
+      <div v-if="showVisualsRow" class="print-section visuals-row">
+        <div v-if="show3DBlock" class="visuals-3d">
+          <h3>VUE 3D</h3>
+          <hr class="header-rule" />
+          <img :src="canvas3DImage!" class="print-img" />
+        </div>
+        <div v-if="showLegend" class="visuals-legend" data-testid="print-legend">
+          <h3>LÉGENDE</h3>
+          <hr class="header-rule" />
+          <div v-for="row in legend" :key="row.color" class="legend-row">
+            <span class="legend-dot" :style="{ background: row.color }" />
+            <span class="legend-label">{{ row.ouvrageName }}</span>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- Vue 3D -->
-    <div v-if="config.show3D && canvas3DImage" class="print-section">
-      <h3>Vue 3D</h3>
-      <img :src="canvas3DImage" class="print-img print-img-3d" />
-    </div>
-
-    <!-- Récap par ouvrage -->
-    <div v-if="config.showRecapOuvrage" class="print-section">
-      <h3>Récapitulatif par ouvrage</h3>
-      <table class="print-table">
-        <thead>
-          <tr><th>Ouvrage</th><th>Constituant</th><th>Qté tot.</th><th>Unité</th><th>P.U.</th><th>Total</th></tr>
-        </thead>
-        <tbody>
-          <template v-for="o in data.recapOuvrages" :key="o.ouvrageId">
-            <tr class="ouvrage-row">
-              <td colspan="5" style="font-weight:bold">{{ o.ouvrageName }}</td>
-              <td style="text-align:right">{{ fmt(o.total) }} €</td>
-            </tr>
-            <tr v-for="c in o.constituents" :key="c.ouvrageConstituentId">
-              <td />
-              <td>
-                {{ c.name }}
-                <span v-if="c.hasError" class="error-icon" title="Formule en erreur sur au moins un tracé">⚠</span>
-              </td>
-              <td style="text-align:right">{{ fmtQty(c.quantity) }}</td>
-              <td>{{ c.unit }}</td>
-              <td style="text-align:right">{{ fmt(c.unitPrice) }} €</td>
-              <td style="text-align:right">{{ fmt(c.total) }} €</td>
-            </tr>
-          </template>
-        </tbody>
-        <tfoot>
-          <tr style="font-weight:bold">
-            <td colspan="5" style="text-align:right">Total général</td>
-            <td style="text-align:right">{{ fmt(data.recapOuvrageTotal) }} €</td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
-
-    <!-- Devis -->
-    <div v-if="config.showDevis" class="print-section" data-testid="devis-section">
-      <h3>Devis</h3>
-      <table class="print-table">
-        <thead>
-          <tr><th>Ouvrage</th><th style="text-align:right">Prix</th></tr>
-        </thead>
-        <tbody>
-          <tr v-for="l in data.devisLines" :key="l.ouvrageId">
-            <td>
-              {{ l.ouvrageName }}
-              <div v-if="l.description" class="ouvrage-description">{{ l.description }}</div>
-            </td>
-            <td style="text-align:right; white-space:nowrap">{{ fmt(l.price) }} €</td>
-          </tr>
-        </tbody>
-        <tfoot>
-          <tr style="font-weight:bold">
-            <td style="text-align:right">Total</td>
-            <td style="text-align:right; white-space:nowrap">{{ fmt(data.devisTotal) }} €</td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
-
-    <!-- Récap par constituant -->
-    <div v-if="config.showRecapConstituent" class="print-section">
-      <h3>Récapitulatif par constituant</h3>
-      <table class="print-table">
-        <thead>
-          <tr><th>Constituant</th><th>Fournisseur</th><th>Qté tot.</th><th>Unité</th><th>P.U.</th><th>Total</th></tr>
-        </thead>
-        <tbody>
-          <tr v-for="c in data.recapConstituents" :key="c.constituentId">
-            <td>
-              {{ c.name }}
-              <span v-if="c.hasError" class="error-icon" title="Formule en erreur sur au moins un tracé">⚠</span>
-            </td>
-            <td>{{ c.supplier ?? '—' }}</td>
-            <td style="text-align:right">{{ fmtQty(c.quantity) }}</td>
-            <td>{{ c.unit }}</td>
-            <td style="text-align:right">{{ fmt(c.unitPrice) }} €</td>
-            <td style="text-align:right">{{ fmt(c.total) }} €</td>
-          </tr>
-        </tbody>
-        <tfoot>
-          <tr style="font-weight:bold">
-            <td colspan="5" style="text-align:right">Total général</td>
-            <td style="text-align:right">{{ fmt(data.recapConstituentTotal) }} €</td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
-
-    <!-- Liste détaillée -->
-    <div v-if="config.showList" class="print-section">
-      <h3>Liste détaillée par tracé</h3>
-      <table class="print-table">
-        <thead>
-          <tr><th>N°</th><th>Constituant</th><th>Qté</th><th>Unité</th><th>P.U.</th><th>Total</th></tr>
-        </thead>
-        <tbody>
-          <template v-for="t in data.traces" :key="t.traceId">
-            <tr class="trace-row">
-              <td colspan="6">▶ Tracé n°{{ t.traceNumber }} — {{ t.ouvrageName }}</td>
-            </tr>
-            <tr v-for="c in t.constituents" :key="c.ouvrageConstituentId">
-              <td />
-              <td>{{ c.name }}</td>
-              <td style="text-align:right" :title="c.error || undefined">
-                <span v-if="c.error" class="error-cell">⚠ Erreur</span>
-                <span v-else>{{ fmtQty(c.quantity) }}</span>
-              </td>
-              <td>{{ c.unit }}</td>
-              <td style="text-align:right">{{ fmt(c.unitPrice) }} €</td>
-              <td style="text-align:right">{{ fmt(c.total) }} €</td>
-            </tr>
-            <tr>
-              <td colspan="5" style="text-align:right;font-style:italic">Sous-total</td>
-              <td style="text-align:right">{{ fmt(t.subtotal) }} €</td>
-            </tr>
-          </template>
-        </tbody>
-        <tfoot>
-          <tr>
-            <td colspan="5" style="text-align:right;font-weight:bold">Total général</td>
-            <td style="text-align:right;font-weight:bold">{{ fmt(data.grandTotal) }} €</td>
-          </tr>
-        </tfoot>
-      </table>
+    <div v-if="showTrailingContent" class="trailing-content" data-testid="trailing-content" style="page-break-before: always">
+      <RecapOuvrageSection v-if="showRecapOuvrageInTrailing" :ouvrages="data.recapOuvrages" :total="data.recapOuvrageTotal" />
+      <RecapConstituentSection v-if="showRecapConstituentInTrailing" :constituents="data.recapConstituents" :total="data.recapConstituentTotal" />
+      <DetailListSection v-if="showListInTrailing" :traces="data.traces" :total="data.grandTotal" />
     </div>
 
   </div>
 </template>
 
 <style scoped>
-.print-layout { font-family: Arial, sans-serif; font-size: 11pt; color: black; }
-.print-title { margin-bottom: 16pt; }
-.print-title h1 { font-size: 18pt; }
-.print-title h2 { font-size: 14pt; color: #444; }
-.print-section { margin-bottom: 20pt; page-break-inside: avoid; }
-.print-section h3 { font-size: 13pt; border-bottom: 1px solid #ccc; margin-bottom: 8pt; }
-.print-img { max-width: 100%; border: 1px solid #ccc; }
-.print-img-3d { max-width: 55%; display: block; margin: 0 auto; }
-.print-table { width: 100%; border-collapse: collapse; font-size: 10pt; }
-.print-table th { background: #eee; padding: 3pt 5pt; border: 1px solid #ccc; text-align: left; }
-.print-table td { padding: 2pt 5pt; border: 1px solid #ddd; }
-.ouvrage-row td { background: #f5f5f5; }
-.trace-row td { background: #f0f4ff; font-style: italic; }
+.print-layout {
+  --ink: #111111;
+  --ink-muted: #666666;
+  --rule: #111111;
+  --rule-light: #e5e5e5;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  font-size: 10.5pt;
+  color: var(--ink);
+}
+
+/* En-tête : bloc entreprise */
+.company-block { display: flex; gap: 4mm; }
+.company-block.layout-side { align-items: flex-start; }
+.company-block.layout-side .company-logo { max-width: 50%; max-height: 30mm; }
+.company-block.layout-side .company-info { columns: 2; column-fill: auto; max-height: 30mm; column-gap: 8pt; }
+.company-block.layout-stacked { flex-direction: column; align-items: flex-start; }
+.company-block.layout-stacked .company-logo { max-width: 66.67%; }
+.company-block.layout-stacked .company-info { columns: 2; column-gap: 16pt; }
+.company-name { font-size: 13pt; font-weight: 600; }
+.header-rule { border: none; border-top: 1pt solid var(--rule); margin: 10pt 0; }
+
+/* En-tête : devis + chantier */
+.devis-meta { text-align: right; }
+.devis-title { font-size: 24pt; font-weight: 700; letter-spacing: 2pt; }
+.chantier-info { margin-top: 6pt; font-size: 9pt; color: var(--ink-muted); }
+
+/* Sections */
+.print-section { margin-bottom: 22pt; page-break-inside: avoid; }
+.print-section h3 {
+  font-size: 11pt; font-weight: 600; color: var(--ink);
+  letter-spacing: 0.5pt; margin: 0 0 8pt;
+}
+
+/* Table sections may span several pages - only their own rows must stay whole,
+   otherwise a long table gets pushed entirely to the next page for no reason. */
+.table-section { page-break-inside: auto; }
+
+.plans-page { page-break-inside: avoid; }
+.print-img-full { display: block; width: 100%; max-height: 135mm; object-fit: contain; }
+.print-img { display: block; width: 100%; max-height: 90mm; object-fit: contain; }
+
+.visuals-row { display: flex; align-items: flex-start; gap: 24pt; }
+.visuals-3d { flex: 1 1 60%; min-width: 0; }
+.visuals-legend { flex: 1 1 40%; min-width: 0; columns: 2; column-gap: 12pt; column-fill: auto; }
+.visuals-legend h3, .visuals-legend hr { column-span: all; }
+.legend-row { display: flex; align-items: center; gap: 6pt; padding: 2pt 0; font-size: 9pt; break-inside: avoid; }
+.legend-dot {
+  width: 8pt; height: 8pt; border-radius: 50%; flex-shrink: 0;
+  /* Browsers strip background colors when printing unless "background graphics" is
+     explicitly enabled - force it since the legend's whole point is the color. */
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
+}
+</style>
+
+<style>
+/* Unscoped: shared by the table subcomponents rendered inside .primary-content / .trailing-content */
+.print-table { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
+.print-table tr { page-break-inside: avoid; break-inside: avoid; }
+.print-table th {
+  text-align: left; font-weight: 600; color: var(--ink);
+  padding: 4pt 6pt 6pt; border-bottom: 1pt solid var(--rule);
+}
+.print-table th.num, .print-table td.num { text-align: right; }
+.print-table td { padding: 5pt 6pt; border-bottom: 0.5pt solid var(--rule-light); }
+.ouvrage-row td { font-weight: 600; border-bottom: none; padding-top: 10pt; }
+.trace-row td { font-style: italic; color: var(--ink-muted); border-bottom: none; padding-top: 10pt; }
+.subtotal-row td { color: var(--ink-muted); font-style: italic; border-bottom: 0.5pt solid var(--rule-light); }
+.total-row td { font-weight: 700; border-top: 1pt solid var(--rule); border-bottom: none; padding-top: 8pt; }
 .error-cell { color: #b91c1c; font-style: italic; }
 .error-icon { color: #b45309; margin-left: 4px; }
-.ouvrage-description { margin-left: 12px; color: #555; font-size: 9pt; white-space: pre-line; }
+.ouvrage-description { margin-top: 2pt; color: var(--ink-muted); font-size: 8.5pt; white-space: pre-line; }
 </style>

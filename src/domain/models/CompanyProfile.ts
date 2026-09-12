@@ -4,6 +4,7 @@ export interface CompanyProfile {
   phone: string
   email: string
   logo: string | null
+  logoAspectRatio: number | null
 }
 
 export function emptyCompanyProfile(): CompanyProfile {
@@ -13,5 +14,6 @@ export function emptyCompanyProfile(): CompanyProfile {
     phone: '',
     email: '',
     logo: null,
+    logoAspectRatio: null,
   }
 }

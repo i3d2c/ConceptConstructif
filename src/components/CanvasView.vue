@@ -562,11 +562,12 @@ function handlePaste(e: ClipboardEvent) {
 }
 
 // ── Exposed for print ──────────────────────────────────────────────────────
-async function getStageDataURL(): Promise<string> {
-  return cm?.toDataURL() ?? ''
+async function getFramedStageDataURL(): Promise<string> {
+  const points = store.activeZone?.traces.flatMap(t => t.points) ?? []
+  return cm?.captureFramed(points) ?? ''
 }
 
-defineExpose({ getStageDataURL, loadImageFile })
+defineExpose({ getFramedStageDataURL, loadImageFile })
 
 // ── Lifecycle ──────────────────────────────────────────────────────────────
 onMounted(() => {

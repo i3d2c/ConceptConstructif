@@ -1,4 +1,5 @@
 import Konva from 'konva'
+import { computeFramedView } from './computeFramedView'
 
 export class CanvasManager {
   stage: Konva.Stage
@@ -36,6 +37,32 @@ export class CanvasManager {
   toDataURL(): Promise<string> {
     return new Promise(resolve => {
       this.stage.toDataURL({ callback: resolve })
+    })
+  }
+
+  // Temporarily reframes the stage to fit the given points before capturing, then restores the live view.
+  captureFramed(points: [number, number][]): Promise<string> {
+    const originalScale = this.stage.scale()
+    const originalPosition = this.stage.position()
+    const framing = computeFramedView(points, this.stage.width(), this.stage.height())
+
+    if (framing) {
+      this.stage.scale({ x: framing.scale, y: framing.scale })
+      this.stage.position({ x: framing.x, y: framing.y })
+      this.stage.batchDraw()
+    }
+
+    return new Promise(resolve => {
+      this.stage.toDataURL({
+        callback: dataUrl => {
+          if (framing) {
+            this.stage.scale(originalScale)
+            this.stage.position(originalPosition)
+            this.stage.batchDraw()
+          }
+          resolve(dataUrl)
+        },
+      })
     })
   }
 

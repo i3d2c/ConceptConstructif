@@ -68,6 +68,58 @@ describe('CompanySettingsDialog', () => {
   })
 
   describe('logo upload', () => {
+    it('Should store the logo aspect ratio once the image dimensions are known', async () => {
+      class FakeImage {
+        naturalWidth = 300
+        naturalHeight = 150
+        onload: (() => void) | null = null
+        onerror: (() => void) | null = null
+        set src(_value: string) {
+          queueMicrotask(() => this.onload?.())
+        }
+      }
+      const OriginalImage = global.Image
+      // @ts-expect-error test double replacing the global Image constructor
+      global.Image = FakeImage
+
+      const store = useSettingsStore()
+      const wrapper = mount(CompanySettingsDialog)
+      const file = new File(['logo-bytes'], 'logo.png', { type: 'image/png' })
+      await triggerFileChange(wrapper, file)
+      await wrapper.find('[data-testid="save"]').trigger('click')
+      await settle()
+
+      global.Image = OriginalImage
+      expect(store.companyProfile.logoAspectRatio).toBe(2)
+    })
+
+    it('Should clear the logo aspect ratio when the logo is removed', async () => {
+      class FakeImage {
+        naturalWidth = 300
+        naturalHeight = 150
+        onload: (() => void) | null = null
+        onerror: (() => void) | null = null
+        set src(_value: string) {
+          queueMicrotask(() => this.onload?.())
+        }
+      }
+      const OriginalImage = global.Image
+      // @ts-expect-error test double replacing the global Image constructor
+      global.Image = FakeImage
+
+      const wrapper = mount(CompanySettingsDialog)
+      const file = new File(['logo-bytes'], 'logo.png', { type: 'image/png' })
+      await triggerFileChange(wrapper, file)
+
+      await wrapper.find('[data-testid="remove-logo"]').trigger('click')
+      await wrapper.find('[data-testid="save"]').trigger('click')
+      await settle()
+
+      global.Image = OriginalImage
+      const store = useSettingsStore()
+      expect(store.companyProfile.logoAspectRatio).toBeNull()
+    })
+
     it('Should show a preview of the uploaded logo as a data URL', async () => {
       const wrapper = mount(CompanySettingsDialog)
       const file = new File(['logo-bytes'], 'logo.png', { type: 'image/png' })
