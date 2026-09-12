@@ -28,7 +28,7 @@ const devisNumber = computed(() => buildDevisNumber(new Date()))
 const logoLayout = computed<'side' | 'stacked'>(() => {
   const ratio = settingsStore.companyProfile.logoAspectRatio
   if (!settingsStore.companyProfile.logo || ratio === null) return 'stacked'
-  return ratio >= 2 ? 'side' : 'stacked'
+  return ratio <= 2 ? 'side' : 'stacked'
 })
 
 const show2DBlock = computed(() => props.config.show2D && !!props.canvas2DImage)
@@ -37,17 +37,11 @@ const showLegend = computed(() => (show2DBlock.value || show3DBlock.value) && le
 const showVisualsRow = computed(() => show3DBlock.value || showLegend.value)
 const showPlansPage = computed(() => show2DBlock.value || show3DBlock.value)
 
-type PrimaryTable = 'devis' | 'recap' | 'list' | null
-const primaryTable = computed<PrimaryTable>(() => {
-  if (props.config.showDevis) return 'devis'
-  if (props.config.showRecapOuvrage || props.config.showRecapConstituent) return 'recap'
-  if (props.config.showList) return 'list'
-  return null
-})
+const showPrimaryDevis = computed(() => props.config.showDevis)
 
-const showRecapOuvrageInTrailing = computed(() => primaryTable.value !== 'recap' && props.config.showRecapOuvrage)
-const showRecapConstituentInTrailing = computed(() => primaryTable.value !== 'recap' && props.config.showRecapConstituent)
-const showListInTrailing = computed(() => primaryTable.value !== 'list' && props.config.showList)
+const showRecapOuvrageInTrailing = computed(() => props.config.showRecapOuvrage)
+const showRecapConstituentInTrailing = computed(() => props.config.showRecapConstituent)
+const showListInTrailing = computed(() => props.config.showList)
 const showTrailingContent = computed(() =>
   showRecapOuvrageInTrailing.value || showRecapConstituentInTrailing.value || showListInTrailing.value,
 )
@@ -80,13 +74,8 @@ const showTrailingContent = computed(() =>
       </div>
     </template>
 
-    <div v-if="primaryTable" class="primary-content" data-testid="primary-content">
-      <DevisSection v-if="primaryTable === 'devis'" :lines="data.devisLines" :total="data.devisTotal" />
-      <template v-if="primaryTable === 'recap'">
-        <RecapOuvrageSection v-if="config.showRecapOuvrage" :ouvrages="data.recapOuvrages" :total="data.recapOuvrageTotal" />
-        <RecapConstituentSection v-if="config.showRecapConstituent" :constituents="data.recapConstituents" :total="data.recapConstituentTotal" />
-      </template>
-      <DetailListSection v-if="primaryTable === 'list'" :traces="data.traces" :total="data.grandTotal" />
+    <div v-if="showPrimaryDevis" class="primary-content" data-testid="primary-content">
+      <DevisSection :lines="data.devisLines" :total="data.devisTotal" />
     </div>
 
     <div v-if="showPlansPage" class="plans-page" data-testid="plans-page" style="page-break-before: always">
@@ -99,6 +88,7 @@ const showTrailingContent = computed(() =>
       <div v-if="showVisualsRow" class="print-section visuals-row">
         <div v-if="show3DBlock" class="visuals-3d">
           <h3>VUE 3D</h3>
+          <hr class="header-rule" />
           <img :src="canvas3DImage!" class="print-img" />
         </div>
         <div v-if="showLegend" class="visuals-legend" data-testid="print-legend">
@@ -155,7 +145,7 @@ const showTrailingContent = computed(() =>
 }
 
 .plans-page { page-break-inside: avoid; }
-.print-img-full { display: block; width: 100%; max-height: 90mm; object-fit: contain; }
+.print-img-full { display: block; width: 100%; max-height: 135mm; object-fit: contain; }
 .print-img { display: block; width: 100%; max-height: 90mm; object-fit: contain; }
 
 .visuals-row { display: flex; align-items: flex-start; gap: 24pt; }

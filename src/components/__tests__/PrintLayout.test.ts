@@ -117,20 +117,30 @@ describe('PrintLayout', () => {
   })
 
   describe('company logo layout', () => {
-    it('Should apply the side-by-side layout when the logo is at least twice as wide as tall', () => {
+    it('Should apply the side-by-side layout when the logo is square', () => {
       const settingsStore = useSettingsStore()
       settingsStore.companyProfile.logo = 'data:image/png;base64,abc'
-      settingsStore.companyProfile.logoAspectRatio = 2.5
+      settingsStore.companyProfile.logoAspectRatio = 1
 
       const wrapper = mountWithUsedOuvrage()
 
       expect(wrapper.find('[data-testid="company-block"]').classes()).toContain('layout-side')
     })
 
-    it('Should apply the stacked layout when the logo is not wide enough', () => {
+    it('Should apply the side-by-side layout when the logo is up to twice as wide as tall', () => {
       const settingsStore = useSettingsStore()
       settingsStore.companyProfile.logo = 'data:image/png;base64,abc'
-      settingsStore.companyProfile.logoAspectRatio = 1.2
+      settingsStore.companyProfile.logoAspectRatio = 2
+
+      const wrapper = mountWithUsedOuvrage()
+
+      expect(wrapper.find('[data-testid="company-block"]').classes()).toContain('layout-side')
+    })
+
+    it('Should apply the stacked layout when the logo is more than twice as wide as tall', () => {
+      const settingsStore = useSettingsStore()
+      settingsStore.companyProfile.logo = 'data:image/png;base64,abc'
+      settingsStore.companyProfile.logoAspectRatio = 2.5
 
       const wrapper = mountWithUsedOuvrage()
 
@@ -181,18 +191,18 @@ describe('PrintLayout', () => {
       expect(wrapper.find('[data-testid="primary-content"] [data-testid="devis-section"]').exists()).toBe(true)
     })
 
-    it('Should show the recap tables as the primary content when Devis is unchecked but a recap is checked', () => {
-      const wrapper = mountWithConfig({ showDevis: false, showRecapOuvrage: true, showRecapConstituent: false, showList: true })
+    it('Should not show a primary content page when Devis is unchecked, even if recap and list tables are checked', () => {
+      const wrapper = mountWithConfig({ showDevis: false, showRecapOuvrage: true, showRecapConstituent: true, showList: true })
 
-      const primary = wrapper.find('[data-testid="primary-content"]')
-      expect(primary.text()).toContain('Récapitulatif par ouvrage')
+      expect(wrapper.find('[data-testid="primary-content"]').exists()).toBe(false)
     })
 
-    it('Should show the detailed list as the primary content when neither Devis nor a recap is checked', () => {
-      const wrapper = mountWithConfig({ showDevis: false, showRecapOuvrage: false, showRecapConstituent: false, showList: true })
+    it('Should show the recap and list tables in the trailing content when Devis is unchecked', () => {
+      const wrapper = mountWithConfig({ showDevis: false, showRecapOuvrage: true, showRecapConstituent: false, showList: true })
 
-      const primary = wrapper.find('[data-testid="primary-content"]')
-      expect(primary.text()).toContain('Liste détaillée par tracé')
+      const trailing = wrapper.find('[data-testid="trailing-content"]')
+      expect(trailing.text()).toContain('Récapitulatif par ouvrage')
+      expect(trailing.text()).toContain('Liste détaillée par tracé')
     })
 
     it('Should show nothing beyond the header when nothing is checked', () => {

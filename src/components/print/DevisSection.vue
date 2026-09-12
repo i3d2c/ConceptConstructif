@@ -10,7 +10,6 @@ defineProps<{
 
 <template>
   <div class="print-section" data-testid="devis-section">
-    <h3>Devis</h3>
     <table class="print-table">
       <thead>
         <tr><th>OUVRAGE</th><th class="num">PRIX</th></tr>
