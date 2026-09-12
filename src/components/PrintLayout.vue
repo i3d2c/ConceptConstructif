@@ -101,6 +101,7 @@ const showTrailingContent = computed(() =>
         </div>
         <div v-if="showLegend" class="visuals-legend" data-testid="print-legend">
           <h3>Légende</h3>
+          <hr class="header-rule" />
           <div v-for="row in legend" :key="row.color" class="legend-row">
             <span class="legend-dot" :style="{ background: row.color }" />
             <span class="legend-label">{{ row.ouvrageName }}</span>
@@ -159,7 +160,7 @@ const showTrailingContent = computed(() =>
 .visuals-row { display: flex; align-items: flex-start; gap: 24pt; }
 .visuals-3d { flex: 1 1 60%; min-width: 0; }
 .visuals-legend { flex: 1 1 40%; min-width: 0; columns: 2; column-gap: 12pt; column-fill: auto; }
-.visuals-legend h3 { column-span: all; }
+.visuals-legend h3, .visuals-legend hr { column-span: all; }
 .legend-row { display: flex; align-items: center; gap: 6pt; padding: 2pt 0; font-size: 9pt; break-inside: avoid; }
 .legend-dot {
   width: 8pt; height: 8pt; border-radius: 50%; flex-shrink: 0;
