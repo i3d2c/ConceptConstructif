@@ -37,10 +37,16 @@ const showLegend = computed(() => (show2DBlock.value || show3DBlock.value) && le
 const showVisualsRow = computed(() => show3DBlock.value || showLegend.value)
 const showPlansPage = computed(() => show2DBlock.value || show3DBlock.value)
 
-const showPrimaryDevis = computed(() => props.config.showDevis)
+type PrimaryTable = 'devis' | 'recapOuvrage' | 'recapConstituent' | null
+const primaryTable = computed<PrimaryTable>(() => {
+  if (props.config.showDevis) return 'devis'
+  if (props.config.showRecapOuvrage) return 'recapOuvrage'
+  if (props.config.showRecapConstituent) return 'recapConstituent'
+  return null
+})
 
-const showRecapOuvrageInTrailing = computed(() => props.config.showRecapOuvrage)
-const showRecapConstituentInTrailing = computed(() => props.config.showRecapConstituent)
+const showRecapOuvrageInTrailing = computed(() => primaryTable.value !== 'recapOuvrage' && props.config.showRecapOuvrage)
+const showRecapConstituentInTrailing = computed(() => primaryTable.value !== 'recapConstituent' && props.config.showRecapConstituent)
 const showListInTrailing = computed(() => props.config.showList)
 const showTrailingContent = computed(() =>
   showRecapOuvrageInTrailing.value || showRecapConstituentInTrailing.value || showListInTrailing.value,
@@ -74,8 +80,10 @@ const showTrailingContent = computed(() =>
       </div>
     </template>
 
-    <div v-if="showPrimaryDevis" class="primary-content" data-testid="primary-content">
-      <DevisSection :lines="data.devisLines" :total="data.devisTotal" />
+    <div v-if="primaryTable" class="primary-content" data-testid="primary-content">
+      <DevisSection v-if="primaryTable === 'devis'" :lines="data.devisLines" :total="data.devisTotal" />
+      <RecapOuvrageSection v-if="primaryTable === 'recapOuvrage'" :ouvrages="data.recapOuvrages" :total="data.recapOuvrageTotal" />
+      <RecapConstituentSection v-if="primaryTable === 'recapConstituent'" :constituents="data.recapConstituents" :total="data.recapConstituentTotal" />
     </div>
 
     <div v-if="showPlansPage" class="plans-page" data-testid="plans-page" style="page-break-before: always">

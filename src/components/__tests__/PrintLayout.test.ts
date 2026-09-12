@@ -191,17 +191,32 @@ describe('PrintLayout', () => {
       expect(wrapper.find('[data-testid="primary-content"] [data-testid="devis-section"]').exists()).toBe(true)
     })
 
-    it('Should not show a primary content page when Devis is unchecked, even if recap and list tables are checked', () => {
+    it('Should use recap ouvrage as the primary content when Devis is unchecked but recap ouvrage is checked', () => {
       const wrapper = mountWithConfig({ showDevis: false, showRecapOuvrage: true, showRecapConstituent: true, showList: true })
 
-      expect(wrapper.find('[data-testid="primary-content"]').exists()).toBe(false)
+      const primary = wrapper.find('[data-testid="primary-content"]')
+      expect(primary.text()).toContain('Récapitulatif par ouvrage')
+      const trailing = wrapper.find('[data-testid="trailing-content"]')
+      expect(trailing.text()).not.toContain('Récapitulatif par ouvrage')
+      expect(trailing.text()).toContain('Récapitulatif par constituant')
+      expect(trailing.text()).toContain('Liste détaillée par tracé')
     })
 
-    it('Should show the recap and list tables in the trailing content when Devis is unchecked', () => {
-      const wrapper = mountWithConfig({ showDevis: false, showRecapOuvrage: true, showRecapConstituent: false, showList: true })
+    it('Should use recap constituent as the primary content when Devis and recap ouvrage are unchecked', () => {
+      const wrapper = mountWithConfig({ showDevis: false, showRecapOuvrage: false, showRecapConstituent: true, showList: true })
 
+      const primary = wrapper.find('[data-testid="primary-content"]')
+      expect(primary.text()).toContain('Récapitulatif par constituant')
       const trailing = wrapper.find('[data-testid="trailing-content"]')
-      expect(trailing.text()).toContain('Récapitulatif par ouvrage')
+      expect(trailing.text()).not.toContain('Récapitulatif par constituant')
+      expect(trailing.text()).toContain('Liste détaillée par tracé')
+    })
+
+    it('Should never use the detailed list as the primary content', () => {
+      const wrapper = mountWithConfig({ showDevis: false, showRecapOuvrage: false, showRecapConstituent: false, showList: true })
+
+      expect(wrapper.find('[data-testid="primary-content"]').exists()).toBe(false)
+      const trailing = wrapper.find('[data-testid="trailing-content"]')
       expect(trailing.text()).toContain('Liste détaillée par tracé')
     })
 
