@@ -73,7 +73,7 @@ async function onPrint(config: PrintConfig) {
 
   // Capture 2D avant d'afficher PrintLayout (canvas Konva composite)
   if (config.show2D && canvasViewRef.value) {
-    canvas2DSnapshot.value = await canvasViewRef.value.getStageDataURL()
+    canvas2DSnapshot.value = await canvasViewRef.value.getFramedStageDataURL()
   } else {
     canvas2DSnapshot.value = null
   }
