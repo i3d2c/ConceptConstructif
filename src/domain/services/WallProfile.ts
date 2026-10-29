@@ -24,3 +24,21 @@ export function profileHeightAt(profile: ProfilePoint[], at: number, baseHeight:
   const t = (at - a.at) / (b.at - a.at)
   return baseHeight + a.offset + t * (b.offset - a.offset)
 }
+
+export function insertProfilePoint(profile: ProfilePoint[], at: number): ProfilePoint[] {
+  if (at <= 0 || at >= 1) return profile
+  const next = profile.findIndex(p => p.at > at)
+  const point = { at, offset: profileHeightAt(profile, at, 0) }
+  return [...profile.slice(0, next), point, ...profile.slice(next)]
+}
+
+export function removeProfilePoint(profile: ProfilePoint[], index: number): ProfilePoint[] {
+  if (index <= 0 || index >= profile.length - 1) return profile
+  return profile.filter((_, i) => i !== index)
+}
+
+export function moveProfilePoint(profile: ProfilePoint[], index: number, at: number, offset: number): ProfilePoint[] {
+  const isEnd = index === 0 || index === profile.length - 1
+  const clampedAt = isEnd ? profile[index].at : Math.min(Math.max(at, profile[index - 1].at), profile[index + 1].at)
+  return profile.map((p, i) => (i === index ? { at: clampedAt, offset } : p))
+}
