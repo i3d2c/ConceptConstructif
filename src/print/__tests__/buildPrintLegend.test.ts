@@ -22,7 +22,7 @@ function makeZone(overrides: Partial<Zone> = {}): Zone {
 function makeProject(zone: Zone, ouvrages: Ouvrage[] = []): Project {
   return {
     id: 'p1', name: 'Projet', ouvrages, constituents: [],
-    zones: [zone], activeZoneId: zone.id, createdAt: '', updatedAt: '',
+    zones: [zone], zoneGroups: [], activeZoneId: zone.id, createdAt: '', updatedAt: '',
   }
 }
 

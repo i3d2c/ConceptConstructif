@@ -45,7 +45,7 @@ function makeZone(overrides: Partial<Zone> = {}): Zone {
 function makeProject(overrides: Partial<Project> = {}): Project {
   return {
     id: 'p-1', name: 'Projet', ouvrages: [], constituents: [],
-    zones: [makeZone()], activeZoneId: 'zone-1',
+    zones: [makeZone()], zoneGroups: [], activeZoneId: 'zone-1',
     createdAt: '', updatedAt: '',
     ...overrides,
   }

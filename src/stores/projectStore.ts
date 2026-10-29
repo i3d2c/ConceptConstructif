@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
-import type { Project } from '../domain/models/Project'
+import type { Project, ZoneGroup } from '../domain/models/Project'
 import type { Zone } from '../domain/models/Zone'
 import type { Ouvrage } from '../domain/models/Ouvrage'
 import type { Constituent } from '../domain/models/Constituent'
@@ -29,6 +29,7 @@ function newProject(): Project {
       traces: [],
       printConfig: defaultPrintConfig(),
     }],
+    zoneGroups: [],
     activeZoneId: zoneId,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -113,9 +114,27 @@ export const useProjectStore = defineStore('project', () => {
     if (project.value.zones.length <= 1) return
     snapshot()
     project.value.zones = project.value.zones.filter(z => z.id !== zoneId)
+    project.value.zoneGroups.forEach(g => { g.zoneIds = g.zoneIds.filter(id => id !== zoneId) })
     if (project.value.activeZoneId === zoneId) {
       project.value.activeZoneId = project.value.zones[0].id
     }
+  }
+
+  // ── Zone groups ────────────────────────────────────────────────────────
+  function addZoneGroup(group: ZoneGroup) {
+    snapshot()
+    project.value.zoneGroups.push(group)
+  }
+
+  function updateZoneGroup(groupId: string, patch: Partial<Omit<ZoneGroup, 'id'>>) {
+    snapshot()
+    const g = project.value.zoneGroups.find(g => g.id === groupId)
+    if (g) Object.assign(g, patch)
+  }
+
+  function removeZoneGroup(groupId: string) {
+    snapshot()
+    project.value.zoneGroups = project.value.zoneGroups.filter(g => g.id !== groupId)
   }
 
   // ── Traces ─────────────────────────────────────────────────────────────
@@ -253,6 +272,7 @@ export const useProjectStore = defineStore('project', () => {
   }
 
   function openProject(p: Project) {
+    p.zoneGroups ??= []
     p.zones.forEach(z => {
       z.printConfig ??= defaultPrintConfig()
       z.backgroundImageLayout ??= null
@@ -302,6 +322,9 @@ export const useProjectStore = defineStore('project', () => {
     addZone,
     updateZone,
     removeZone,
+    addZoneGroup,
+    updateZoneGroup,
+    removeZoneGroup,
     addTrace,
     updateTrace,
     removeTrace,
