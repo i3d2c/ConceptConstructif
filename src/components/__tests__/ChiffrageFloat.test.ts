@@ -229,4 +229,70 @@ describe('ChiffrageFloat', () => {
       expect(panel.text()).toContain(`${fmt(roundedTotalQty)} €`)
     })
   })
+
+  describe('scope', () => {
+    function setupGroupOfTwoZones() {
+      const store = setupZoneWithUsedAndUnusedOuvrages()
+      const mainZone = store.project.zones[0]
+      store.addZone({ ...mainZone, id: 'z-annex', name: 'Annexe', traces: [{ ...drawnTrace, id: 't-annex' }] })
+      store.addZoneGroup({ id: 'g-1', name: 'Maison complète', zoneIds: [mainZone.id, 'z-annex'] })
+      return store
+    }
+
+    it('Should not offer a scope choice when the project has no zone group', () => {
+      setupZoneWithUsedAndUnusedOuvrages()
+
+      const wrapper = mount(ChiffrageFloat)
+
+      expect(wrapper.find('[data-testid="chiffrage-scope"]').exists()).toBe(false)
+    })
+
+    it('Should add up the zones of the group chosen as scope', async () => {
+      setupGroupOfTwoZones()
+      const wrapper = mount(ChiffrageFloat)
+
+      await wrapper.find('[data-testid="chiffrage-scope"]').setValue('g-1')
+
+      expect(wrapper.text()).toContain('Total général3,07 €')
+    })
+
+    it('Should name the zone of each trace in the detailed list when a group is chosen', async () => {
+      setupGroupOfTwoZones()
+      const wrapper = mount(ChiffrageFloat)
+
+      await wrapper.find('[data-testid="chiffrage-scope"]').setValue('g-1')
+
+      expect(wrapper.text()).toContain('Tracé n°1 · Annexe — Mur brique')
+    })
+
+    it('Should warn about the zones of the group left out because they have no scale', async () => {
+      const store = setupGroupOfTwoZones()
+      store.project.zones[1].scale = null
+      const wrapper = mount(ChiffrageFloat)
+
+      await wrapper.find('[data-testid="chiffrage-scope"]').setValue('g-1')
+
+      expect(wrapper.find('[data-testid="unscaled-zones"]').text()).toContain('Annexe')
+      expect(wrapper.text()).toContain('Total général1,53 €')
+    })
+
+    it('Should say that no zone of the group has a scale when none has one', async () => {
+      const store = setupGroupOfTwoZones()
+      store.project.zones.forEach(z => { z.scale = null })
+      const wrapper = mount(ChiffrageFloat)
+
+      await wrapper.find('[data-testid="chiffrage-scope"]').setValue('g-1')
+
+      expect(wrapper.text()).toContain("Aucune zone de ce groupe n'a d'échelle.")
+    })
+
+    it('Should explain that recap rounding applies to the group total', async () => {
+      setupGroupOfTwoZones()
+      const wrapper = mount(ChiffrageFloat)
+
+      await wrapper.find('[data-testid="chiffrage-scope"]').setValue('g-1')
+
+      expect(wrapper.find('[data-testid="group-rounding-hint"]').exists()).toBe(true)
+    })
+  })
 })

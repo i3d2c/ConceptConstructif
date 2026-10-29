@@ -472,4 +472,33 @@ describe('projectStore — zone groups', () => {
       expect(store.project.zoneGroups).toEqual([])
     })
   })
+
+  describe('chiffrageZones', () => {
+    it('Should be the active zone alone when no group is chosen', () => {
+      const store = useProjectStore()
+
+      expect(store.chiffrageZones.map(z => z.id)).toEqual([store.project.activeZoneId])
+    })
+
+    it('Should be the zones of the chosen group, in project order', () => {
+      const store = useProjectStore()
+      const mainId = store.project.zones[0].id
+      store.addZone({ ...store.project.zones[0], id: 'z-annex', name: 'Annexe' })
+      store.addZoneGroup({ id: 'g-1', name: 'Maison complète', zoneIds: ['z-annex', mainId] })
+
+      store.chiffrageGroupId = 'g-1'
+
+      expect(store.chiffrageZones.map(z => z.id)).toEqual([mainId, 'z-annex'])
+    })
+
+    it('Should fall back to the active zone once the chosen group is removed', () => {
+      const store = useProjectStore()
+      store.addZoneGroup({ id: 'g-1', name: 'Groupe', zoneIds: [] })
+      store.chiffrageGroupId = 'g-1'
+
+      store.removeZoneGroup('g-1')
+
+      expect(store.chiffrageZones.map(z => z.id)).toEqual([store.project.activeZoneId])
+    })
+  })
 })

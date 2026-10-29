@@ -137,6 +137,14 @@ export const useProjectStore = defineStore('project', () => {
     project.value.zoneGroups = project.value.zoneGroups.filter(g => g.id !== groupId)
   }
 
+  const chiffrageGroupId = ref<string | null>(null)
+  const chiffrageGroup = computed(() => project.value.zoneGroups.find(g => g.id === chiffrageGroupId.value))
+  const chiffrageZones = computed<Zone[]>(() => {
+    const group = chiffrageGroup.value
+    if (group) return project.value.zones.filter(z => group.zoneIds.includes(z.id))
+    return activeZone.value ? [activeZone.value] : []
+  })
+
   // ── Traces ─────────────────────────────────────────────────────────────
   function addTrace(zoneId: string, trace: Trace) {
     snapshot()
@@ -325,6 +333,9 @@ export const useProjectStore = defineStore('project', () => {
     addZoneGroup,
     updateZoneGroup,
     removeZoneGroup,
+    chiffrageGroupId,
+    chiffrageGroup,
+    chiffrageZones,
     addTrace,
     updateTrace,
     removeTrace,

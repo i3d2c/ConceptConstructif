@@ -114,5 +114,15 @@ describe('AppHeader', () => {
       expect(store.project.zones).toHaveLength(1)
       expect(alertSpy).toHaveBeenCalled()
     })
+
+    it('Should emit "openZoneGroups" and close the menu when "Groupes de zones…" is clicked', async () => {
+      const wrapper = mount(AppHeader)
+
+      await wrapper.find('[title="Actions sur la zone"]').trigger('click')
+      await wrapper.find('[title="Groupes de zones"]').trigger('click')
+
+      expect(wrapper.emitted('openZoneGroups')).toHaveLength(1)
+      expect(wrapper.find('.zone-menu').exists()).toBe(false)
+    })
   })
 })
