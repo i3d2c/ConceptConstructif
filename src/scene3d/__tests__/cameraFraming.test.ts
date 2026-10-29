@@ -12,6 +12,11 @@ function surfaceTrace(points: [number, number][], colorAssignmentId = 'ca1', up 
   return { id: 't1', number: 1, colorAssignmentId, up, points, type: 'surface', angle: 0, slopeDirection: 'top' }
 }
 
+function gableTrace(ridgeOffset: number): Trace {
+  const profile = [{ at: 0, offset: 0 }, { at: 0.5, offset: ridgeOffset }, { at: 1, offset: 0 }]
+  return { id: 't1', number: 1, colorAssignmentId: 'ca1', up: 0, points: [[0, 0], [10, 0]], type: 'line', profile }
+}
+
 function zoneWith(traces: Trace[], colorAssignments = COLOR_ASSIGNMENTS): Zone {
   return { id: 'z1', name: 'Zone', scale: SCALE, backgroundImage: null, backgroundImageLayout: null, colorAssignments, traces, printConfig: defaultPrintConfig() }
 }
@@ -51,5 +56,12 @@ describe('computeFramingCamera', () => {
     const framing = computeFramingCamera(zone, SCALE, 60)
     expect(framing?.target.x).toBeCloseTo(5)
     expect(framing?.target.z).toBeCloseTo(5)
+  })
+
+  it('should aim higher when a wall rises to a gable', () => {
+    const flat = computeFramingCamera(zoneWith([gableTrace(0)]), SCALE, 60)!
+    const gable = computeFramingCamera(zoneWith([gableTrace(2.5)]), SCALE, 60)!
+    expect(gable.target.y).toBeCloseTo(5 * 0.3)
+    expect(gable.target.y).toBeGreaterThan(flat.target.y)
   })
 })

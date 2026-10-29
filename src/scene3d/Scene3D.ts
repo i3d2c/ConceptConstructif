@@ -4,6 +4,7 @@ import type { Zone } from '../domain/models/Zone'
 import type { Scale } from '../domain/models/Scale'
 import { tiltScale, applyTilt } from './tiltGeometry'
 import { computeFramingCamera } from './cameraFraming'
+import { wallProfileOutline, placeWallSegment } from './wallProfileOutline'
 
 interface StoreRef {
   activeZone: Zone | undefined
@@ -86,30 +87,28 @@ export class Scene3D {
       const color = new THREE.Color(ca.color)
 
       if (trace.type === 'line') {
-        const H = ca.hauteur
         const E = ca.epaisseur
+        const worldPts = trace.points.map(([px, py]): [number, number] => [px * scale.ratio, py * scale.ratio])
+        const lengths = worldPts.slice(1).map(([x, z], i) => Math.hypot(x - worldPts[i][0], z - worldPts[i][1]))
+        const wallLength = lengths.reduce((sum, l) => sum + l, 0)
+        if (wallLength === 0) continue
 
-        for (let i = 0; i < trace.points.length - 1; i++) {
-          const [x1, y1] = trace.points[i]
-          const [x2, y2] = trace.points[i + 1]
-          const wx1 = x1 * scale.ratio
-          const wz1 = y1 * scale.ratio
-          const wx2 = x2 * scale.ratio
-          const wz2 = y2 * scale.ratio
+        let walked = 0
+        lengths.forEach((length, i) => {
+          const fromAt = walked / wallLength
+          walked += length
+          const outline = wallProfileOutline(trace.profile, ca.hauteur, wallLength, fromAt, walked / wallLength)
 
-          const length = Math.hypot(wx2 - wx1, wz2 - wz1)
-          const geom = new THREE.BoxGeometry(length, H, E)
+          const shape = new THREE.Shape(outline.map(([x, y]) => new THREE.Vector2(x, y)))
+          const geom = new THREE.ExtrudeGeometry(shape, { depth: E, bevelEnabled: false })
+          geom.translate(0, 0, -E / 2)
           const mat = new THREE.MeshLambertMaterial({ color, transparent: true, opacity: OUVRAGE_OPACITY })
           const mesh = new THREE.Mesh(geom, mat)
-
-          const cx = (wx1 + wx2) / 2
-          const cz = (wz1 + wz2) / 2
-          mesh.position.set(cx, trace.up + H / 2, cz)
-          mesh.rotation.y = -Math.atan2(wz2 - wz1, wx2 - wx1)
+          placeWallSegment(mesh, worldPts[i], worldPts[i + 1], trace.up)
           mesh.userData['trace'] = true
 
           this.scene.add(mesh)
-        }
+        })
       } else {
         const worldPts: [number, number][] = trace.points.map(([px, py]) => [px * scale.ratio, py * scale.ratio])
 
