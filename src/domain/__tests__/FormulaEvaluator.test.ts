@@ -19,6 +19,10 @@ describe('FormulaEvaluator', () => {
     expect(result).toBeCloseTo(2.247, 2)
   })
 
+  it('should accept Hmax as a known variable in validateFormula', () => {
+    expect(validateFormula('Hmax * L')).toBeNull()
+  })
+
   it('validateFormula retourne null pour une formule valide', () => {
     expect(validateFormula('L * H / 0.25')).toBeNull()
   })

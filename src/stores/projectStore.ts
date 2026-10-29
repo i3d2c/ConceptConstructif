@@ -10,6 +10,7 @@ import { HistoryManager } from '../domain/services/HistoryManager'
 import { planImportOuvrage, planImportConstituent } from '../domain/services/LibraryImportService'
 import { saveProject, loadProject } from '../storage/ProjectStore'
 import { defaultPrintConfig } from '../print/PrintConfig'
+import { defaultProfile } from '../domain/services/WallProfile'
 
 function newProject(): Project {
   const zoneId = crypto.randomUUID()
@@ -251,15 +252,18 @@ export const useProjectStore = defineStore('project', () => {
     localStorage.setItem('cc_last_project', project.value.id)
   }
 
+  function openProject(p: Project) {
+    p.zones.forEach(z => {
+      z.printConfig ??= defaultPrintConfig()
+      z.backgroundImageLayout ??= null
+      z.traces.forEach(t => { if (t.type === 'line') t.profile ??= defaultProfile() })
+    })
+    project.value = p
+  }
+
   async function load(id: string) {
     const p = await loadProject(id)
-    if (p) {
-      p.zones.forEach(z => {
-        z.printConfig ??= defaultPrintConfig()
-        z.backgroundImageLayout ??= null
-      })
-      project.value = p
-    }
+    if (p) openProject(p)
   }
 
   // Auto-save debounced (1 s après la dernière mutation)
@@ -317,6 +321,7 @@ export const useProjectStore = defineStore('project', () => {
     bgLayout,
     setBackgroundImageLayout,
     save,
+    openProject,
     load,
     reset,
     startNewProject,

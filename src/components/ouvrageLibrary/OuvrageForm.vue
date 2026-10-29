@@ -208,10 +208,11 @@ defineExpose({ isDirty })
 
       <FormulaVariablesTooltip :visible="formulaTooltipVisible" :position="formulaTooltipPos">
         <div class="help-grid">
-          <span class="hk">L</span><span>Longueur (m) — trait : Σ segments ; surface : étendue X bounding box</span>
-          <span class="hk">H</span><span>Hauteur (m) — trait : valeur CA ; surface : étendue Y bounding box</span>
+          <span class="hk">L</span><span>Longueur (m) — trait : Σ segments ; surface : étendue X bounding box (corrigée pente)</span>
+          <span class="hk">H</span><span>Hauteur (m) — trait : hauteur équivalente S/L (= hauteur de la couleur si le mur est rectangulaire) ; surface : étendue Y bounding box (corrigée pente)</span>
+          <span class="hk">Hmax</span><span>Hauteur max (m) — trait : point le plus haut du profil (faîtage d'un pignon) ; surface : = H</span>
           <span class="hk">E</span><span>Épaisseur (m) — depuis la couleur</span>
-          <span class="hk">S</span><span>Surface (m²) — trait : L×H ; surface : aire réelle (corrigée angle)</span>
+          <span class="hk">S</span><span>Surface (m²) — trait : aire du profil (L×H) ; surface : aire réelle (corrigée angle)</span>
           <span class="hk">V</span><span>Volume (m³) = S × E</span>
           <span class="hk">Cn</span><span>Quantité du constituant en position n (cascade) — n doit être strictement inférieur à la position du constituant courant</span>
         </div>

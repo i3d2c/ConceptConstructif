@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { duplicateZone } from '../services/ZoneDuplicator'
 import { defaultPrintConfig } from '../../print/PrintConfig'
 import type { Zone } from '../models/Zone'
+import { defaultProfile } from '../services/WallProfile'
 
 const baseZone: Zone = {
   id: 'z-1',
@@ -18,7 +19,7 @@ const baseZone: Zone = {
     { id: 'ca-1', color: '#ff0000', ouvrageId: 'o-1', epaisseur: 0.105, hauteur: 2.5 },
   ],
   traces: [
-    { id: 't-1', type: 'line', number: 1, colorAssignmentId: 'ca-1', up: 0, points: [[0, 0], [60, 0]] },
+    { id: 't-1', type: 'line', number: 1, colorAssignmentId: 'ca-1', up: 0, profile: defaultProfile(), points: [[0, 0], [60, 0]] },
   ],
   printConfig: defaultPrintConfig(),
 }

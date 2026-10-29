@@ -4,7 +4,8 @@ import type { Scale } from '../models/Scale'
 import type { ColorAssignment } from '../models/Zone'
 import type { Ouvrage } from '../models/Ouvrage'
 import type { Constituent } from '../models/Constituent'
-import type { LineTrace, SurfaceTrace, SlopeDirection } from '../models/Trace'
+import type { LineTrace, SurfaceTrace, SlopeDirection, ProfilePoint } from '../models/Trace'
+import { defaultProfile } from '../services/WallProfile'
 
 const scale: Scale = {
   pixelLength: 100,
@@ -21,8 +22,8 @@ const colorAssignment: ColorAssignment = {
   hauteur: 2.5,
 }
 
-function lineTrace(points: [number, number][]): LineTrace {
-  return { id: 't-1', type: 'line', number: 1, colorAssignmentId: 'ca-1', up: 0, points }
+function lineTrace(points: [number, number][], profile: ProfilePoint[] = defaultProfile()): LineTrace {
+  return { id: 't-1', type: 'line', number: 1, colorAssignmentId: 'ca-1', up: 0, profile, points }
 }
 
 function surfaceTrace(points: [number, number][], angle = 0, slopeDirection: SlopeDirection = 'top'): SurfaceTrace {
@@ -59,6 +60,33 @@ describe('ChiffrageCalculator', () => {
     expect(vars.H).toBeCloseTo(3) // 60px * 0.05
   })
 
+  it('should compute S, H and Hmax of a gable wall from its height profile', () => {
+    const gable = [{ at: 0, offset: 0 }, { at: 0.5, offset: 2.5 }, { at: 1, offset: 0 }]
+    const vars = computeTraceVariables(lineTrace([[0, 0], [200, 0]], gable), scale, colorAssignment)
+    expect(vars.L).toBeCloseTo(10)
+    expect(vars.S).toBeCloseTo(37.5)
+    expect(vars.H).toBeCloseTo(3.75)
+    expect(vars.Hmax).toBeCloseTo(5)
+  })
+
+  it('should compute S of a raking wall from its two end heights', () => {
+    const raking = [{ at: 0, offset: 0 }, { at: 1, offset: 1.5 }]
+    const vars = computeTraceVariables(lineTrace([[0, 0], [200, 0]], raking), scale, colorAssignment)
+    expect(vars.S).toBeCloseTo(32.5)
+    expect(vars.Hmax).toBeCloseTo(4)
+  })
+
+  it('should keep H equal to the assigned height for a zero-length wall', () => {
+    const vars = computeTraceVariables(lineTrace([[0, 0], [0, 0]]), scale, colorAssignment)
+    expect(vars.H).toBe(2.5)
+  })
+
+  it('should give a surface an Hmax equal to its H', () => {
+    const points: [number, number][] = [[0, 0], [80, 0], [80, 60], [0, 60]]
+    const vars = computeTraceVariables(surfaceTrace(points, 30), scale, colorAssignment)
+    expect(vars.Hmax).toBe(vars.H)
+  })
+
   it('should stretch H by the slope when a surface tilts towards the top', () => {
     const points: [number, number][] = [[0, 0], [80, 0], [80, 60], [0, 60]]
     const vars = computeTraceVariables(surfaceTrace(points, 60, 'top'), scale, colorAssignment)
@@ -93,7 +121,7 @@ describe('ChiffrageCalculator', () => {
     }
 
     const trace: LineTrace = {
-      id: 't-1', type: 'line', number: 1, colorAssignmentId: 'ca-1', up: 0,
+      id: 't-1', type: 'line', number: 1, colorAssignmentId: 'ca-1', up: 0, profile: defaultProfile(),
       points: [[0, 0], [60, 0]], // L = 3m
     }
 
@@ -121,7 +149,7 @@ describe('ChiffrageCalculator', () => {
       type: 'line',
       number: 1,
       colorAssignmentId: 'ca-1',
-      up: 0,
+      up: 0, profile: defaultProfile(),
       points: [[0, 0], [60, 0]], // 60px * 0.05 = 3m
     }
 
@@ -142,7 +170,7 @@ describe('ChiffrageCalculator', () => {
     }
 
     const trace: LineTrace = {
-      id: 't-1', type: 'line', number: 1, colorAssignmentId: 'ca-1', up: 0,
+      id: 't-1', type: 'line', number: 1, colorAssignmentId: 'ca-1', up: 0, profile: defaultProfile(),
       points: [[0, 0], [60, 0]],
     }
 
@@ -166,7 +194,7 @@ describe('ChiffrageCalculator', () => {
     }
 
     const trace: LineTrace = {
-      id: 't-1', type: 'line', number: 1, colorAssignmentId: 'ca-1', up: 0,
+      id: 't-1', type: 'line', number: 1, colorAssignmentId: 'ca-1', up: 0, profile: defaultProfile(),
       points: [[0, 0], [60, 0]],
     }
 

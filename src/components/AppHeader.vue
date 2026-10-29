@@ -97,8 +97,7 @@ function handleImport() {
     if (!file) return
     const text = await file.text()
     try {
-      const project = importProject(text)
-      store.project = project
+      store.openProject(importProject(text))
     } catch {
       alert('Fichier JSON invalide')
     }

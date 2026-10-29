@@ -4,6 +4,7 @@ import type { Project } from '../../domain/models/Project'
 import type { Zone, ColorAssignment } from '../../domain/models/Zone'
 import type { Ouvrage } from '../../domain/models/Ouvrage'
 import type { LineTrace } from '../../domain/models/Trace'
+import { defaultProfile } from '../../domain/services/WallProfile'
 
 const ouvrageA: Ouvrage = { id: 'o-a', name: 'Mur brique', description: '', category: 'Test', constituents: [] }
 const ouvrageB: Ouvrage = { id: 'o-b', name: 'Cloison placo', description: '', category: 'Test', constituents: [] }
@@ -27,7 +28,7 @@ function makeProject(zone: Zone, ouvrages: Ouvrage[] = []): Project {
 
 describe('buildPrintLegend', () => {
   it('Should return one row with the color and ouvrage name for a used color assignment', () => {
-    const traceA: LineTrace = { id: 't1', number: 1, type: 'line', colorAssignmentId: caA.id, up: 0, points: [[0, 0], [1, 0]] }
+    const traceA: LineTrace = { id: 't1', number: 1, type: 'line', colorAssignmentId: caA.id, up: 0, profile: defaultProfile(), points: [[0, 0], [1, 0]] }
     const zone = makeZone({ colorAssignments: [caA], traces: [traceA] })
     const project = makeProject(zone, [ouvrageA])
 
@@ -37,8 +38,8 @@ describe('buildPrintLegend', () => {
   })
 
   it('Should return a single row for a color assignment used by several traces, not one per trace', () => {
-    const traceA: LineTrace = { id: 't1', number: 1, type: 'line', colorAssignmentId: caA.id, up: 0, points: [[0, 0], [1, 0]] }
-    const traceB: LineTrace = { id: 't2', number: 2, type: 'line', colorAssignmentId: caA.id, up: 0, points: [[0, 0], [1, 0]] }
+    const traceA: LineTrace = { id: 't1', number: 1, type: 'line', colorAssignmentId: caA.id, up: 0, profile: defaultProfile(), points: [[0, 0], [1, 0]] }
+    const traceB: LineTrace = { id: 't2', number: 2, type: 'line', colorAssignmentId: caA.id, up: 0, profile: defaultProfile(), points: [[0, 0], [1, 0]] }
     const zone = makeZone({ colorAssignments: [caA], traces: [traceA, traceB] })
     const project = makeProject(zone, [ouvrageA])
 
@@ -46,8 +47,8 @@ describe('buildPrintLegend', () => {
   })
 
   it('Should order rows by the first trace number using each color', () => {
-    const traceB: LineTrace = { id: 't2', number: 2, type: 'line', colorAssignmentId: caB.id, up: 0, points: [[0, 0], [1, 0]] }
-    const traceA: LineTrace = { id: 't1', number: 1, type: 'line', colorAssignmentId: caA.id, up: 0, points: [[0, 0], [1, 0]] }
+    const traceB: LineTrace = { id: 't2', number: 2, type: 'line', colorAssignmentId: caB.id, up: 0, profile: defaultProfile(), points: [[0, 0], [1, 0]] }
+    const traceA: LineTrace = { id: 't1', number: 1, type: 'line', colorAssignmentId: caA.id, up: 0, profile: defaultProfile(), points: [[0, 0], [1, 0]] }
     const zone = makeZone({ colorAssignments: [caA, caB], traces: [traceB, traceA] })
     const project = makeProject(zone, [ouvrageA, ouvrageB])
 
@@ -57,7 +58,7 @@ describe('buildPrintLegend', () => {
   })
 
   it('Should skip a trace whose color assignment no longer exists', () => {
-    const orphanTrace: LineTrace = { id: 't1', number: 1, type: 'line', colorAssignmentId: 'missing', up: 0, points: [[0, 0], [1, 0]] }
+    const orphanTrace: LineTrace = { id: 't1', number: 1, type: 'line', colorAssignmentId: 'missing', up: 0, profile: defaultProfile(), points: [[0, 0], [1, 0]] }
     const zone = makeZone({ colorAssignments: [], traces: [orphanTrace] })
     const project = makeProject(zone)
 
