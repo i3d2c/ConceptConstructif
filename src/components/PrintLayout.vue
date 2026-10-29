@@ -20,7 +20,7 @@ const props = defineProps<{
 const store = useProjectStore()
 const settingsStore = useSettingsStore()
 
-const data = computed(() => buildPrintData(store.project, store.activeZone))
+const data = computed(() => buildPrintData(store.project, store.activeZone ? [store.activeZone] : []))
 const legend = computed(() => store.activeZone ? buildPrintLegend(store.project, store.activeZone) : [])
 const today = computed(() => new Date().toLocaleDateString('fr-FR'))
 const devisNumber = computed(() => buildDevisNumber(new Date()))
