@@ -3,7 +3,7 @@ import type { ColorAssignment } from '../models/Zone'
 import type { Ouvrage } from '../models/Ouvrage'
 import type { Constituent } from '../models/Constituent'
 import type { Trace } from '../models/Trace'
-import { computePolygonArea, applyAngle } from './SurfaceCalculator'
+import { computePolygonArea, applyAngle, surfaceStretch } from './SurfaceCalculator'
 import { evaluateFormula } from './FormulaEvaluator'
 import type { FormulaVariables } from './FormulaEvaluator'
 
@@ -51,17 +51,16 @@ export interface ZoneChiffrage {
 }
 
 export function computeTraceVariables(
-  type: 'line' | 'surface',
-  points: [number, number][],
+  trace: Trace,
   scale: Scale,
   ca: ColorAssignment,
-  angleDeg = 0,
 ): FormulaVars {
+  const { points } = trace
   const ratio = scale.ratio
   const E = ca.epaisseur
   const H = ca.hauteur
 
-  if (type === 'line') {
+  if (trace.type === 'line') {
     let pixelLen = 0
     for (let i = 0; i < points.length - 1; i++) {
       const dx = points[i + 1][0] - points[i][0]
@@ -76,13 +75,14 @@ export function computeTraceVariables(
     // Surface
     const pixelArea = computePolygonArea(points)
     const projectedArea = pixelArea * ratio * ratio
-    const S = applyAngle(projectedArea, angleDeg)
+    const S = applyAngle(projectedArea, trace.angle ?? 0)
     const V = S * E
 
+    const stretch = surfaceStretch(trace)
     const xs = points.map(p => p[0])
     const ys = points.map(p => p[1])
-    const L = (Math.max(...xs) - Math.min(...xs)) * ratio
-    const H_bbox = (Math.max(...ys) - Math.min(...ys)) * ratio
+    const L = (Math.max(...xs) - Math.min(...xs)) * ratio * stretch.x
+    const H_bbox = (Math.max(...ys) - Math.min(...ys)) * ratio * stretch.y
 
     return { L, H: H_bbox, E, S, V }
   }
@@ -95,8 +95,7 @@ export function computeTraceChiffrage(
   ouvrage: Ouvrage,
   constituentsMap: Map<string, Constituent>,
 ): TraceChiffrage {
-  const angleDeg = trace.type === 'surface' ? (trace.angle ?? 0) : 0
-  const baseVars = computeTraceVariables(trace.type, trace.points, scale, ca, angleDeg)
+  const baseVars = computeTraceVariables(trace, scale, ca)
 
   const sortedOC = [...ouvrage.constituents].sort((a, b) => a.position - b.position)
 

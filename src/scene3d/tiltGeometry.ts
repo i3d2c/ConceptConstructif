@@ -1,12 +1,10 @@
 import * as THREE from 'three'
 import type { SlopeDirection } from '../domain/models/Trace'
+import { slopeStretch } from '../domain/services/SurfaceCalculator'
 
 export function tiltScale(direction: SlopeDirection, angleRad: number): { x: number; z: number } {
-  const cosA = Math.max(Math.cos(angleRad), 1e-6)
-  return {
-    x: direction === 'left' || direction === 'right' ? 1 / cosA : 1,
-    z: direction === 'top' || direction === 'bottom' ? 1 / cosA : 1,
-  }
+  const { x, y } = slopeStretch(direction, angleRad)
+  return { x, z: y }
 }
 
 export function applyTilt(mesh: THREE.Object3D, angleRad: number, direction: SlopeDirection) {

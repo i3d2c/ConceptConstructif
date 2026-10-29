@@ -5,7 +5,7 @@ import { useProjectStore } from '../../stores/projectStore'
 import SidebarRight from '../SidebarRight.vue'
 import type { Ouvrage } from '../../domain/models/Ouvrage'
 import type { ColorAssignment } from '../../domain/models/Zone'
-import type { LineTrace } from '../../domain/models/Trace'
+import type { LineTrace, SurfaceTrace } from '../../domain/models/Trace'
 import type { Scale } from '../../domain/models/Scale'
 
 const scale: Scale = { pixelLength: 100, realLength: 5, ratio: 0.05, tracePoints: [[0, 0], [100, 0]] }
@@ -145,6 +145,25 @@ describe('SidebarRight', () => {
 
         expect(wrapper.text()).toContain('5 m')
         expect(wrapper.text()).not.toContain('10 m')
+      })
+    })
+
+    describe('resize', () => {
+      it('Should keep a tilted surface unchanged when applying its prefilled true dimensions', async () => {
+        const store = setupSelectedTrace()
+        const tilted: SurfaceTrace = {
+          id: 't-2', number: 2, type: 'surface', colorAssignmentId: colorAssignment.id, up: 0,
+          points: [[0, 0], [80, 0], [80, 60], [0, 60]], angle: 60, slopeDirection: 'top',
+        }
+        store.activeZone!.traces.push(tilted)
+        store.selectedTraceId = tilted.id
+        const wrapper = mount(SidebarRight)
+
+        await wrapper.find('.resize-col button').trigger('click')
+
+        const points = store.activeZone!.traces.find(t => t.id === tilted.id)!.points
+        expect(points[2][0]).toBeCloseTo(80)
+        expect(points[2][1]).toBeCloseTo(60)
       })
     })
   })
