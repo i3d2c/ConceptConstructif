@@ -74,14 +74,14 @@ async function onPrint(config: PrintConfig) {
   }
 
   // Capture 2D avant d'afficher PrintLayout (canvas Konva composite)
-  if (config.show2D && canvasViewRef.value) {
+  if (config.show2D && !store.chiffrageGroup && canvasViewRef.value) {
     canvas2DSnapshot.value = await canvasViewRef.value.getFramedStageDataURL()
   } else {
     canvas2DSnapshot.value = null
   }
 
   // Capture 3D dans une scène hors-écran dédiée, cadrée indépendamment du panneau live
-  canvas3DSnapshot.value = config.show3D ? await capturePrintSnapshot(store) : null
+  canvas3DSnapshot.value = config.show3D && !store.chiffrageGroup ? await capturePrintSnapshot(store) : null
 
   // Affiche PrintLayout avec les données capturées
   printConfig.value = config
@@ -152,7 +152,13 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
     </div>
 
     <OuvrageLibraryModal v-if="showOuvrageModal" @close="showOuvrageModal = false" />
-    <PrintDialog v-if="showPrintDialog" :initial-config="store.activeZone?.printConfig" @print="onPrint" @cancel="showPrintDialog = false" />
+    <PrintDialog
+      v-if="showPrintDialog"
+      :initial-config="store.activeZone?.printConfig"
+      :group-name="store.chiffrageGroup?.name"
+      @print="onPrint"
+      @cancel="showPrintDialog = false"
+    />
     <ProjectListDialog v-if="showProjectDialog" @close="showProjectDialog = false" />
     <WhatsNewDialog v-if="showWhatsNew" @close="whatsNewStore.markSeen(); showWhatsNew = false" />
     <CompanySettingsDialog v-if="showSettingsDialog" @close="showSettingsDialog = false" />

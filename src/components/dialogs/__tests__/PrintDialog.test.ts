@@ -81,4 +81,14 @@ describe('PrintDialog', () => {
       })
     })
   })
+
+  describe('when a zone group is the chiffrage scope', () => {
+    it('Should say which group is printed and disable the plan views, which only show the active zone', () => {
+      const wrapper = mount(PrintDialog, { props: { groupName: 'Maison complète' } })
+
+      expect(wrapper.find('[data-testid="group-scope-hint"]').text()).toContain('Maison complète')
+      expect(findCheckbox(wrapper, 'Vue 2D').attributes('disabled')).toBeDefined()
+      expect(findCheckbox(wrapper, 'Vue 3D').attributes('disabled')).toBeDefined()
+    })
+  })
 })

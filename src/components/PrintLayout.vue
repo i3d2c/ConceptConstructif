@@ -20,7 +20,7 @@ const props = defineProps<{
 const store = useProjectStore()
 const settingsStore = useSettingsStore()
 
-const data = computed(() => buildPrintData(store.project, store.activeZone ? [store.activeZone] : []))
+const data = computed(() => buildPrintData(store.project, store.chiffrageZones))
 const legend = computed(() => store.activeZone ? buildPrintLegend(store.project, store.activeZone) : [])
 const today = computed(() => new Date().toLocaleDateString('fr-FR'))
 const devisNumber = computed(() => buildDevisNumber(new Date()))
@@ -31,8 +31,9 @@ const logoLayout = computed<'side' | 'stacked'>(() => {
   return ratio <= 2 ? 'side' : 'stacked'
 })
 
-const show2DBlock = computed(() => props.config.show2D && !!props.canvas2DImage)
-const show3DBlock = computed(() => props.config.show3D && !!props.canvas3DImage)
+const showsPlans = computed(() => !store.chiffrageGroup)
+const show2DBlock = computed(() => showsPlans.value && props.config.show2D && !!props.canvas2DImage)
+const show3DBlock = computed(() => showsPlans.value && props.config.show3D && !!props.canvas3DImage)
 const showLegend = computed(() => (show2DBlock.value || show3DBlock.value) && legend.value.length > 0)
 const showVisualsRow = computed(() => show3DBlock.value || showLegend.value)
 const showPlansPage = computed(() => show2DBlock.value || show3DBlock.value)
@@ -72,7 +73,11 @@ const showTrailingContent = computed(() =>
           <div class="devis-title">DEVIS {{ devisNumber }}</div>
           <div class="chantier-info">
             <div>{{ store.project.name }}</div>
-            <div>{{ store.activeZone?.name }}</div>
+            <template v-if="store.chiffrageGroup">
+              <div>{{ store.chiffrageGroup.name }}</div>
+              <div>{{ store.chiffrageZones.map(z => z.name).join(', ') }}</div>
+            </template>
+            <div v-else>{{ store.activeZone?.name }}</div>
             <div>{{ today }}</div>
           </div>
         </div>
@@ -113,7 +118,7 @@ const showTrailingContent = computed(() =>
     <div v-if="showTrailingContent" class="trailing-content" data-testid="trailing-content" style="page-break-before: always">
       <RecapOuvrageSection v-if="showRecapOuvrageInTrailing" :ouvrages="data.recapOuvrages" :total="data.recapOuvrageTotal" />
       <RecapConstituentSection v-if="showRecapConstituentInTrailing" :constituents="data.recapConstituents" :total="data.recapConstituentTotal" />
-      <DetailListSection v-if="showListInTrailing" :traces="data.traces" :total="data.grandTotal" />
+      <DetailListSection v-if="showListInTrailing" :traces="data.traces" :total="data.grandTotal" :show-zone="!!store.chiffrageGroup" />
     </div>
 
   </div>

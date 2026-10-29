@@ -5,6 +5,7 @@ import type { PrintConfig } from '../../print/PrintConfig'
 
 const props = withDefaults(defineProps<{
   initialConfig?: PrintConfig
+  groupName?: string
 }>(), {
   initialConfig: () => defaultPrintConfig(),
 })
@@ -50,6 +51,10 @@ function doPrint() {
     <div class="dialog">
       <h3>Configuration d'impression</h3>
       <p class="hint">Sélectionnez les éléments à inclure dans le PDF</p>
+      <p v-if="groupName" data-testid="group-scope-hint" class="hint">
+        Impression du groupe « {{ groupName }} » (périmètre choisi dans la fenêtre Chiffrage) :
+        les vues 2D et 3D ne montrent qu'une zone et ne sont pas incluses.
+      </p>
 
       <div class="presets">
         <button type="button" data-testid="preset-total" @click="applyPreset('total')">Total</button>
@@ -63,11 +68,11 @@ function doPrint() {
           Titre du projet et de la zone
         </label>
         <label class="checkbox-row">
-          <input type="checkbox" v-model="config.show2D" />
+          <input type="checkbox" v-model="config.show2D" :disabled="!!groupName" />
           Vue 2D (capture du plan)
         </label>
         <label class="checkbox-row">
-          <input type="checkbox" v-model="config.show3D" />
+          <input type="checkbox" v-model="config.show3D" :disabled="!!groupName" />
           Vue 3D
         </label>
         <hr class="divider" />
