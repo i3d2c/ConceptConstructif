@@ -18,6 +18,7 @@ import { defaultProfile } from '../domain/services/WallProfile'
 import type { LineTrace, SurfaceTrace } from '../domain/models/Trace'
 import { fileToDataURL } from '../utils/fileToDataURL'
 import ScaleDialog from './dialogs/ScaleDialog.vue'
+import { isEditableTarget, isTraceDeleteKey } from '../utils/keyboard'
 
 const store = useProjectStore()
 const containerRef = ref<HTMLDivElement | null>(null)
@@ -264,7 +265,7 @@ function activateTool(mode: string) {
 
     // Touche Suppr / Delete sur le tracé sélectionné
     const onDeleteKey = (e: KeyboardEvent) => {
-      if (e.key !== 'Delete' && e.key !== 'Backspace') return
+      if (!isTraceDeleteKey(e)) return
       if (!store.selectedTraceId || !store.activeZone) return
       store.removeTrace(store.activeZone.id, store.selectedTraceId)
     }
@@ -545,12 +546,6 @@ function handleImageDrop(e: DragEvent) {
   const file = e.dataTransfer?.files[0]
   if (!file || !file.type.startsWith('image/')) return
   loadImageFile(file)
-}
-
-function isEditableTarget(el: Element | null): boolean {
-  if (!el) return false
-  const tag = el.tagName
-  return tag === 'INPUT' || tag === 'TEXTAREA' || (el as HTMLElement).isContentEditable
 }
 
 function handlePaste(e: ClipboardEvent) {
