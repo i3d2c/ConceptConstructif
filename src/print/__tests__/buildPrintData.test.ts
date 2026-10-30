@@ -60,13 +60,68 @@ describe('buildPrintData', () => {
     it('Should return empty sections and a zero grand total', () => {
       const project = makeProject({ zones: [makeZone({ scale: null })] })
 
-      const data = buildPrintData(project, project.zones[0])
+      const data = buildPrintData(project, [project.zones[0]])
 
       expect(data.traces).toEqual([])
       expect(data.recapOuvrages).toEqual([])
       expect(data.devisLines).toEqual([])
       expect(data.recapConstituents).toEqual([])
       expect(data.grandTotal).toBe(0)
+    })
+  })
+
+  describe('when several zones are given', () => {
+    function twoZonesProject() {
+      const zoneA = makeZone({ id: 'zone-a', colorAssignments: [colorAssignment], traces: [drawnTrace] })
+      const zoneB = makeZone({
+        id: 'zone-b', colorAssignments: [colorAssignment], traces: [drawnTrace],
+        scale: { pixelLength: 100, realLength: 10, ratio: 0.1, tracePoints: [[0, 0], [100, 0]] },
+      })
+      return makeProject({ ouvrages: [usedOuvrage], constituents: [usedConstituent], zones: [zoneA, zoneB] })
+    }
+
+    it('Should list the traces of every zone, each measured with its own scale', () => {
+      const project = twoZonesProject()
+
+      const data = buildPrintData(project, project.zones)
+
+      expect(data.traces).toHaveLength(2)
+      expect(fmt(data.grandTotal)).toBe(fmt((5 / 3 + 10 / 3) * usedConstituent.unitPrice))
+    })
+
+    it('Should apply the recap formula once, to the quantity summed over the zones', () => {
+      const project = twoZonesProject()
+
+      const data = buildPrintData(project, project.zones)
+
+      expect(data.recapConstituents[0].quantity).toBe(5)
+    })
+  })
+
+  describe('screen details', () => {
+    function projectWithLinkedConstituent() {
+      const linked = { ...usedConstituent, url: 'https://example.com/brique' }
+      return makeProject({
+        ouvrages: [usedOuvrage], constituents: [linked],
+        zones: [makeZone({ colorAssignments: [colorAssignment], traces: [drawnTrace] })],
+      })
+    }
+
+    it('Should expose the dimensions of each trace', () => {
+      const project = projectWithLinkedConstituent()
+
+      const data = buildPrintData(project, project.zones)
+
+      expect(data.traces[0].vars).toMatchObject({ L: 5, H: 2.5, E: 0.2 })
+    })
+
+    it('Should expose the constituent link in the trace details and in the constituent recap', () => {
+      const project = projectWithLinkedConstituent()
+
+      const data = buildPrintData(project, project.zones)
+
+      expect(data.traces[0].constituents[0].url).toBe('https://example.com/brique')
+      expect(data.recapConstituents[0].url).toBe('https://example.com/brique')
     })
   })
 
@@ -82,7 +137,7 @@ describe('buildPrintData', () => {
     it('Should not list an ouvrage that has no trace in the zone', () => {
       const project = projectWithUsedAndUnusedOuvrages()
 
-      const data = buildPrintData(project, project.zones[0])
+      const data = buildPrintData(project, [project.zones[0]])
 
       expect(data.recapOuvrages.map(o => o.ouvrageId)).not.toContain(unusedOuvrage.id)
     })
@@ -90,7 +145,7 @@ describe('buildPrintData', () => {
     it('Should list an ouvrage that has a trace in the zone, with its constituent lines', () => {
       const project = projectWithUsedAndUnusedOuvrages()
 
-      const data = buildPrintData(project, project.zones[0])
+      const data = buildPrintData(project, [project.zones[0]])
 
       const recap = data.recapOuvrages.find(o => o.ouvrageId === usedOuvrage.id)
       expect(recap).toBeTruthy()
@@ -111,7 +166,7 @@ describe('buildPrintData', () => {
         zones: [makeZone({ colorAssignments: [ca], traces: [trace] })],
       })
 
-      const data = buildPrintData(project, project.zones[0])
+      const data = buildPrintData(project, [project.zones[0]])
 
       expect(data.recapOuvrages.find(o => o.ouvrageId === hiddenOuvrage.id)!.constituents).toHaveLength(0)
     })
@@ -125,7 +180,7 @@ describe('buildPrintData', () => {
         zones: [makeZone({ colorAssignments: [colorAssignment], traces: [drawnTrace] })],
       })
 
-      const data = buildPrintData(project, project.zones[0])
+      const data = buildPrintData(project, [project.zones[0]])
 
       expect(data.devisLines.map(l => l.ouvrageId)).not.toContain(unusedOuvrage.id)
     })
@@ -137,7 +192,7 @@ describe('buildPrintData', () => {
         zones: [makeZone({ colorAssignments: [colorAssignment], traces: [drawnTrace] })],
       })
 
-      const data = buildPrintData(project, project.zones[0])
+      const data = buildPrintData(project, [project.zones[0]])
 
       expect(data.devisLines[0].description).toBe(usedOuvrage.description)
     })
@@ -149,7 +204,7 @@ describe('buildPrintData', () => {
         zones: [makeZone({ colorAssignments: [colorAssignment], traces: [drawnTrace] })],
       })
 
-      const data = buildPrintData(project, project.zones[0])
+      const data = buildPrintData(project, [project.zones[0]])
 
       const roundedQty = Math.ceil(5 / 3)
       expect(fmt(data.devisTotal)).toBe(fmt(roundedQty * usedConstituent.unitPrice))
@@ -177,7 +232,7 @@ describe('buildPrintData', () => {
         zones: [makeZone({ colorAssignments: [caA, caB], traces: [traceA, traceB] })],
       })
 
-      const data = buildPrintData(project, project.zones[0])
+      const data = buildPrintData(project, [project.zones[0]])
 
       const rawA = 5 / 5
       const rawB = 5 / 2
@@ -198,7 +253,7 @@ describe('buildPrintData', () => {
         zones: [makeZone({ colorAssignments: [colorAssignment], traces: [drawnTrace] })],
       })
 
-      const data = buildPrintData(project, project.zones[0])
+      const data = buildPrintData(project, [project.zones[0]])
 
       expect(data.recapConstituents.map(c => c.constituentId)).not.toContain(unusedConstituent.id)
     })
@@ -210,7 +265,7 @@ describe('buildPrintData', () => {
         zones: [makeZone({ colorAssignments: [colorAssignment], traces: [drawnTrace] })],
       })
 
-      const data = buildPrintData(project, project.zones[0])
+      const data = buildPrintData(project, [project.zones[0]])
 
       expect(data.recapConstituents[0].supplier).toBeNull()
     })
@@ -228,7 +283,7 @@ describe('buildPrintData', () => {
         zones: [makeZone({ colorAssignments: [ca], traces: [trace] })],
       })
 
-      const data = buildPrintData(project, project.zones[0])
+      const data = buildPrintData(project, [project.zones[0]])
 
       expect(data.recapConstituents[0].hasError).toBe(true)
     })
@@ -242,7 +297,7 @@ describe('buildPrintData', () => {
         zones: [makeZone({ colorAssignments: [colorAssignment], traces: [drawnTrace] })],
       })
 
-      const data = buildPrintData(project, project.zones[0])
+      const data = buildPrintData(project, [project.zones[0]])
 
       expect(data.traces).toHaveLength(1)
       expect(data.traces[0].traceNumber).toBe(1)
@@ -262,7 +317,7 @@ describe('buildPrintData', () => {
         zones: [makeZone({ colorAssignments: [ca], traces: [trace] })],
       })
 
-      const data = buildPrintData(project, project.zones[0])
+      const data = buildPrintData(project, [project.zones[0]])
 
       expect(data.traces[0].constituents).toHaveLength(0)
     })
@@ -274,7 +329,7 @@ describe('buildPrintData', () => {
         zones: [makeZone({ colorAssignments: [colorAssignment], traces: [drawnTrace] })],
       })
 
-      const data = buildPrintData(project, project.zones[0])
+      const data = buildPrintData(project, [project.zones[0]])
 
       const expected = data.traces.reduce((sum, t) => sum + t.subtotal, 0)
       expect(data.grandTotal).toBe(expected)

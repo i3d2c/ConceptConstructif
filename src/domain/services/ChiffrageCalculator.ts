@@ -45,13 +45,6 @@ export interface TraceChiffrage {
   subtotal: number
 }
 
-export interface ZoneChiffrage {
-  zoneId: string
-  zoneName: string
-  traces: TraceChiffrage[]
-  grandTotal: number
-}
-
 export function computeTraceVariables(
   trace: Trace,
   scale: Scale,

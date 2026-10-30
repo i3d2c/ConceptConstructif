@@ -69,6 +69,50 @@ describe('ChiffrageFloat', () => {
     setActivePinia(createPinia())
   })
 
+  describe('Liste détaillée tab', () => {
+    it('Should show each trace with its dimensions, its constituent quantities and the grand total', () => {
+      setupZoneWithUsedAndUnusedOuvrages()
+
+      const wrapper = mount(ChiffrageFloat)
+
+      const text = wrapper.text()
+      expect(text).toContain('Tracé n°1 — Mur brique')
+      expect(text).toContain('L=5m · H=2,5m · E=0,2m')
+      expect(text).toContain('1,67')
+      expect(text).toContain('Total général1,53 €')
+    })
+
+    it('Should hide a constituent flagged hideIfZero when its quantity is zero', () => {
+      const store = setupZoneWithUsedAndUnusedOuvrages()
+      store.project.ouvrages[0] = {
+        ...usedOuvrage,
+        constituents: [
+          ...usedOuvrage.constituents,
+          { id: 'oc-zero', constituentId: unusedConstituent.id, position: 2, formula: '0', hideIfZero: true },
+        ],
+      }
+
+      const wrapper = mount(ChiffrageFloat)
+
+      expect(wrapper.text()).not.toContain('Peinture')
+    })
+  })
+
+  describe('Récap/Ouvrage tab', () => {
+    it('Should group the quantities by used ouvrage, without the recap formula rounding', async () => {
+      setupZoneWithUsedAndUnusedOuvrages()
+      const wrapper = mount(ChiffrageFloat)
+
+      await clickTab(wrapper, 'Récap/Ouvrage')
+
+      const text = wrapper.text()
+      expect(text).toContain('Mur brique1,53 €')
+      expect(text).toContain('Brique pleine')
+      expect(text).toContain('1,67unité0,92 €1,53 €')
+      expect(text).not.toContain('Peinture murale')
+    })
+  })
+
   describe('Récap/Constituant tab', () => {
     it('Should not list a constituent from an ouvrage that has no trace in the active zone', async () => {
       const wrapper = await mountOnConstituentTab()

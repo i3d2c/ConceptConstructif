@@ -2,7 +2,7 @@ import type { Project } from '../domain/models/Project'
 import type { Zone } from '../domain/models/Zone'
 import type { OuvrageConstituent } from '../domain/models/Ouvrage'
 import { computeTraceChiffrage } from '../domain/services/ChiffrageCalculator'
-import type { TraceChiffrage } from '../domain/services/ChiffrageCalculator'
+import type { FormulaVars, TraceChiffrage } from '../domain/services/ChiffrageCalculator'
 import { evaluateRecap } from '../domain/services/FormulaEvaluator'
 
 export interface PrintOuvrageConstituentLine {
@@ -32,6 +32,7 @@ export interface PrintDevisLine {
 export interface PrintConstituentRecap {
   constituentId: string
   name: string
+  url: string | null
   supplier: string | null
   quantity: number
   unit: string
@@ -43,6 +44,7 @@ export interface PrintConstituentRecap {
 export interface PrintTraceConstituentLine {
   ouvrageConstituentId: string
   name: string
+  url?: string
   unit: string
   unitPrice: number
   quantity: number
@@ -57,6 +59,7 @@ export interface PrintTraceDetail {
   traceNumber: number
   ouvrageId: string
   ouvrageName: string
+  vars: FormulaVars
   constituents: PrintTraceConstituentLine[]
   subtotal: number
 }
@@ -86,26 +89,21 @@ function hasError(oc: OuvrageConstituent, traces: TraceChiffrage[]): boolean {
   return traces.flatMap(t => t.constituents).some(c => c.ouvrageConstituentId === oc.id && c.error)
 }
 
-export function buildPrintData(project: Project, zone: Zone | undefined): PrintData {
-  const empty: PrintData = {
-    recapOuvrages: [], recapOuvrageTotal: 0,
-    devisLines: [], devisTotal: 0,
-    recapConstituents: [], recapConstituentTotal: 0,
-    traces: [], grandTotal: 0,
-  }
-  if (!zone?.scale) return empty
-
-  const scale = zone.scale
+export function buildPrintData(project: Project, zones: Zone[]): PrintData {
   const constituentsMap = new Map(project.constituents.map(c => [c.id, c]))
 
-  const traceResults: TraceChiffrage[] = zone.traces
-    .map(trace => {
-      const ca = zone.colorAssignments.find(c => c.id === trace.colorAssignmentId)
-      const ouvrage = project.ouvrages.find(o => o.id === ca?.ouvrageId)
-      if (!ca || !ouvrage) return null
-      return computeTraceChiffrage(trace, scale, ca, ouvrage, constituentsMap)
-    })
-    .filter((t): t is TraceChiffrage => t !== null)
+  const traceResults: TraceChiffrage[] = zones.flatMap(zone => {
+    const scale = zone.scale
+    if (!scale) return []
+    return zone.traces
+      .map(trace => {
+        const ca = zone.colorAssignments.find(c => c.id === trace.colorAssignmentId)
+        const ouvrage = project.ouvrages.find(o => o.id === ca?.ouvrageId)
+        if (!ca || !ouvrage) return null
+        return computeTraceChiffrage(trace, scale, ca, ouvrage, constituentsMap)
+      })
+      .filter((t): t is TraceChiffrage => t !== null)
+  })
 
   const usedOuvrages = project.ouvrages.filter(o => traceResults.some(t => t.ouvrageId === o.id))
 
@@ -171,6 +169,7 @@ export function buildPrintData(project: Project, zone: Zone | undefined): PrintD
       return {
         constituentId: c.id,
         name: c.name,
+        url: c.url ?? null,
         supplier: c.supplier ?? null,
         quantity,
         unit: c.unit,
@@ -193,12 +192,14 @@ export function buildPrintData(project: Project, zone: Zone | undefined): PrintD
     traceNumber: t.traceNumber,
     ouvrageId: t.ouvrageId,
     ouvrageName: t.ouvrageName,
+    vars: t.vars,
     subtotal: t.subtotal,
     constituents: t.constituents
       .filter(c => !(c.hideIfZero && c.quantity === 0) && !(c.hideIfPriceZero && c.unitPrice === 0))
       .map(c => ({
         ouvrageConstituentId: c.ouvrageConstituentId,
         name: c.name,
+        url: c.url,
         unit: c.unit,
         unitPrice: c.unitPrice,
         quantity: c.quantity,
