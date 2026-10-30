@@ -21,6 +21,7 @@ import { useOnboardingTourStore } from './stores/onboardingTourStore'
 import { useSettingsStore } from './stores/settingsStore'
 import { capturePrintSnapshot } from './scene3d/capturePrintSnapshot'
 import type { PrintConfig } from './print/PrintConfig'
+import { historyShortcut } from './utils/keyboard'
 
 const store = useProjectStore()
 const whatsNewStore = useWhatsNewStore()
@@ -57,14 +58,11 @@ function onImportPlan() {
 }
 
 function onKeydown(e: KeyboardEvent) {
-  if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-    e.preventDefault()
-    store.undo()
-  }
-  if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'z'))) {
-    e.preventDefault()
-    store.redo()
-  }
+  const shortcut = historyShortcut(e)
+  if (!shortcut) return
+  e.preventDefault()
+  if (shortcut === 'undo') store.undo()
+  else store.redo()
 }
 
 async function onPrint(config: PrintConfig, groupId: string | null) {
