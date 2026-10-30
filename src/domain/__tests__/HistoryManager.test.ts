@@ -68,4 +68,15 @@ describe('HistoryManager', () => {
     expect(r3?.name).toBe('v2')
     expect(small.canUndo).toBe(false)
   })
+
+  it('should forget every undo and redo step on clear', () => {
+    history.push(makeProject('v1'))
+    history.push(makeProject('v2'))
+    history.undo(makeProject('v3'))
+
+    history.clear()
+
+    expect(history.canUndo).toBe(false)
+    expect(history.canRedo).toBe(false)
+  })
 })

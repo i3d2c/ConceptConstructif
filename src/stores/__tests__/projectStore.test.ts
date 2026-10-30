@@ -514,3 +514,58 @@ describe('projectStore — zone groups', () => {
     })
   })
 })
+
+describe('projectStore — undo history across projects', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  function otherProject(): Project {
+    return {
+      id: 'p-other', name: 'Autre projet', ouvrages: [], constituents: [], zoneGroups: [],
+      zones: [{ id: 'z-other', name: 'Zone', scale: null, backgroundImage: null, backgroundImageLayout: null, colorAssignments: [], traces: [], printConfig: defaultPrintConfig() }],
+      activeZoneId: 'z-other', createdAt: '', updatedAt: '',
+    }
+  }
+
+  describe('openProject', () => {
+    it('Should not undo back into the previously open project', () => {
+      const store = useProjectStore()
+      store.addZoneGroup({ id: 'g-1', name: 'Groupe', zoneIds: [] })
+
+      store.openProject(otherProject())
+      store.undo()
+
+      expect(store.project.id).toBe('p-other')
+      expect(store.canUndo).toBe(false)
+    })
+  })
+
+  describe('canUndo', () => {
+    it('Should follow the history after being read, as the undo button does', () => {
+      const store = useProjectStore()
+      expect(store.canUndo).toBe(false)
+
+      store.addZoneGroup({ id: 'g-1', name: 'Groupe', zoneIds: [] })
+      expect(store.canUndo).toBe(true)
+
+      store.openProject(otherProject())
+      expect(store.canUndo).toBe(false)
+    })
+  })
+
+  describe('reset', () => {
+    it('Should not undo back into the project open before starting a new one', () => {
+      const store = useProjectStore()
+      store.openProject(otherProject())
+      store.addZoneGroup({ id: 'g-1', name: 'Groupe', zoneIds: [] })
+
+      store.reset()
+      const newProjectId = store.project.id
+      store.undo()
+
+      expect(store.project.id).toBe(newProjectId)
+      expect(store.canUndo).toBe(false)
+    })
+  })
+})

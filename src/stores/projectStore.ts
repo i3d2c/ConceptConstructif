@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, reactive } from 'vue'
 import type { Project, ZoneGroup } from '../domain/models/Project'
 import type { Zone } from '../domain/models/Zone'
 import type { Ouvrage } from '../domain/models/Ouvrage'
@@ -40,7 +40,7 @@ export type DrawMode = 'select' | 'scale' | 'line' | 'surface'
 
 export const useProjectStore = defineStore('project', () => {
   const project = ref<Project>(newProject())
-  const history = new HistoryManager(20)
+  const history = reactive(new HistoryManager(20))
 
   // UI state (non persisté)
   const drawMode = ref<DrawMode>('select')
@@ -289,6 +289,7 @@ export const useProjectStore = defineStore('project', () => {
       z.traces.forEach(t => { if (t.type === 'line') t.profile ??= defaultProfile() })
     })
     project.value = p
+    history.clear()
   }
 
   async function load(id: string) {
@@ -304,7 +305,7 @@ export const useProjectStore = defineStore('project', () => {
   }, { deep: true })
 
   function reset() {
-    project.value = newProject()
+    openProject(newProject())
   }
 
   async function startNewProject() {
