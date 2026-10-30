@@ -1,4 +1,5 @@
 const STEPS_PER_METRE = 20
+export const SNAP_STEP_METRES = 1 / STEPS_PER_METRE
 
 function roundToStep(value: number): number {
   return Math.round(value * STEPS_PER_METRE) / STEPS_PER_METRE

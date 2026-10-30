@@ -140,4 +140,24 @@ describe('WallProfileEditor', () => {
 
     expect(committed(wrapper)).toEqual([[{ at: 0, offset: 0 }, { at: 1, offset: 0 }]])
   })
+
+  it('Should stop a dragged point 5 cm before its neighbour instead of letting it pass', async () => {
+    const { wrapper, client } = mountEditor()
+
+    await pointer(wrapper.findAll('circle')[1], 'pointerdown', client(5, 2.5))
+    await pointer(wrapper.find('svg'), 'pointermove', client(12, 4))
+    await pointer(wrapper.find('svg'), 'pointerup')
+
+    expect(committed(wrapper)![0][1].at).toBeCloseTo(0.995)
+  })
+
+  it('Should stop a point typed beyond its neighbour 5 cm before it', async () => {
+    const { wrapper, client } = mountEditor()
+    await pointer(wrapper.findAll('circle')[1], 'pointerdown', client(5, 2.5))
+    await pointer(wrapper.find('svg'), 'pointerup')
+
+    await wrapper.find('[data-testid="point-position"]').setValue('15')
+
+    expect(committed(wrapper)![0][1].at).toBeCloseTo(0.995)
+  })
 })

@@ -4,7 +4,7 @@ import type { ProfilePoint } from '../../domain/models/Trace'
 import { defaultProfile, insertProfilePoint, moveProfilePoint, removeProfilePoint } from '../../domain/services/WallProfile'
 import { wallProfileOutline } from '../../scene3d/wallProfileOutline'
 import { createProfileViewport, profileViewHeight, PROFILE_FRAME } from './profileViewport'
-import { snapHeight, snapPosition } from './profileSnap'
+import { snapHeight, snapPosition, SNAP_STEP_METRES } from './profileSnap'
 
 const props = defineProps<{
   profile: ProfilePoint[]
@@ -21,6 +21,7 @@ const draft = shallowRef<ProfilePoint[] | null>(null)
 const dragIndex = ref<number | null>(null)
 const selectedIndex = ref<number | null>(null)
 
+const minGap = computed(() => SNAP_STEP_METRES / props.wallLength)
 const shown = computed(() => draft.value ?? props.profile)
 const view = computed(() =>
   createProfileViewport(props.wallLength, profileViewHeight(props.profile, props.baseHeight), PROFILE_FRAME),
@@ -59,7 +60,7 @@ function commit(profile: ProfilePoint[]) {
 
 function addPoint(e: MouseEvent) {
   const at = snappedAt(wallPointOf(e)[0])
-  const profile = insertProfilePoint(props.profile, at)
+  const profile = insertProfilePoint(props.profile, at, minGap.value)
   selectedIndex.value = profile.findIndex(p => p.at === at)
   commit(profile)
 }
@@ -82,13 +83,13 @@ function parseMeters(input: EventTarget | null): number | null {
 function setHeight(e: Event) {
   const height = parseMeters(e.target)
   if (height === null || !selectedPoint.value) return
-  commit(moveProfilePoint(props.profile, selectedIndex.value!, selectedPoint.value.at, height - props.baseHeight))
+  commit(moveProfilePoint(props.profile, selectedIndex.value!, selectedPoint.value.at, height - props.baseHeight, minGap.value))
 }
 
 function setPosition(e: Event) {
   const position = parseMeters(e.target)
   if (position === null || !selectedPoint.value) return
-  commit(moveProfilePoint(props.profile, selectedIndex.value!, position / props.wallLength, selectedPoint.value.offset))
+  commit(moveProfilePoint(props.profile, selectedIndex.value!, position / props.wallLength, selectedPoint.value.offset, minGap.value))
 }
 
 function startDrag(index: number, e: PointerEvent) {
@@ -101,7 +102,7 @@ function startDrag(index: number, e: PointerEvent) {
 function drag(e: PointerEvent) {
   if (dragIndex.value === null || !draft.value) return
   const [x, h] = wallPointOf(e)
-  draft.value = moveProfilePoint(draft.value, dragIndex.value, snappedAt(x), snapHeight(h) - props.baseHeight)
+  draft.value = moveProfilePoint(draft.value, dragIndex.value, snappedAt(x), snapHeight(h) - props.baseHeight, minGap.value)
 }
 
 function endDrag() {
