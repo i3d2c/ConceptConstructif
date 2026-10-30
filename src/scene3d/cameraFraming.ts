@@ -1,5 +1,6 @@
 import type { Zone } from '../domain/models/Zone'
 import type { Scale } from '../domain/models/Scale'
+import { profileMaxHeight } from '../domain/services/WallProfile'
 
 export interface CameraFraming {
   position: { x: number; y: number; z: number }
@@ -24,7 +25,7 @@ export function computeFramingCamera(zone: Zone, scale: Scale, fovDegrees: numbe
     const ca = zone.colorAssignments.find(c => c.id === trace.colorAssignmentId)
     if (!ca) continue
 
-    const traceHeight = trace.up + (trace.type === 'line' ? ca.hauteur : ca.epaisseur)
+    const traceHeight = trace.up + (trace.type === 'line' ? profileMaxHeight(trace.profile, ca.hauteur) : ca.epaisseur)
     maxHeight = Math.max(maxHeight, traceHeight)
 
     for (const [px, py] of trace.points) {

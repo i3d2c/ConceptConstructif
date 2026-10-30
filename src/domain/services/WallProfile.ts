@@ -15,3 +15,12 @@ export function profileMeanHeight(profile: ProfilePoint[], baseHeight: number): 
 export function profileMaxHeight(profile: ProfilePoint[], baseHeight: number): number {
   return baseHeight + Math.max(...profile.map(p => p.offset))
 }
+
+export function profileHeightAt(profile: ProfilePoint[], at: number, baseHeight: number): number {
+  const next = profile.findIndex(p => p.at >= at)
+  if (next === 0) return baseHeight + profile[0].offset
+  const a = profile[next - 1]
+  const b = profile[next]
+  const t = (at - a.at) / (b.at - a.at)
+  return baseHeight + a.offset + t * (b.offset - a.offset)
+}
