@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useProjectStore } from '../stores/projectStore'
 import { computeTraceVariables, computeTraceChiffrage } from '../domain/services/ChiffrageCalculator'
+import { surfaceStretch } from '../domain/services/SurfaceCalculator'
 import type { SlopeDirection } from '../domain/models/Trace'
 import type { Scale } from '../domain/models/Scale'
 
@@ -42,8 +43,7 @@ const liveTrace = computed(() => {
 
 const vars = computed(() => {
   if (!liveTrace.value || !zone.value?.scale || !ca.value) return null
-  const angleDeg = liveTrace.value.type === 'surface' ? (liveTrace.value.angle ?? 0) : 0
-  return computeTraceVariables(liveTrace.value.type, liveTrace.value.points, zone.value.scale, ca.value, angleDeg)
+  return computeTraceVariables(liveTrace.value, zone.value.scale, ca.value)
 })
 
 const chiffrage = computed(() => {
@@ -143,7 +143,8 @@ function applyResize() {
     const newL = parseM(resizeL.value)
     const newH = parseM(resizeH.value)
     if (!newL && !newH) return
-    newPts = resizeSurface(trace.value.points, newL, newH, s)
+    const stretch = surfaceStretch(trace.value)
+    newPts = resizeSurface(trace.value.points, newL && newL / stretch.x, newH && newH / stretch.y, s)
   }
 
   store.updateTrace(zone.value.id, trace.value.id, { points: newPts })

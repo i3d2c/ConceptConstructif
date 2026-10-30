@@ -4,7 +4,7 @@ import type { Scale } from '../models/Scale'
 import type { ColorAssignment } from '../models/Zone'
 import type { Ouvrage } from '../models/Ouvrage'
 import type { Constituent } from '../models/Constituent'
-import type { LineTrace } from '../models/Trace'
+import type { LineTrace, SurfaceTrace, SlopeDirection } from '../models/Trace'
 
 const scale: Scale = {
   pixelLength: 100,
@@ -21,17 +21,25 @@ const colorAssignment: ColorAssignment = {
   hauteur: 2.5,
 }
 
+function lineTrace(points: [number, number][]): LineTrace {
+  return { id: 't-1', type: 'line', number: 1, colorAssignmentId: 'ca-1', up: 0, points }
+}
+
+function surfaceTrace(points: [number, number][], angle = 0, slopeDirection: SlopeDirection = 'top'): SurfaceTrace {
+  return { id: 't-1', type: 'surface', number: 1, colorAssignmentId: 'ca-1', up: 0, points, angle, slopeDirection }
+}
+
 describe('ChiffrageCalculator', () => {
   it('calcule L comme somme des segments pour un LineTrace', () => {
     // Mur en L : segment 1 = 60px (3m) + segment 2 = 80px (4m) → L = 7m
     const points: [number, number][] = [[0, 0], [60, 0], [60, 80]]
-    const vars = computeTraceVariables('line', points, scale, colorAssignment)
+    const vars = computeTraceVariables(lineTrace(points), scale, colorAssignment)
     expect(vars.L).toBeCloseTo(7)
   })
 
   it('calcule S = L × H et V = S × E pour un LineTrace', () => {
     const points: [number, number][] = [[0, 0], [60, 0]]
-    const vars = computeTraceVariables('line', points, scale, colorAssignment)
+    const vars = computeTraceVariables(lineTrace(points), scale, colorAssignment)
     expect(vars.S).toBeCloseTo(7.5)
     expect(vars.V).toBeCloseTo(0.7875)
   })
@@ -40,15 +48,35 @@ describe('ChiffrageCalculator', () => {
     // Rectangle 4m × 3m en pixels = 80px × 60px, aire projetée = 12m²
     // angle 60° → S_réelle = 12 / cos(60°) = 24m²
     const points: [number, number][] = [[0, 0], [80, 0], [80, 60], [0, 60]]
-    const vars = computeTraceVariables('surface', points, scale, colorAssignment, 60)
+    const vars = computeTraceVariables(surfaceTrace(points, 60), scale, colorAssignment)
     expect(vars.S).toBeCloseTo(24)
   })
 
   it('SurfaceTrace : L et H sont les dimensions de la bounding box', () => {
     const points: [number, number][] = [[0, 0], [80, 0], [80, 60], [0, 60]]
-    const vars = computeTraceVariables('surface', points, scale, colorAssignment)
+    const vars = computeTraceVariables(surfaceTrace(points), scale, colorAssignment)
     expect(vars.L).toBeCloseTo(4) // 80px * 0.05
     expect(vars.H).toBeCloseTo(3) // 60px * 0.05
+  })
+
+  it('should stretch H by the slope when a surface tilts towards the top', () => {
+    const points: [number, number][] = [[0, 0], [80, 0], [80, 60], [0, 60]]
+    const vars = computeTraceVariables(surfaceTrace(points, 60, 'top'), scale, colorAssignment)
+    expect(vars.L).toBeCloseTo(4)
+    expect(vars.H).toBeCloseTo(6)
+  })
+
+  it('should stretch L by the slope when a surface tilts towards the left', () => {
+    const points: [number, number][] = [[0, 0], [80, 0], [80, 60], [0, 60]]
+    const vars = computeTraceVariables(surfaceTrace(points, 60, 'left'), scale, colorAssignment)
+    expect(vars.L).toBeCloseTo(8)
+    expect(vars.H).toBeCloseTo(3)
+  })
+
+  it('should keep L × H equal to S for a tilted rectangle', () => {
+    const points: [number, number][] = [[0, 0], [80, 0], [80, 60], [0, 60]]
+    const vars = computeTraceVariables(surfaceTrace(points, 45, 'bottom'), scale, colorAssignment)
+    expect(vars.L * vars.H).toBeCloseTo(vars.S)
   })
 
   it('computeTraceChiffrage gère la cascade Cn entre constituants', () => {

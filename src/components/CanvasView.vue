@@ -54,8 +54,7 @@ const hoverInfo = computed(() => {
   if (!store.activeZone.scale) {
     return `#${trace.number} — ${trace.type === 'line' ? 'Trait' : 'Surface'}`
   }
-  const angleDeg = trace.type === 'surface' ? (trace.angle ?? 0) : 0
-  const v = computeTraceVariables(trace.type, trace.points, store.activeZone.scale, ca, angleDeg)
+  const v = computeTraceVariables(trace, store.activeZone.scale, ca)
   if (trace.type === 'line') {
     return `#${trace.number}  L=${v.L.toFixed(2)}m  H=${v.H.toFixed(2)}m  E=${v.E.toFixed(3)}m`
   } else {
