@@ -30,6 +30,7 @@ const show3D = ref(false)
 const showChiffrage = ref(false)
 const showOuvrageModal = ref(false)
 const showPrintDialog = ref(false)
+const printGroupId = ref<string | null>(null)
 const showProjectDialog = ref(false)
 const showWhatsNew = ref(false)
 const showSettingsDialog = ref(false)
@@ -66,22 +67,23 @@ function onKeydown(e: KeyboardEvent) {
   }
 }
 
-async function onPrint(config: PrintConfig) {
+async function onPrint(config: PrintConfig, groupId: string | null) {
   showPrintDialog.value = false
+  printGroupId.value = groupId
 
   if (store.activeZone) {
     store.updateZone(store.activeZone.id, { printConfig: config })
   }
 
   // Capture 2D avant d'afficher PrintLayout (canvas Konva composite)
-  if (config.show2D && canvasViewRef.value) {
+  if (config.show2D && !groupId && canvasViewRef.value) {
     canvas2DSnapshot.value = await canvasViewRef.value.getFramedStageDataURL()
   } else {
     canvas2DSnapshot.value = null
   }
 
   // Capture 3D dans une scène hors-écran dédiée, cadrée indépendamment du panneau live
-  canvas3DSnapshot.value = config.show3D ? await capturePrintSnapshot(store) : null
+  canvas3DSnapshot.value = config.show3D && !groupId ? await capturePrintSnapshot(store) : null
 
   // Affiche PrintLayout avec les données capturées
   printConfig.value = config
@@ -152,7 +154,14 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
     </div>
 
     <OuvrageLibraryModal v-if="showOuvrageModal" @close="showOuvrageModal = false" />
-    <PrintDialog v-if="showPrintDialog" :initial-config="store.activeZone?.printConfig" @print="onPrint" @cancel="showPrintDialog = false" />
+    <PrintDialog
+      v-if="showPrintDialog"
+      :initial-config="store.activeZone?.printConfig"
+      :groups="store.project.zoneGroups"
+      :active-zone-name="store.activeZone?.name"
+      @print="onPrint"
+      @cancel="showPrintDialog = false"
+    />
     <ProjectListDialog v-if="showProjectDialog" @close="showProjectDialog = false" />
     <WhatsNewDialog v-if="showWhatsNew" @close="whatsNewStore.markSeen(); showWhatsNew = false" />
     <CompanySettingsDialog v-if="showSettingsDialog" @close="showSettingsDialog = false" />
@@ -166,6 +175,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
     :config="printConfig"
     :canvas2DImage="canvas2DSnapshot"
     :canvas3DImage="canvas3DSnapshot"
+    :group-id="printGroupId"
   />
 </template>
 

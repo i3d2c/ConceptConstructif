@@ -5,6 +5,7 @@ import type { PrintTraceDetail } from '../../print/buildPrintData'
 defineProps<{
   traces: PrintTraceDetail[]
   total: number
+  showZone?: boolean
 }>()
 </script>
 
@@ -18,7 +19,7 @@ defineProps<{
       <tbody>
         <template v-for="t in traces" :key="t.traceId">
           <tr class="trace-row">
-            <td colspan="6">Tracé n°{{ t.traceNumber }} — {{ t.ouvrageName }}</td>
+            <td colspan="6">Tracé n°{{ t.traceNumber }}<template v-if="showZone"> · {{ t.zoneName }}</template> — {{ t.ouvrageName }}</td>
           </tr>
           <tr v-for="c in t.constituents" :key="c.ouvrageConstituentId">
             <td />

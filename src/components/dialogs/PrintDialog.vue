@@ -1,20 +1,27 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { defaultPrintConfig } from '../../print/PrintConfig'
 import type { PrintConfig } from '../../print/PrintConfig'
+import type { ZoneGroup } from '../../domain/models/Project'
 
 const props = withDefaults(defineProps<{
   initialConfig?: PrintConfig
+  groups?: ZoneGroup[]
+  activeZoneName?: string
 }>(), {
   initialConfig: () => defaultPrintConfig(),
+  groups: () => [],
+  activeZoneName: '',
 })
 
 const emit = defineEmits<{
-  print: [config: PrintConfig]
+  print: [config: PrintConfig, groupId: string | null]
   cancel: []
 }>()
 
 const config = ref<PrintConfig>({ ...props.initialConfig })
+const groupId = ref<string | null>(null)
+const groupName = computed(() => props.groups.find(g => g.id === groupId.value)?.name)
 
 type PresetName = 'total' | 'chiffrage' | 'devis'
 
@@ -41,7 +48,7 @@ function applyPreset(name: PresetName) {
 }
 
 function doPrint() {
-  emit('print', { ...config.value })
+  emit('print', { ...config.value }, groupId.value)
 }
 </script>
 
@@ -50,6 +57,17 @@ function doPrint() {
     <div class="dialog">
       <h3>Configuration d'impression</h3>
       <p class="hint">Sélectionnez les éléments à inclure dans le PDF</p>
+
+      <label v-if="groups.length > 0" class="scope-row">
+        Périmètre
+        <select data-testid="print-scope" :value="groupId ?? ''" @change="groupId = ($event.target as HTMLSelectElement).value || null">
+          <option value="">Zone active ({{ activeZoneName }})</option>
+          <option v-for="g in groups" :key="g.id" :value="g.id">{{ g.name }}</option>
+        </select>
+      </label>
+      <p v-if="groupName" data-testid="group-scope-hint" class="hint">
+        Impression du groupe « {{ groupName }} » : les vues 2D et 3D ne montrent qu'une zone et ne sont pas incluses.
+      </p>
 
       <div class="presets">
         <button type="button" data-testid="preset-total" @click="applyPreset('total')">Total</button>
@@ -63,11 +81,21 @@ function doPrint() {
           Titre du projet et de la zone
         </label>
         <label class="checkbox-row">
-          <input type="checkbox" v-model="config.show2D" />
+          <input
+            type="checkbox"
+            :checked="config.show2D && !groupName"
+            :disabled="!!groupName"
+            @change="config.show2D = ($event.target as HTMLInputElement).checked"
+          />
           Vue 2D (capture du plan)
         </label>
         <label class="checkbox-row">
-          <input type="checkbox" v-model="config.show3D" />
+          <input
+            type="checkbox"
+            :checked="config.show3D && !groupName"
+            :disabled="!!groupName"
+            @change="config.show3D = ($event.target as HTMLInputElement).checked"
+          />
           Vue 3D
         </label>
         <hr class="divider" />
@@ -99,6 +127,7 @@ function doPrint() {
 </template>
 
 <style scoped>
+.scope-row { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text); }
 .dialog-overlay {
   position: fixed; inset: 0;
   background: rgba(0,0,0,0.6);

@@ -307,4 +307,64 @@ describe('PrintLayout', () => {
       expect(wrapper.find('[data-testid="print-legend"]').exists()).toBe(false)
     })
   })
+
+  describe('zone group scope', () => {
+    function mountWithGroupScope(config: PrintConfig = defaultPrintConfig()) {
+      const store = useProjectStore()
+      store.project.ouvrages.push(usedOuvrage)
+      store.project.constituents.push(usedConstituent)
+      const mainZone = store.project.zones[0]
+      mainZone.name = 'RDC'
+      mainZone.scale = { pixelLength: 100, realLength: 5, ratio: 0.05, tracePoints: [[0, 0], [100, 0]] }
+      mainZone.colorAssignments.push(colorAssignment)
+      mainZone.traces.push(drawnTrace)
+      store.addZone({ ...mainZone, id: 'z-annex', name: 'Annexe', traces: [{ ...drawnTrace, id: 't-annex' }] })
+      store.addZoneGroup({ id: 'g-1', name: 'Maison complète', zoneIds: [mainZone.id, 'z-annex'] })
+
+      return mount(PrintLayout, {
+        props: { config, groupId: 'g-1', canvas2DImage: 'data:image/png;base64,2d', canvas3DImage: 'data:image/png;base64,3d' },
+      })
+    }
+
+    it('Should total every zone of the chosen group', () => {
+      const wrapper = mountWithGroupScope()
+
+      expect(wrapper.find('[data-testid="devis-section"]').text()).toContain('3,68 €')
+    })
+
+    it('Should name the group and its zones in the header instead of the active zone', () => {
+      const wrapper = mountWithGroupScope()
+
+      const header = wrapper.find('[data-testid="print-header"]').text()
+      expect(header).toContain('Maison complète')
+      expect(header).toContain('RDC, Annexe')
+    })
+
+    it('Should leave out the 2D/3D plans, which only show the active zone', () => {
+      const wrapper = mountWithGroupScope()
+
+      expect(wrapper.find('[data-testid="plans-page"]').exists()).toBe(false)
+    })
+
+    it('Should name the zone of each trace in the detailed list', () => {
+      const wrapper = mountWithGroupScope({ ...defaultPrintConfig(), showList: true })
+
+      expect(wrapper.find('[data-testid="trailing-content"]').text()).toContain('Tracé n°1 · Annexe — Mur brique')
+    })
+
+    it('Should print the active zone when no group is given, whatever the Chiffrage panel scope', () => {
+      const store = useProjectStore()
+      store.addZoneGroup({ id: 'g-panel', name: 'Groupe du panneau', zoneIds: [] })
+      store.chiffrageGroupId = 'g-panel'
+      store.activeZone!.name = 'RDC'
+
+      const wrapper = mount(PrintLayout, {
+        props: { config: defaultPrintConfig(), canvas2DImage: null, canvas3DImage: null },
+      })
+
+      const header = wrapper.find('[data-testid="print-header"]').text()
+      expect(header).toContain('RDC')
+      expect(header).not.toContain('Groupe du panneau')
+    })
+  })
 })

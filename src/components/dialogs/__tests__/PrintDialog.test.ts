@@ -81,4 +81,55 @@ describe('PrintDialog', () => {
       })
     })
   })
+
+  describe('print scope', () => {
+    const groups = [{ id: 'g-1', name: 'Maison complète', zoneIds: [] }]
+
+    it('Should print the active zone by default', async () => {
+      const wrapper = mount(PrintDialog, { props: { groups, activeZoneName: 'RDC' } })
+
+      await wrapper.find('.dialog-actions .active').trigger('click')
+
+      expect(wrapper.emitted('print')![0][1]).toBeNull()
+    })
+
+    it('Should not offer a scope choice when the project has no zone group', () => {
+      const wrapper = mount(PrintDialog, { props: { groups: [], activeZoneName: 'RDC' } })
+
+      expect(wrapper.find('[data-testid="print-scope"]').exists()).toBe(false)
+    })
+
+    it('Should print the chosen group', async () => {
+      const wrapper = mount(PrintDialog, { props: { groups, activeZoneName: 'RDC' } })
+
+      await wrapper.find('[data-testid="print-scope"]').setValue('g-1')
+      await wrapper.find('.dialog-actions .active').trigger('click')
+
+      expect(wrapper.emitted('print')![0][1]).toBe('g-1')
+    })
+
+    it('Should explain and disable the plan views, which only show one zone, once a group is chosen', async () => {
+      const wrapper = mount(PrintDialog, { props: { groups, activeZoneName: 'RDC' } })
+
+      await wrapper.find('[data-testid="print-scope"]').setValue('g-1')
+
+      expect(wrapper.find('[data-testid="group-scope-hint"]').text()).toContain('Maison complète')
+      expect(findCheckbox(wrapper, 'Vue 2D').attributes('disabled')).toBeDefined()
+      expect(findCheckbox(wrapper, 'Vue 3D').attributes('disabled')).toBeDefined()
+    })
+
+    it('Should show the disabled plan views unchecked while a group is chosen, and restore them for the active zone', async () => {
+      const initialConfig = { ...defaultPrintConfig(), show2D: true, show3D: true }
+      const wrapper = mount(PrintDialog, { props: { initialConfig, groups, activeZoneName: 'RDC' } })
+      const checked = (label: string) => (findCheckbox(wrapper, label).element as HTMLInputElement).checked
+
+      await wrapper.find('[data-testid="print-scope"]').setValue('g-1')
+      expect(checked('Vue 2D')).toBe(false)
+      expect(checked('Vue 3D')).toBe(false)
+
+      await wrapper.find('[data-testid="print-scope"]').setValue('')
+      expect(checked('Vue 2D')).toBe(true)
+      expect(checked('Vue 3D')).toBe(true)
+    })
+  })
 })

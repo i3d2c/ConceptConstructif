@@ -501,4 +501,16 @@ describe('projectStore — zone groups', () => {
       expect(store.chiffrageZones.map(z => z.id)).toEqual([store.project.activeZoneId])
     })
   })
+
+  describe('scopeZones', () => {
+    it('Should give the zones of the given group, or the active zone alone when no group is given', () => {
+      const store = useProjectStore()
+      const mainId = store.project.zones[0].id
+      store.addZone({ ...store.project.zones[0], id: 'z-annex', name: 'Annexe' })
+      store.addZoneGroup({ id: 'g-1', name: 'Maison complète', zoneIds: [mainId, 'z-annex'] })
+
+      expect(store.scopeZones('g-1').map(z => z.id)).toEqual([mainId, 'z-annex'])
+      expect(store.scopeZones(null).map(z => z.id)).toEqual([store.project.activeZoneId])
+    })
+  })
 })
