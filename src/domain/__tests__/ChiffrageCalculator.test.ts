@@ -76,9 +76,12 @@ describe('ChiffrageCalculator', () => {
     expect(vars.Hmax).toBeCloseTo(4)
   })
 
-  it('should keep H equal to the assigned height for a zero-length wall', () => {
-    const vars = computeTraceVariables(lineTrace([[0, 0], [0, 0]]), scale, colorAssignment)
-    expect(vars.H).toBe(2.5)
+  it('should give a zero-length wall the mean height of its profile and no surface', () => {
+    const gable = [{ at: 0, offset: 0 }, { at: 0.5, offset: 2.5 }, { at: 1, offset: 0 }]
+    const vars = computeTraceVariables(lineTrace([[0, 0], [0, 0]], gable), scale, colorAssignment)
+    expect(vars.H).toBeCloseTo(3.75)
+    expect(vars.Hmax).toBeCloseTo(5)
+    expect(vars.S).toBe(0)
   })
 
   it('should give a surface an Hmax equal to its H', () => {

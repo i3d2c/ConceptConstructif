@@ -3,6 +3,7 @@ import { evaluate } from 'mathjs'
 export interface FormulaVariables {
   L: number
   H: number
+  Hmax: number
   E: number
   S: number
   V: number
