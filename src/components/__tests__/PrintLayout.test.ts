@@ -320,10 +320,9 @@ describe('PrintLayout', () => {
       mainZone.traces.push(drawnTrace)
       store.addZone({ ...mainZone, id: 'z-annex', name: 'Annexe', traces: [{ ...drawnTrace, id: 't-annex' }] })
       store.addZoneGroup({ id: 'g-1', name: 'Maison complète', zoneIds: [mainZone.id, 'z-annex'] })
-      store.chiffrageGroupId = 'g-1'
 
       return mount(PrintLayout, {
-        props: { config, canvas2DImage: 'data:image/png;base64,2d', canvas3DImage: 'data:image/png;base64,3d' },
+        props: { config, groupId: 'g-1', canvas2DImage: 'data:image/png;base64,2d', canvas3DImage: 'data:image/png;base64,3d' },
       })
     }
 
@@ -351,6 +350,21 @@ describe('PrintLayout', () => {
       const wrapper = mountWithGroupScope({ ...defaultPrintConfig(), showList: true })
 
       expect(wrapper.find('[data-testid="trailing-content"]').text()).toContain('Tracé n°1 · Annexe — Mur brique')
+    })
+
+    it('Should print the active zone when no group is given, whatever the Chiffrage panel scope', () => {
+      const store = useProjectStore()
+      store.addZoneGroup({ id: 'g-panel', name: 'Groupe du panneau', zoneIds: [] })
+      store.chiffrageGroupId = 'g-panel'
+      store.activeZone!.name = 'RDC'
+
+      const wrapper = mount(PrintLayout, {
+        props: { config: defaultPrintConfig(), canvas2DImage: null, canvas3DImage: null },
+      })
+
+      const header = wrapper.find('[data-testid="print-header"]').text()
+      expect(header).toContain('RDC')
+      expect(header).not.toContain('Groupe du panneau')
     })
   })
 })

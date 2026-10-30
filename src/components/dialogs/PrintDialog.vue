@@ -1,21 +1,27 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { defaultPrintConfig } from '../../print/PrintConfig'
 import type { PrintConfig } from '../../print/PrintConfig'
+import type { ZoneGroup } from '../../domain/models/Project'
 
 const props = withDefaults(defineProps<{
   initialConfig?: PrintConfig
-  groupName?: string
+  groups?: ZoneGroup[]
+  activeZoneName?: string
 }>(), {
   initialConfig: () => defaultPrintConfig(),
+  groups: () => [],
+  activeZoneName: '',
 })
 
 const emit = defineEmits<{
-  print: [config: PrintConfig]
+  print: [config: PrintConfig, groupId: string | null]
   cancel: []
 }>()
 
 const config = ref<PrintConfig>({ ...props.initialConfig })
+const groupId = ref<string | null>(null)
+const groupName = computed(() => props.groups.find(g => g.id === groupId.value)?.name)
 
 type PresetName = 'total' | 'chiffrage' | 'devis'
 
@@ -42,7 +48,7 @@ function applyPreset(name: PresetName) {
 }
 
 function doPrint() {
-  emit('print', { ...config.value })
+  emit('print', { ...config.value }, groupId.value)
 }
 </script>
 
@@ -51,9 +57,16 @@ function doPrint() {
     <div class="dialog">
       <h3>Configuration d'impression</h3>
       <p class="hint">Sélectionnez les éléments à inclure dans le PDF</p>
+
+      <label v-if="groups.length > 0" class="scope-row">
+        Périmètre
+        <select data-testid="print-scope" :value="groupId ?? ''" @change="groupId = ($event.target as HTMLSelectElement).value || null">
+          <option value="">Zone active ({{ activeZoneName }})</option>
+          <option v-for="g in groups" :key="g.id" :value="g.id">{{ g.name }}</option>
+        </select>
+      </label>
       <p v-if="groupName" data-testid="group-scope-hint" class="hint">
-        Impression du groupe « {{ groupName }} » (périmètre choisi dans la fenêtre Chiffrage) :
-        les vues 2D et 3D ne montrent qu'une zone et ne sont pas incluses.
+        Impression du groupe « {{ groupName }} » : les vues 2D et 3D ne montrent qu'une zone et ne sont pas incluses.
       </p>
 
       <div class="presets">
@@ -104,6 +117,7 @@ function doPrint() {
 </template>
 
 <style scoped>
+.scope-row { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text); }
 .dialog-overlay {
   position: fixed; inset: 0;
   background: rgba(0,0,0,0.6);
