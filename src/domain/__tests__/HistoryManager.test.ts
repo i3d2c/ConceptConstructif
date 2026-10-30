@@ -8,6 +8,7 @@ const makeProject = (name: string): Project => ({
   ouvrages: [],
   constituents: [],
   zones: [],
+  zoneGroups: [],
   activeZoneId: '',
   createdAt: '',
   updatedAt: '',

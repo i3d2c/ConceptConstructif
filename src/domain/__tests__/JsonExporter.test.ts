@@ -8,6 +8,7 @@ const project: Project = {
   ouvrages: [],
   constituents: [],
   zones: [],
+  zoneGroups: [],
   activeZoneId: '',
   createdAt: '2026-01-01',
   updatedAt: '2026-01-01',

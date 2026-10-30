@@ -404,3 +404,72 @@ describe('projectStore — wall profile persistence', () => {
     })
   })
 })
+
+describe('projectStore — zone groups', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  describe('addZoneGroup', () => {
+    it('Should add the group to the project', () => {
+      const store = useProjectStore()
+      const group = { id: 'g-1', name: 'Maison complète', zoneIds: [store.project.zones[0].id] }
+
+      store.addZoneGroup(group)
+
+      expect(store.project.zoneGroups).toEqual([group])
+    })
+  })
+
+  describe('updateZoneGroup', () => {
+    it('Should rename the group and change its zones', () => {
+      const store = useProjectStore()
+      store.addZoneGroup({ id: 'g-1', name: 'Groupe', zoneIds: [] })
+
+      store.updateZoneGroup('g-1', { name: 'Maison complète', zoneIds: ['z-a', 'z-b'] })
+
+      expect(store.project.zoneGroups[0]).toEqual({ id: 'g-1', name: 'Maison complète', zoneIds: ['z-a', 'z-b'] })
+    })
+  })
+
+  describe('removeZoneGroup', () => {
+    it('Should remove the group but keep its zones', () => {
+      const store = useProjectStore()
+      const zoneId = store.project.zones[0].id
+      store.addZoneGroup({ id: 'g-1', name: 'Groupe', zoneIds: [zoneId] })
+
+      store.removeZoneGroup('g-1')
+
+      expect(store.project.zoneGroups).toEqual([])
+      expect(store.project.zones.map(z => z.id)).toEqual([zoneId])
+    })
+  })
+
+  describe('removeZone', () => {
+    it('Should also drop the removed zone from the groups that contained it', () => {
+      const store = useProjectStore()
+      const keptZoneId = store.project.zones[0].id
+      store.addZone({ ...store.project.zones[0], id: 'z-removed', name: 'Annexe' })
+      store.addZoneGroup({ id: 'g-1', name: 'Maison complète', zoneIds: [keptZoneId, 'z-removed'] })
+
+      store.removeZone('z-removed')
+
+      expect(store.project.zoneGroups[0].zoneIds).toEqual([keptZoneId])
+    })
+  })
+
+  describe('openProject', () => {
+    it('Should give a project saved before zone groups existed an empty group list', () => {
+      const store = useProjectStore()
+      const legacyProject = {
+        id: 'p-legacy', name: 'Ancien projet', ouvrages: [], constituents: [],
+        zones: [{ id: 'z-1', name: 'Zone 1', scale: null, backgroundImage: null, colorAssignments: [], traces: [], printConfig: defaultPrintConfig() }],
+        activeZoneId: 'z-1', createdAt: '', updatedAt: '',
+      } as unknown as Project
+
+      store.openProject(legacyProject)
+
+      expect(store.project.zoneGroups).toEqual([])
+    })
+  })
+})
