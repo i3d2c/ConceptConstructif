@@ -8,6 +8,7 @@ import type { Constituent } from '../../domain/models/Constituent'
 import type { Trace } from '../../domain/models/Trace'
 import type { ColorAssignment } from '../../domain/models/Zone'
 import type { Project } from '../../domain/models/Project'
+import { defaultProfile } from '../../domain/services/WallProfile'
 
 vi.mock('../../storage/ProjectStore')
 
@@ -110,8 +111,8 @@ describe('projectStore — library cascade actions', () => {
 })
 
 const ca: ColorAssignment = { id: 'ca-1', color: '#ff0000', ouvrageId: 'o-1', epaisseur: 0.2, hauteur: 2.5 }
-const lineTrace: Trace = { id: 't-1', number: 1, type: 'line', colorAssignmentId: 'ca-1', up: 0, points: [[0, 0], [1, 1]] }
-const otherTrace: Trace = { id: 't-2', number: 2, type: 'line', colorAssignmentId: 'ca-1', up: 0, points: [[0, 0], [2, 2]] }
+const lineTrace: Trace = { id: 't-1', number: 1, type: 'line', colorAssignmentId: 'ca-1', up: 0, profile: defaultProfile(), points: [[0, 0], [1, 1]] }
+const otherTrace: Trace = { id: 't-2', number: 2, type: 'line', colorAssignmentId: 'ca-1', up: 0, profile: defaultProfile(), points: [[0, 0], [2, 2]] }
 
 describe('projectStore — trace selection', () => {
   beforeEach(() => {
@@ -350,6 +351,56 @@ describe('projectStore — background image layout persistence', () => {
       await store.load('p-legacy')
 
       expect(store.activeZone!.backgroundImageLayout).toBeNull()
+    })
+  })
+})
+
+describe('projectStore — wall profile persistence', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+  })
+
+  describe('load', () => {
+    it('Should backfill a flat profile on line traces saved before profiles existed', async () => {
+      const legacyLine = { id: 't-1', number: 1, type: 'line', colorAssignmentId: 'ca-1', up: 0, points: [[0, 0], [1, 0]] }
+      const legacyProject = {
+        id: 'p-legacy',
+        name: 'Ancien projet',
+        ouvrages: [],
+        constituents: [],
+        zones: [{ id: 'z-1', name: 'Zone 1', scale: null, backgroundImage: null, colorAssignments: [], traces: [legacyLine], printConfig: defaultPrintConfig() }],
+        activeZoneId: 'z-1',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      } as unknown as Project
+      vi.mocked(loadProject).mockResolvedValue(legacyProject)
+      const store = useProjectStore()
+
+      await store.load('p-legacy')
+
+      expect(store.activeZone!.traces[0]).toMatchObject({ profile: defaultProfile() })
+    })
+  })
+
+  describe('openProject', () => {
+    it('Should backfill legacy fields of a project imported from JSON', () => {
+      const legacyLine = { id: 't-1', number: 1, type: 'line', colorAssignmentId: 'ca-1', up: 0, points: [[0, 0], [1, 0]] }
+      const legacyProject = {
+        id: 'p-legacy',
+        name: 'Ancien projet',
+        ouvrages: [],
+        constituents: [],
+        zones: [{ id: 'z-1', name: 'Zone 1', scale: null, backgroundImage: null, colorAssignments: [], traces: [legacyLine] }],
+        activeZoneId: 'z-1',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      } as unknown as Project
+      const store = useProjectStore()
+
+      store.openProject(legacyProject)
+
+      expect(store.activeZone!.printConfig).toEqual(defaultPrintConfig())
+      expect(store.activeZone!.traces[0]).toMatchObject({ profile: defaultProfile() })
     })
   })
 })

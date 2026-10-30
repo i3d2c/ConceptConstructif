@@ -6,6 +6,7 @@ import type { Zone, ColorAssignment } from '../../domain/models/Zone'
 import type { Ouvrage } from '../../domain/models/Ouvrage'
 import type { Constituent } from '../../domain/models/Constituent'
 import type { LineTrace } from '../../domain/models/Trace'
+import { defaultProfile } from '../../domain/services/WallProfile'
 
 const usedConstituent: Constituent = {
   id: 'c-used', name: 'Brique pleine', unit: 'unité', unitPrice: 0.92, category: 'Maçonnerie', formulaRecap: 'ceil(X)',
@@ -28,7 +29,7 @@ const colorAssignment: ColorAssignment = {
 }
 
 const drawnTrace: LineTrace = {
-  id: 't-1', number: 1, type: 'line', colorAssignmentId: colorAssignment.id, up: 0,
+  id: 't-1', number: 1, type: 'line', colorAssignmentId: colorAssignment.id, up: 0, profile: defaultProfile(),
   points: [[0, 0], [100, 0]],
 }
 
@@ -103,7 +104,7 @@ describe('buildPrintData', () => {
         constituents: [{ id: 'oc-hidden', constituentId: usedConstituent.id, position: 1, formula: 'L', hideFromRecapOuvrage: true }],
       }
       const ca: ColorAssignment = { id: 'ca-hidden', color: '#000', ouvrageId: hiddenOuvrage.id, epaisseur: 0.2, hauteur: 2.5 }
-      const trace: LineTrace = { id: 't-hidden', number: 1, type: 'line', colorAssignmentId: ca.id, up: 0, points: [[0, 0], [100, 0]] }
+      const trace: LineTrace = { id: 't-hidden', number: 1, type: 'line', colorAssignmentId: ca.id, up: 0, profile: defaultProfile(), points: [[0, 0], [100, 0]] }
       const project = makeProject({
         ouvrages: [hiddenOuvrage],
         constituents: [usedConstituent],
@@ -168,8 +169,8 @@ describe('buildPrintData', () => {
       }
       const caA: ColorAssignment = { id: 'ca-a', color: '#111111', ouvrageId: ouvrageA.id, epaisseur: 0.2, hauteur: 2.5 }
       const caB: ColorAssignment = { id: 'ca-b', color: '#222222', ouvrageId: ouvrageB.id, epaisseur: 0.2, hauteur: 2.5 }
-      const traceA: LineTrace = { id: 't-a', number: 1, type: 'line', colorAssignmentId: caA.id, up: 0, points: [[0, 0], [100, 0]] }
-      const traceB: LineTrace = { id: 't-b', number: 2, type: 'line', colorAssignmentId: caB.id, up: 0, points: [[0, 0], [100, 0]] }
+      const traceA: LineTrace = { id: 't-a', number: 1, type: 'line', colorAssignmentId: caA.id, up: 0, profile: defaultProfile(), points: [[0, 0], [100, 0]] }
+      const traceB: LineTrace = { id: 't-b', number: 2, type: 'line', colorAssignmentId: caB.id, up: 0, profile: defaultProfile(), points: [[0, 0], [100, 0]] }
       const project = makeProject({
         ouvrages: [ouvrageA, ouvrageB],
         constituents: [sharedConstituent],
@@ -220,7 +221,7 @@ describe('buildPrintData', () => {
         constituents: [{ id: 'oc-broken', constituentId: usedConstituent.id, position: 1, formula: 'not_a_variable' }],
       }
       const ca: ColorAssignment = { id: 'ca-broken', color: '#000', ouvrageId: brokenOuvrage.id, epaisseur: 0.2, hauteur: 2.5 }
-      const trace: LineTrace = { id: 't-broken', number: 1, type: 'line', colorAssignmentId: ca.id, up: 0, points: [[0, 0], [100, 0]] }
+      const trace: LineTrace = { id: 't-broken', number: 1, type: 'line', colorAssignmentId: ca.id, up: 0, profile: defaultProfile(), points: [[0, 0], [100, 0]] }
       const project = makeProject({
         ouvrages: [brokenOuvrage],
         constituents: [usedConstituent],
@@ -254,7 +255,7 @@ describe('buildPrintData', () => {
         constituents: [{ id: 'oc-zero', constituentId: usedConstituent.id, position: 1, formula: '0', hideIfZero: true }],
       }
       const ca: ColorAssignment = { id: 'ca-zero', color: '#000', ouvrageId: zeroFormulaOuvrage.id, epaisseur: 0.2, hauteur: 2.5 }
-      const trace: LineTrace = { id: 't-zero', number: 1, type: 'line', colorAssignmentId: ca.id, up: 0, points: [[0, 0], [100, 0]] }
+      const trace: LineTrace = { id: 't-zero', number: 1, type: 'line', colorAssignmentId: ca.id, up: 0, profile: defaultProfile(), points: [[0, 0], [100, 0]] }
       const project = makeProject({
         ouvrages: [zeroFormulaOuvrage],
         constituents: [usedConstituent],

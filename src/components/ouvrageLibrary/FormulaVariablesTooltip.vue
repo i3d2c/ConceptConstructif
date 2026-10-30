@@ -29,7 +29,7 @@ defineProps<{
 }
 .help-grid {
   display: grid;
-  grid-template-columns: 28px 1fr;
+  grid-template-columns: 36px 1fr;
   gap: 2px 8px;
 }
 .hk {

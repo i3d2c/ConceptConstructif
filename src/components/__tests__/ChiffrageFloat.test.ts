@@ -7,6 +7,7 @@ import type { Ouvrage } from '../../domain/models/Ouvrage'
 import type { Constituent } from '../../domain/models/Constituent'
 import type { ColorAssignment } from '../../domain/models/Zone'
 import type { LineTrace } from '../../domain/models/Trace'
+import { defaultProfile } from '../../domain/services/WallProfile'
 
 const usedConstituent: Constituent = {
   id: 'c-used', name: 'Brique pleine', unit: 'unité', unitPrice: 0.92, category: 'Maçonnerie', formulaRecap: 'ceil(X)',
@@ -29,7 +30,7 @@ const colorAssignment: ColorAssignment = {
 }
 
 const drawnTrace: LineTrace = {
-  id: 't-1', number: 1, type: 'line', colorAssignmentId: colorAssignment.id, up: 0,
+  id: 't-1', number: 1, type: 'line', colorAssignmentId: colorAssignment.id, up: 0, profile: defaultProfile(),
   points: [[0, 0], [100, 0]],
 }
 
@@ -147,8 +148,8 @@ describe('ChiffrageFloat', () => {
     }
     const caA: ColorAssignment = { id: 'ca-a', color: '#111111', ouvrageId: ouvrageA.id, epaisseur: 0.2, hauteur: 2.5 }
     const caB: ColorAssignment = { id: 'ca-b', color: '#222222', ouvrageId: ouvrageB.id, epaisseur: 0.2, hauteur: 2.5 }
-    const traceA: LineTrace = { id: 't-a', number: 1, type: 'line', colorAssignmentId: caA.id, up: 0, points: [[0, 0], [100, 0]] }
-    const traceB: LineTrace = { id: 't-b', number: 2, type: 'line', colorAssignmentId: caB.id, up: 0, points: [[0, 0], [100, 0]] }
+    const traceA: LineTrace = { id: 't-a', number: 1, type: 'line', colorAssignmentId: caA.id, up: 0, profile: defaultProfile(), points: [[0, 0], [100, 0]] }
+    const traceB: LineTrace = { id: 't-b', number: 2, type: 'line', colorAssignmentId: caB.id, up: 0, profile: defaultProfile(), points: [[0, 0], [100, 0]] }
 
     function fmt(n: number) {
       return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)

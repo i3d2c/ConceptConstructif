@@ -3,6 +3,7 @@ import { evaluate } from 'mathjs'
 export interface FormulaVariables {
   L: number
   H: number
+  Hmax: number
   E: number
   S: number
   V: number
@@ -38,7 +39,7 @@ export function evaluateRecap(formula: string, X: number): number {
 
 export function validateFormula(formula: string): string | null {
   try {
-    evaluate(normalize(formula), buildScope({ L: 1, H: 1, E: 1, S: 1, V: 1 }))
+    evaluate(normalize(formula), buildScope({ L: 1, H: 1, Hmax: 1, E: 1, S: 1, V: 1 }))
     return null
   } catch (e) {
     return e instanceof Error ? e.message : String(e)

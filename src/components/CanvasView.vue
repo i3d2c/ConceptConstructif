@@ -14,6 +14,7 @@ import { buildScale } from '../domain/services/ScaleCalculator'
 import { moveScalePoint, moveScaleLine } from '../domain/services/ScaleDragCalculator'
 import type { ImageLayout } from '../domain/services/ImageLayoutCalculator'
 import { computeTraceVariables } from '../domain/services/ChiffrageCalculator'
+import { defaultProfile } from '../domain/services/WallProfile'
 import type { LineTrace, SurfaceTrace } from '../domain/models/Trace'
 import { fileToDataURL } from '../utils/fileToDataURL'
 import ScaleDialog from './dialogs/ScaleDialog.vue'
@@ -499,6 +500,7 @@ function onLineDone(points: [number, number][]) {
     colorAssignmentId: ca.id,
     up: 0,
     points,
+    profile: defaultProfile(),
   }
   store.addTrace(zone.id, trace)
   rerenderAll()

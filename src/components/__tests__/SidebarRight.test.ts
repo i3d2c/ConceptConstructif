@@ -7,6 +7,7 @@ import type { Ouvrage } from '../../domain/models/Ouvrage'
 import type { ColorAssignment } from '../../domain/models/Zone'
 import type { LineTrace, SurfaceTrace } from '../../domain/models/Trace'
 import type { Scale } from '../../domain/models/Scale'
+import { defaultProfile } from '../../domain/services/WallProfile'
 
 const scale: Scale = { pixelLength: 100, realLength: 5, ratio: 0.05, tracePoints: [[0, 0], [100, 0]] }
 
@@ -20,7 +21,7 @@ const colorAssignment: ColorAssignment = {
 }
 
 const trace: LineTrace = {
-  id: 't-1', number: 1, type: 'line', colorAssignmentId: colorAssignment.id, up: 0,
+  id: 't-1', number: 1, type: 'line', colorAssignmentId: colorAssignment.id, up: 0, profile: defaultProfile(),
   points: [[0, 0], [100, 0]],
 }
 

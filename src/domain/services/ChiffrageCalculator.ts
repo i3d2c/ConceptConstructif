@@ -4,12 +4,14 @@ import type { Ouvrage } from '../models/Ouvrage'
 import type { Constituent } from '../models/Constituent'
 import type { Trace } from '../models/Trace'
 import { computePolygonArea, applyAngle, surfaceStretch } from './SurfaceCalculator'
+import { profileMeanHeight, profileMaxHeight } from './WallProfile'
 import { evaluateFormula } from './FormulaEvaluator'
 import type { FormulaVariables } from './FormulaEvaluator'
 
 export interface FormulaVars {
   L: number
   H: number
+  Hmax: number
   E: number
   S: number
   V: number
@@ -68,9 +70,10 @@ export function computeTraceVariables(
       pixelLen += Math.sqrt(dx * dx + dy * dy)
     }
     const L = pixelLen * ratio
-    const S = L * H
+    const meanHeight = profileMeanHeight(trace.profile, H)
+    const S = L * meanHeight
     const V = S * E
-    return { L, H, E, S, V }
+    return { L, H: meanHeight, Hmax: profileMaxHeight(trace.profile, H), E, S, V }
   } else {
     // Surface
     const pixelArea = computePolygonArea(points)
@@ -84,7 +87,7 @@ export function computeTraceVariables(
     const L = (Math.max(...xs) - Math.min(...xs)) * ratio * stretch.x
     const H_bbox = (Math.max(...ys) - Math.min(...ys)) * ratio * stretch.y
 
-    return { L, H: H_bbox, E, S, V }
+    return { L, H: H_bbox, Hmax: H_bbox, E, S, V }
   }
 }
 
