@@ -3,6 +3,7 @@ import { setActivePinia, createPinia } from 'pinia'
 import { mount } from '@vue/test-utils'
 import { useProjectStore } from '../../stores/projectStore'
 import SidebarRight from '../SidebarRight.vue'
+import WallProfileEditor from '../wallProfile/WallProfileEditor.vue'
 import type { Ouvrage } from '../../domain/models/Ouvrage'
 import type { ColorAssignment } from '../../domain/models/Zone'
 import type { LineTrace, SurfaceTrace } from '../../domain/models/Trace'
@@ -146,6 +147,29 @@ describe('SidebarRight', () => {
 
         expect(wrapper.text()).toContain('5 m')
         expect(wrapper.text()).not.toContain('10 m')
+      })
+    })
+
+    describe('wall profile', () => {
+      const gable = [{ at: 0, offset: 0 }, { at: 0.5, offset: 2.5 }, { at: 1, offset: 0 }]
+
+      it('Should save the profile committed by the wall profile editor on the selected wall', async () => {
+        const store = setupSelectedTrace()
+        const wrapper = mount(SidebarRight)
+
+        wrapper.findComponent(WallProfileEditor).vm.$emit('commit', gable)
+        await wrapper.vm.$nextTick()
+
+        expect(store.activeZone!.traces[0]).toMatchObject({ profile: gable })
+      })
+
+      it('Should display the highest point of the wall as Hmax', () => {
+        const store = setupSelectedTrace()
+        store.updateTrace(store.activeZone!.id, trace.id, { profile: gable })
+
+        const wrapper = mount(SidebarRight)
+
+        expect(wrapper.find('[data-testid="var-Hmax"]').text()).toBe('5 m')
       })
     })
 

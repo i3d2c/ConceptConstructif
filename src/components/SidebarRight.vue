@@ -3,7 +3,8 @@ import { computed, ref, watch } from 'vue'
 import { useProjectStore } from '../stores/projectStore'
 import { computeTraceVariables, computeTraceChiffrage } from '../domain/services/ChiffrageCalculator'
 import { surfaceStretch } from '../domain/services/SurfaceCalculator'
-import type { SlopeDirection } from '../domain/models/Trace'
+import WallProfileEditor from './wallProfile/WallProfileEditor.vue'
+import type { ProfilePoint, SlopeDirection } from '../domain/models/Trace'
 import type { Scale } from '../domain/models/Scale'
 
 const store = useProjectStore()
@@ -80,6 +81,11 @@ function setDirection(d: SlopeDirection) {
   if (!zone.value || !trace.value || trace.value.type !== 'surface') return
   localDirection.value = d
   store.updateTrace(zone.value.id, trace.value.id, { slopeDirection: d })
+}
+
+function applyProfile(profile: ProfilePoint[]) {
+  if (!zone.value || !trace.value) return
+  store.updateTrace(zone.value.id, trace.value.id, { profile })
 }
 
 // ── Redimensionnement ──────────────────────────────────────────────────────
@@ -209,12 +215,23 @@ function fmtQty(n: number) {
           <div class="info-grid">
             <span class="label">L</span><span>{{ fmtQty(vars.L) }} m</span>
             <span class="label">H</span><span>{{ fmtQty(vars.H) }} m</span>
+            <span class="label">Hmax</span><span data-testid="var-Hmax">{{ fmtQty(vars.Hmax) }} m</span>
             <span class="label">E</span><span>{{ fmtQty(vars.E) }} m</span>
             <span class="label">S</span><span>{{ fmtQty(vars.S) }} m²</span>
             <span class="label">V</span><span>{{ fmtQty(vars.V) }} m³</span>
           </div>
         </div>
         <div v-else class="hint">Posez une échelle pour voir les dimensions réelles.</div>
+
+        <div v-if="trace.type === 'line' && vars && vars.L > 0 && ca" class="section">
+          <div class="section-title">Profil du mur (vue de face)</div>
+          <WallProfileEditor
+            :profile="trace.profile"
+            :base-height="ca.hauteur"
+            :wall-length="vars.L"
+            @commit="applyProfile"
+          />
+        </div>
 
         <!-- Élévation 3D -->
         <div class="section">
@@ -372,7 +389,7 @@ function fmtQty(n: number) {
 .section-title { font-size: 10px; text-transform: uppercase; color: var(--text-muted); }
 .info-row { display: flex; align-items: center; gap: 8px; font-size: 12px; }
 .dot { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
-.info-grid { display: grid; grid-template-columns: 20px 1fr; gap: 2px 8px; font-size: 12px; }
+.info-grid { display: grid; grid-template-columns: 34px 1fr; gap: 2px 8px; font-size: 12px; }
 .label { color: var(--text-muted); }
 .hint { padding: 10px 14px; font-size: 11px; color: var(--text-muted); }
 .resize-row { display: flex; align-items: center; gap: 8px; }
