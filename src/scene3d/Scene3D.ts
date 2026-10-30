@@ -4,7 +4,7 @@ import type { Zone } from '../domain/models/Zone'
 import type { Scale } from '../domain/models/Scale'
 import { tiltScale, applyTilt } from './tiltGeometry'
 import { computeFramingCamera } from './cameraFraming'
-import { wallProfileOutline, placeWallSegment } from './wallProfileOutline'
+import { wallProfileOutline, placeWallSegment, segmentLengths } from './wallProfileOutline'
 
 interface StoreRef {
   activeZone: Zone | undefined
@@ -89,7 +89,7 @@ export class Scene3D {
       if (trace.type === 'line') {
         const E = ca.epaisseur
         const worldPts = trace.points.map(([px, py]): [number, number] => [px * scale.ratio, py * scale.ratio])
-        const lengths = worldPts.slice(1).map(([x, z], i) => Math.hypot(x - worldPts[i][0], z - worldPts[i][1]))
+        const lengths = segmentLengths(worldPts)
         const wallLength = lengths.reduce((sum, l) => sum + l, 0)
         if (wallLength === 0) continue
 

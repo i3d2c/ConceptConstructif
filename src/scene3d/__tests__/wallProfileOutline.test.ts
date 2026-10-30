@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import * as THREE from 'three'
-import { wallProfileOutline, placeWallSegment } from '../wallProfileOutline'
+import { wallProfileOutline, placeWallSegment, segmentLengths } from '../wallProfileOutline'
 
 const gable = [{ at: 0, offset: 0 }, { at: 0.5, offset: 2.5 }, { at: 1, offset: 0 }]
 
@@ -39,5 +39,11 @@ describe('placeWallSegment', () => {
     expect(top.x).toBeCloseTo(1)
     expect(top.y).toBeCloseTo(3.5)
     expect(top.z).toBeCloseTo(2)
+  })
+})
+
+describe('segmentLengths', () => {
+  it('should give the length of each segment between consecutive points', () => {
+    expect(segmentLengths([[0, 0], [3, 4], [3, 10]])).toEqual([5, 6])
   })
 })

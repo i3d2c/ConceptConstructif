@@ -14,6 +14,14 @@ export function wallProfileOutline(
   return [[0, 0], [(toAt - fromAt) * wallLength, 0], ...top.reverse()]
 }
 
+export function segmentLengths(points: [number, number][]): number[] {
+  const starts = points.slice(0, -1)
+  return starts.map(([x, z], i) => {
+    const [endX, endZ] = points[i + 1]
+    return Math.hypot(endX - x, endZ - z)
+  })
+}
+
 export function placeWallSegment(obj: THREE.Object3D, start: [number, number], end: [number, number], up: number) {
   obj.position.set(start[0], up, start[1])
   obj.rotation.y = -Math.atan2(end[1] - start[1], end[0] - start[0])
