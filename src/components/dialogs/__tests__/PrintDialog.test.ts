@@ -117,5 +117,19 @@ describe('PrintDialog', () => {
       expect(findCheckbox(wrapper, 'Vue 2D').attributes('disabled')).toBeDefined()
       expect(findCheckbox(wrapper, 'Vue 3D').attributes('disabled')).toBeDefined()
     })
+
+    it('Should show the disabled plan views unchecked while a group is chosen, and restore them for the active zone', async () => {
+      const initialConfig = { ...defaultPrintConfig(), show2D: true, show3D: true }
+      const wrapper = mount(PrintDialog, { props: { initialConfig, groups, activeZoneName: 'RDC' } })
+      const checked = (label: string) => (findCheckbox(wrapper, label).element as HTMLInputElement).checked
+
+      await wrapper.find('[data-testid="print-scope"]').setValue('g-1')
+      expect(checked('Vue 2D')).toBe(false)
+      expect(checked('Vue 3D')).toBe(false)
+
+      await wrapper.find('[data-testid="print-scope"]').setValue('')
+      expect(checked('Vue 2D')).toBe(true)
+      expect(checked('Vue 3D')).toBe(true)
+    })
   })
 })

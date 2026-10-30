@@ -81,11 +81,21 @@ function doPrint() {
           Titre du projet et de la zone
         </label>
         <label class="checkbox-row">
-          <input type="checkbox" v-model="config.show2D" :disabled="!!groupName" />
+          <input
+            type="checkbox"
+            :checked="config.show2D && !groupName"
+            :disabled="!!groupName"
+            @change="config.show2D = ($event.target as HTMLInputElement).checked"
+          />
           Vue 2D (capture du plan)
         </label>
         <label class="checkbox-row">
-          <input type="checkbox" v-model="config.show3D" :disabled="!!groupName" />
+          <input
+            type="checkbox"
+            :checked="config.show3D && !groupName"
+            :disabled="!!groupName"
+            @change="config.show3D = ($event.target as HTMLInputElement).checked"
+          />
           Vue 3D
         </label>
         <hr class="divider" />
