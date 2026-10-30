@@ -17,6 +17,7 @@ const emit = defineEmits<{
   print: []
   openProjects: []
   openSettings: []
+  openZoneGroups: []
 }>()
 
 function openProjectList() {
@@ -68,6 +69,11 @@ function dupZone() {
     store.addZone(copy)
   }
   showZoneMenu.value = false
+}
+
+function openZoneGroups() {
+  showZoneMenu.value = false
+  emit('openZoneGroups')
 }
 
 function removeZone() {
@@ -149,6 +155,7 @@ function handleExport() {
           <button title="Nouvelle zone" @click="addZone">+ Nouvelle zone</button>
           <button title="Dupliquer la zone active" @click="dupZone">Dupliquer la zone active</button>
           <button title="Supprimer la zone active" @click="removeZone">Supprimer la zone active</button>
+          <button title="Groupes de zones" @click="openZoneGroups">Groupes de zones…</button>
         </div>
       </div>
     </div>

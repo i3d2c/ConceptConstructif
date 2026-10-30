@@ -13,6 +13,7 @@ import PrintLayout from './components/PrintLayout.vue'
 import ProjectListDialog from './components/dialogs/ProjectListDialog.vue'
 import WhatsNewDialog from './components/dialogs/WhatsNewDialog.vue'
 import CompanySettingsDialog from './components/dialogs/CompanySettingsDialog.vue'
+import ZoneGroupsDialog from './components/dialogs/ZoneGroupsDialog.vue'
 import TourOverlay from './components/onboarding/TourOverlay.vue'
 import { useProjectStore } from './stores/projectStore'
 import { useWhatsNewStore } from './stores/whatsNewStore'
@@ -32,6 +33,7 @@ const showPrintDialog = ref(false)
 const showProjectDialog = ref(false)
 const showWhatsNew = ref(false)
 const showSettingsDialog = ref(false)
+const showZoneGroupsDialog = ref(false)
 const printConfig = ref<PrintConfig | null>(null)
 const canvas2DSnapshot = ref<string | null>(null)
 const canvas3DSnapshot = ref<string | null>(null)
@@ -121,6 +123,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
       @print="showPrintDialog = true"
       @open-projects="showProjectDialog = true"
       @open-settings="showSettingsDialog = true"
+      @open-zone-groups="showZoneGroupsDialog = true"
     />
 
     <div class="app-body">
@@ -153,6 +156,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
     <ProjectListDialog v-if="showProjectDialog" @close="showProjectDialog = false" />
     <WhatsNewDialog v-if="showWhatsNew" @close="whatsNewStore.markSeen(); showWhatsNew = false" />
     <CompanySettingsDialog v-if="showSettingsDialog" @close="showSettingsDialog = false" />
+    <ZoneGroupsDialog v-if="showZoneGroupsDialog" @close="showZoneGroupsDialog = false" />
     <TourOverlay v-if="tourStore.isActive" />
   </div>
 

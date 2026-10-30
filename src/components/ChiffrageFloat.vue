@@ -6,7 +6,15 @@ import { buildPrintData } from '../print/buildPrintData'
 const store = useProjectStore()
 const tab = ref<'list' | 'ouvrage' | 'devis' | 'constituent'>('list')
 
-const data = computed(() => buildPrintData(store.project, store.activeZone ? [store.activeZone] : []))
+const data = computed(() => buildPrintData(store.project, store.chiffrageZones))
+
+const unscaledZoneNames = computed(() =>
+  store.chiffrageZones.filter(z => !z.scale).map(z => z.name).join(', '),
+)
+
+function setScope(e: Event) {
+  store.chiffrageGroupId = (e.target as HTMLSelectElement).value || null
+}
 
 function fmt(n: number): string {
   return new Intl.NumberFormat('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)
@@ -18,6 +26,19 @@ function fmtQty(n: number): string {
 
 <template>
   <div class="chiffrage-float">
+    <div v-if="store.project.zoneGroups.length > 0" class="scope">
+      <label>Périmètre</label>
+      <select data-testid="chiffrage-scope" :value="store.chiffrageGroup?.id ?? ''" @change="setScope">
+        <option value="">Zone active ({{ store.activeZone?.name }})</option>
+        <option v-for="g in store.project.zoneGroups" :key="g.id" :value="g.id">{{ g.name }}</option>
+      </select>
+    </div>
+    <div v-if="store.chiffrageGroup" data-testid="group-rounding-hint" class="hint">
+      Quantités cumulées sur les zones du groupe : les arrondis des constituants (ex. sacs entiers) s'appliquent au total.
+    </div>
+    <div v-if="store.chiffrageGroup && unscaledZoneNames" data-testid="unscaled-zones" class="warning">
+      Zones ignorées faute d'échelle : {{ unscaledZoneNames }}
+    </div>
     <div class="tabs">
       <button :class="{ active: tab === 'list' }" @click="tab = 'list'">Liste détaillée</button>
       <button :class="{ active: tab === 'ouvrage' }" @click="tab = 'ouvrage'">Récap/Ouvrage</button>
@@ -25,8 +46,10 @@ function fmtQty(n: number): string {
       <button :class="{ active: tab === 'constituent' }" @click="tab = 'constituent'">Récap/Constituant</button>
     </div>
 
-    <div v-if="!store.activeZone?.scale" class="empty">
-      Définissez d'abord l'échelle pour calculer le chiffrage.
+    <div v-if="!store.chiffrageZones.some(z => z.scale)" class="empty">
+      {{ store.chiffrageGroup
+        ? "Aucune zone de ce groupe n'a d'échelle."
+        : "Définissez d'abord l'échelle pour calculer le chiffrage." }}
     </div>
 
     <!-- Onglet 1 : liste détaillée -->
@@ -39,7 +62,7 @@ function fmtQty(n: number): string {
           <template v-for="t in data.traces" :key="t.traceId">
             <tr class="trace-header">
               <td colspan="6">
-                ▶ Tracé n°{{ t.traceNumber }} — {{ t.ouvrageName }}
+                ▶ Tracé n°{{ t.traceNumber }}<template v-if="store.chiffrageGroup"> · {{ t.zoneName }}</template> — {{ t.ouvrageName }}
                 (L={{ fmtQty(t.vars.L) }}m · H={{ fmtQty(t.vars.H) }}m · E={{ fmtQty(t.vars.E) }}m)
               </td>
             </tr>
@@ -163,6 +186,11 @@ function fmtQty(n: number): string {
 
 <style scoped>
 .chiffrage-float { display: flex; flex-direction: column; height: 100%; }
+.scope { display: flex; align-items: center; gap: 8px; padding: 6px; border-bottom: 1px solid var(--border); font-size: 11px; }
+.scope label { color: var(--text-muted); }
+.scope select { flex: 1; font-size: 11px; }
+.hint { padding: 4px 6px; font-size: 10px; color: var(--text-muted); border-bottom: 1px solid var(--border); }
+.warning { padding: 4px 6px; font-size: 11px; color: #f59e0b; border-bottom: 1px solid var(--border); }
 .tabs { display: flex; gap: 4px; padding: 6px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
 .tabs button { font-size: 11px; padding: 3px 8px; }
 .empty { padding: 20px; text-align: center; color: var(--text-muted); }

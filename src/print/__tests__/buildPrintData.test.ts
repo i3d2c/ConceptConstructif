@@ -89,6 +89,15 @@ describe('buildPrintData', () => {
       expect(fmt(data.grandTotal)).toBe(fmt((5 / 3 + 10 / 3) * usedConstituent.unitPrice))
     })
 
+    it('Should tell which zone each trace comes from', () => {
+      const project = twoZonesProject()
+      project.zones[1].name = 'Annexe'
+
+      const data = buildPrintData(project, project.zones)
+
+      expect(data.traces.map(t => t.zoneName)).toEqual(['Zone 1', 'Annexe'])
+    })
+
     it('Should apply the recap formula once, to the quantity summed over the zones', () => {
       const project = twoZonesProject()
 

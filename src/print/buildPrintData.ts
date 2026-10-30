@@ -55,6 +55,7 @@ export interface PrintTraceConstituentLine {
 }
 
 export interface PrintTraceDetail {
+  zoneName: string
   traceId: string
   traceNumber: number
   ouvrageId: string
@@ -92,18 +93,17 @@ function hasError(oc: OuvrageConstituent, traces: TraceChiffrage[]): boolean {
 export function buildPrintData(project: Project, zones: Zone[]): PrintData {
   const constituentsMap = new Map(project.constituents.map(c => [c.id, c]))
 
-  const traceResults: TraceChiffrage[] = zones.flatMap(zone => {
+  const zoneTraces = zones.flatMap(zone => {
     const scale = zone.scale
     if (!scale) return []
-    return zone.traces
-      .map(trace => {
-        const ca = zone.colorAssignments.find(c => c.id === trace.colorAssignmentId)
-        const ouvrage = project.ouvrages.find(o => o.id === ca?.ouvrageId)
-        if (!ca || !ouvrage) return null
-        return computeTraceChiffrage(trace, scale, ca, ouvrage, constituentsMap)
-      })
-      .filter((t): t is TraceChiffrage => t !== null)
+    return zone.traces.flatMap(trace => {
+      const ca = zone.colorAssignments.find(c => c.id === trace.colorAssignmentId)
+      const ouvrage = project.ouvrages.find(o => o.id === ca?.ouvrageId)
+      if (!ca || !ouvrage) return []
+      return [{ zoneName: zone.name, result: computeTraceChiffrage(trace, scale, ca, ouvrage, constituentsMap) }]
+    })
   })
+  const traceResults: TraceChiffrage[] = zoneTraces.map(t => t.result)
 
   const usedOuvrages = project.ouvrages.filter(o => traceResults.some(t => t.ouvrageId === o.id))
 
@@ -187,7 +187,8 @@ export function buildPrintData(project: Project, zones: Zone[]): PrintData {
     return { ouvrageId: o.id, ouvrageName: o.name, description: o.description, price }
   })
 
-  const traces: PrintTraceDetail[] = traceResults.map(t => ({
+  const traces: PrintTraceDetail[] = zoneTraces.map(({ zoneName, result: t }) => ({
+    zoneName,
     traceId: t.traceId,
     traceNumber: t.traceNumber,
     ouvrageId: t.ouvrageId,
