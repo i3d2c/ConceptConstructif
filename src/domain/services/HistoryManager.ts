@@ -17,6 +17,11 @@ export class HistoryManager {
     return this.future.length > 0
   }
 
+  clear(): void {
+    this.past = []
+    this.future = []
+  }
+
   push(project: Project): void {
     this.past.push(JSON.stringify(project))
     if (this.past.length > this.maxSize) {
